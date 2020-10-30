@@ -1,0 +1,44 @@
+{
+    "group_name": "Ctf Core",
+    "instructions": [
+        {
+            "name": "SendCfsCommand",
+            "description": "Send a CFS command",
+            "parameters": [
+                {
+                    "name": "mid",
+                    "description": "The CFS message ID of the command to send",
+                    "type": "cmd_mid"
+                },
+                {
+                    "name": "cc",
+                    "description": "The command code to use",
+                    "type": "cmd_code"
+                },
+                {
+                    "name": "args",
+                    "description": "The command arguments to use",
+                    "type": "cmd_arg",
+                    "isArray": true
+                }
+            ]
+        },
+        {
+            "name": "CheckTlmValue",
+            "description": "Check a CFS telemetry value",
+            "parameters": [
+                {
+                    "name": "mid",
+                    "description": "The CFS message ID of the telemetry packet",
+                    "type": "tlm_mid"
+                },
+                {
+                    "name": "args",
+                    "description": "An array of expressions to check on the telemetry packet",
+                    "type": "comparison",
+                    "isArray": true
+                }
+            ]
+        }
+    ]
+}

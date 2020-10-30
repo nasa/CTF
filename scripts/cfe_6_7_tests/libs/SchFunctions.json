@@ -1,0 +1,392 @@
+{
+  "test_number": "Nominal-SCH-Commands",
+  "test_name": "Functions for nominal SCH commands",
+  "requirements": {
+    "MyRequirement": "N/A"
+  },
+  "description": "Nominal SCH Functions",
+  "owner": "CTF",
+  "test_setup": "Functions for use in other tests",
+  "ctf_options": {
+    "verify_timeout": 4
+  },
+  "telemetry_watch_list": {
+    "SCH_HK_TLM_MID": [
+      "ErrCounter",
+      "CmdCounter"
+    ]
+  },
+  "command_watch_list": {
+    "SCH_CMD_MID": [
+      "SCH_NOOP_CC",
+      "SCH_RESET_CC",
+      "SCH_ENABLE_CC",
+      "SCH_DISABLE_CC",
+      "SCH_ENABLE_GROUP_CC",
+      "SCH_DISABLE_GROUP_CC"
+    ]
+  },
+  "import": {},
+  "functions": {
+    "SendCheckSchNoopCmd": {
+      "description": "Send and check SCH_NOOP_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "SCH_CMD_MID",
+            "cc": "SCH_NOOP_CC",
+            "args": {}
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "SCH_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "CmdCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "ErrCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckSchResetCmd": {
+      "description": "Send and check SCH_RESET_COUNTER_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "SCH_CMD_MID",
+            "cc": "SCH_RESET_CC",
+            "args": {}
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "SCH_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "CmdCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "ErrCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckSchEnableCmd": {
+      "description": "Send and check SCH_ENABLE_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "slotNumber",
+        "entryNumber"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "SCH_CMD_MID",
+            "cc": "SCH_ENABLE_CC",
+            "args": {
+              "SlotNumber": "slotNumber",
+              "EntryNumber": "entryNumber"
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "SCH_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "CmdCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "ErrCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckSchDisableCmd": {
+      "description": "Send and check SCH_DISABLE_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "slotNumber",
+        "entryNumber"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "SCH_CMD_MID",
+            "cc": "SCH_DISABLE_CC",
+            "args": {
+              "SlotNumber": "slotNumber",
+              "EntryNumber": "entryNumber"
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "SCH_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "CmdCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "ErrCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckSchEnableGroupCmd": {
+      "description": "Send and check SCH_ENABLE_GROUP_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "groupData"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "SCH_CMD_MID",
+            "cc": "SCH_ENABLE_GROUP_CC",
+            "args": {
+              "GroupData": "groupData"
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "SCH_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "CmdCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "ErrCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckSchDisableGroupCmd": {
+      "description": "Send and check SCH_DISABLE_GROUP_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "groupData"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "SCH_CMD_MID",
+            "cc": "SCH_DISABLE_GROUP_CC",
+            "args": {
+              "GroupData": "groupData"
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "SCH_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "CmdCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "ErrCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckSchEnableSyncCmd": {
+      "description": "Send and check SCH_ENABLE_SYNC_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "SCH_CMD_MID",
+            "cc": "SCH_ENABLE_SYNC_CC",
+            "args": {}
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "SCH_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "CmdCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "ErrCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckSchSendDiagTlmCmd": {
+      "description": "Send and check SCH_SEND_DIAG_TLM_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "SCH_CMD_MID",
+            "cc": "SCH_SEND_DIAG_TLM_CC",
+            "args": {}
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "SCH_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "CmdCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "ErrCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    }
+  }
+}

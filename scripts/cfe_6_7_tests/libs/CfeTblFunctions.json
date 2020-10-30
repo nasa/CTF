@@ -1,0 +1,512 @@
+{
+  "test_number": "Nominal-CFE_TBL-Commands",
+  "test_name": "Functions for nominal CFE_TBL commands",
+  "requirements": {
+    "MyRequirement": "N/A"
+  },
+  "description": "Nominal CFE_TBL Functions",
+  "owner": "CTF",
+  "test_setup": "Functions for use in other tests",
+  "ctf_options": {
+    "verify_timeout": 4
+  },
+  "telemetry_watch_list": {
+    "CFE_TBL_HK_TLM_MID": [
+      "Payload.CommandErrorCounter",
+      "Payload.CommandCounter"
+    ]
+  },
+  "command_watch_list": {
+    "CFE_TBL_CMD_MID": [
+      "CFE_TBL_NOOP_CC",
+      "CFE_TBL_RESET_COUNTERS_CC",
+      "CFE_TBL_LOAD_CC",
+      "CFE_TBL_DUMP_CC",
+      "CFE_TBL_VALIDATE_CC",
+      "CFE_TBL_ACTIVATE_CC",
+      "CFE_TBL_DUMP_REGISTRY_CC",
+      "CFE_TBL_SEND_REGISTRY_CC",
+      "CFE_TBL_DELETE_CDS_CC",
+      "CFE_TBL_ABORT_LOAD_CC"
+    ]
+  },
+  "import": {},
+  "functions": {
+    "SendCheckCfsTblNoopCmd": {
+      "description": "Send and check CFS_EVS_NOOP_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_TBL_CMD_MID",
+            "cc": "CFE_TBL_NOOP_CC",
+            "args": {}
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_TBL_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfsTblResetCmd": {
+      "description": "Send and check CFS_EVS_RESET_COUNTER_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_TBL_CMD_MID",
+            "cc": "CFE_TBL_RESET_COUNTERS_CC",
+            "args": {}
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_TBL_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfsTblLoadCmd": {
+      "description": "Send and check CFE_TBL_LOAD_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "fileName"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_TBL_CMD_MID",
+            "cc": "CFE_TBL_LOAD_CC",
+            "args": {
+              "Payload": {
+                "LoadFilename": "fileName"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_TBL_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfsTblDumpCmd": {
+      "description": "Send and check CFE_TBL_DUMP_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "activeFlag",
+        "tableName",
+        "fileName"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_TBL_CMD_MID",
+            "cc": "CFE_TBL_DUMP_CC",
+            "args": {
+              "Payload": {
+                "ActiveTableFlag": "activeFlag",
+                "TableName": "tableName",
+                "DumpFilename": "fileName"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_TBL_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfsTblValidateCmd": {
+      "description": "Send and check CFE_TBL_VALIDATE_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "activeFlag",
+        "tableName"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_TBL_CMD_MID",
+            "cc": "CFE_TBL_VALIDATE_CC",
+            "args": {
+              "Payload": {
+                "ActiveTableFlag": "activeFlag",
+                "TableName": "tableName"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_TBL_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfsTblActivateCmd": {
+      "description": "Send and check CFE_TBL_ACTIVATE_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "tableName"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_TBL_CMD_MID",
+            "cc": "CFE_TBL_VALIDATE_CC",
+            "args": {
+              "Payload": {
+                "TableName": "tableName"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_TBL_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfsTblDumpRegistryCmd": {
+      "description": "Send and check CFE_TBL_DUMP_REGISTRY_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "fileName"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_TBL_CMD_MID",
+            "cc": "CFE_TBL_DUMP_REGISTRY_CC",
+            "args": {
+              "Payload": {
+                "DumpFilename": "fileName"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_TBL_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfsTblSendRegistryCmd": {
+      "description": "Send and check CFE_TBL_SEND_REGISTRY_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "tableName"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_TBL_CMD_MID",
+            "cc": "CFE_TBL_SEND_REGISTRY_CC",
+            "args": {
+              "Payload": {
+                "TableName": "tableName"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_TBL_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfsTblDeleteCdsCmd": {
+      "description": "Send and check CFE_TBL_DELETE_CDS_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "tableName"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_TBL_CMD_MID",
+            "cc": "CFE_TBL_DELETE_CDS_CC",
+            "args": {
+              "Payload": {
+                "TableName": "tableName"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_TBL_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfsTblAbortLoadCmd": {
+      "description": "Send and check CFE_TBL_ABORT_LOAD_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "tableName"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_TBL_CMD_MID",
+            "cc": "CFE_TBL_ABORT_LOAD_CC",
+            "args": {
+              "Payload": {
+                "TableName": "tableName"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_TBL_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    }
+  }
+}

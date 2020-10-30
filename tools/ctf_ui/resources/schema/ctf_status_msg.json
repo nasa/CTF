@@ -1,0 +1,109 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "http://er6.jsc.nasa.gov/v1/ctf/ctf_status_msg.json",
+    "title": "CTF GUI Test Status Message",
+    "description": "A message for sending test suite run status to the GUI.",
+    "type": "object",
+    "properties": {
+        "elapsed_time": {
+            "description": "Total elapsed test time in seconds",
+            "type": "number"
+        },
+        "status": {
+            "description": "Status of entire test suite. 'waiting', 'active', 'stopped', 'passed', 'failed', 'error', 'timeout'",
+            "type": "string"
+        },
+        "scripts": {
+            "description": "An array of test script statuses",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "description": "Absolute path to the test script file",
+                        "type": "string"
+                    },
+                    "test_name": {
+                        "description": "Test name from script file",
+                        "type": "string"
+                    },
+                    "status": {
+                        "description": "Script file status. See enums for test suite status",
+                        "type": "string"
+                    },
+                    "details": {
+                        "description": "Informational message to clarify status",
+                        "type": "string"
+                    },
+                    "tests": {
+                        "description": "An array of tests within the script file",
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "case_number": {
+                                    "description": "Test case number from the script file",
+                                    "type": "string"
+                                },
+                                "status": {
+                                    "description": "Test case status. See enums for suite status",
+                                    "type": "string"
+                                },
+                                "details": {
+                                    "description": "Informational message to clarify status",
+                                    "type": "string"
+                                },
+                                "instructions": {
+                                    "description": "Status array for individual instructions.",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "status": {
+                                                "description": "Status of instruction. See test suite status enums.",
+                                                "type": "string"
+                                            },
+                                            "details": {
+                                                "description": "Informational message to clarify status",
+                                                "type": "string"
+                                            },
+                                            "instruction": {
+                                                "description": "instruction name",
+                                                "type": "string"
+                                            },
+                                            "data": {
+                                                "description": "Instruction argument data. Each key is an argument name with the argument value(s) as the value.",
+                                                "type": "object"
+                                            }
+                                        },
+                                        "required": [
+                                            "status",
+                                            "instruction",
+                                            "data"
+                                        ]
+                                    }
+                                }
+                            },
+                            "required": [
+                                "case_number",
+                                "status",
+                                "instructions"
+                            ]
+                        }
+                    }
+                },
+                "required": [
+                    "path",
+                    "status",
+                    "tests",
+                    "test_name"
+                ]
+            }
+        }
+    },
+    "required": [
+        "elapsed_time",
+        "status",
+        "scripts"
+    ]
+}

@@ -1,0 +1,1245 @@
+{
+  "test_number": "Nominal-CFE_ES-Commands",
+  "test_name": "Functions for nominal CFE_ES commands",
+  "requirements": {
+    "MyRequirement": "N/A"
+  },
+  "description": "Nominal CFE_ES Functions",
+  "owner": "CTF",
+  "test_setup": "Functions for use in other tests",
+  "ctf_options": {
+    "verify_timeout": 4
+  },
+  "telemetry_watch_list": {
+    "CFE_ES_HK_TLM_MID": [
+      "Payload.CommandErrorCounter",
+      "Payload.CommandCounter"
+    ]
+  },
+  "command_watch_list": {
+    "CFE_ES_CMD_MID": [
+      "CFE_ES_NOOP_CC",
+      "CFE_ES_RESET_CC",
+      "CFE_ES_RESTART_CC",
+      "CFE_ES_SHELL_CC",
+      "CFE_ES_START_APP_CC",
+      "CFE_ES_STOP_APP_CC",
+      "CFE_ES_RESTART_APP_CC",
+      "CFE_ES_RELOAD_APP_CC",
+      "CFE_ES_QUERY_ONE_CC",
+      "CFE_ES_QUERY_ALL_CC",
+      "CFE_ES_CLEAR_SYSLOG_CC",
+      "CFE_ES_WRITE_SYSLOG_CC",
+      "CFE_ES_CLEAR_ER_LOG_CC",
+      "CFE_ES_WRITE_ER_LOG_CC",
+      "CFE_ES_START_PERF_DATA_CC",
+      "CFE_ES_STOP_PERF_DATA_CC",
+      "CFE_ES_SET_PERF_FILTER_MASK_CC",
+      "CFE_ES_SET_PERF_TRIGGER_MASK_CC",
+      "CFE_ES_OVER_WRITE_SYSLOG_CC",
+      "CFE_ES_RESET_PR_COUNT_CC",
+      "CFE_ES_SET_MAX_PR_COUNT_CC",
+      "CFE_ES_DELETE_CDS_CC",
+      "CFE_ES_SEND_MEM_POOL_STATS_CC",
+      "CFE_ES_DUMP_CDS_REGISTRY_CCS",
+      "CFE_ES_QUERY_ALL_TASKS_CC"
+    ]
+  },
+  "import": {},
+  "functions": {
+    "SendCheckCfeEsNoopCmd": {
+      "description": "Send and check CFS_ES_NOOP_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_CMD_MID",
+            "cc": "CFE_ES_NOOP_CC",
+            "args": {}
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfeEsResetCounterCmd": {
+      "description": "Send and check CFS_ES_RESET_COUNTER_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_CMD_MID",
+            "cc": "CFE_ES_RESET_COUNTERS_CC",
+            "args": {}
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfeEsRestartCmd": {
+      "description": "Send and check CFE_ES_RESTART_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "restartType"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_CMD_MID",
+            "cc": "CFE_ES_RESTART_CC",
+            "args": {
+              "Payload": {
+                "RestartType": "restartType"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfeEsShellCmd": {
+      "description": "Send and check CFE_ES_SHELL_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "cmdString",
+        "outputFile"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_CMD_MID",
+            "cc": "CFE_ES_SHELL_CC",
+            "args": {
+              "Payload": {
+                "CmdString": "cmdString",
+                "OutputFilename": "outputFile"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfeEsStartAppCmd": {
+      "description": "Send and check CFE_ES_START_APP_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "app",
+        "entryPoint",
+        "fileName",
+        "stackSize",
+        "exceptionAction",
+        "priority"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_CMD_MID",
+            "cc": "CFE_ES_START_APP_CC",
+            "args": {
+              "Payload": {
+                "Application": "app",
+                "AppEntryPoint": "entryPoint",
+                "AppFileName": "fileName",
+                "StackSize": "stackSize",
+                "ExceptionAction": "exceptionAction",
+                "Priority": "priority"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfeEsStopAppCmd": {
+      "description": "Send and check CFE_ES_STOP_APP_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "app"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_CMD_MID",
+            "cc": "CFE_ES_STOP_APP_CC",
+            "args": {
+              "Payload": {
+                "Application": "app"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfeEsRestartAppCmd": {
+      "description": "Send and check CFE_ES_RESTART_APP_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "app"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_CMD_MID",
+            "cc": "CFE_ES_RESTART_APP_CC",
+            "args": {
+              "Payload": {
+                "Application": "app"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfeEsReloadAppCmd": {
+      "description": "Send and check CFE_ES_RELOAD_APP_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "app"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_CMD_MID",
+            "cc": "CFE_ES_RELOAD_APP_CC",
+            "args": {
+              "Payload": {
+                "Application": "app",
+                "AppFileName": "fileName"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfeEsQueryOneAppCmd": {
+      "description": "Send and check CFE_ES_QUERY_ONE_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "app"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_CMD_MID",
+            "cc": "CFE_ES_QUERY_ONE_CC",
+            "args": {
+              "Payload": {
+                "Application": "app"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfeEsQueryAllAppCmd": {
+      "description": "Send and check CFE_ES_QUERY_ALL_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "fileName"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_CMD_MID",
+            "cc": "CFE_ES_QUERY_ALL_CC",
+            "args": {
+              "Payload": {
+                "FileName": "fileName"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfeEsClearSyslogAppCmd": {
+      "description": "Send and check CFE_ES_CLEAR_SYSLOG_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_CMD_MID",
+            "cc": "CFE_ES_CLEAR_SYSLOG_CC",
+            "args": {}
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfeEsWriteSyslogAppCmd": {
+      "description": "Send and check CFE_ES_WRITE_SYSLOG_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "fileName"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_CMD_MID",
+            "cc": "CFE_ES_WRITE_SYSLOG_CC",
+            "args": {
+              "Payload": {
+                "FileName": "fileName"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfeEsClearErLogAppCmd": {
+      "description": "Send and check CFE_ES_CLEAR_ER_LOG_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_CMD_MID",
+            "cc": "CFE_ES_CLEAR_ER_LOG_CC",
+            "args": {}
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfeEsWriteErLogAppCmd": {
+      "description": "Send and check CFE_ES_WRITE_ER_LOG_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "fileName"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_CMD_MID",
+            "cc": "CFE_ES_WRITE_ER_LOG_CC",
+            "args": {
+              "Payload": {
+                "FileName": "fileName"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfeEsStartPerfDataAppCmd": {
+      "description": "Send and check CFE_ES_START_PERF_DATA_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "triggerMode"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_CMD_MID",
+            "cc": "CFE_ES_START_PERF_DATA_CC",
+            "args": {
+              "Payload": {
+                "TriggerMode": "triggerMode"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfeEsStopPerfDataAppCmd": {
+      "description": "Send and check CFE_ES_STOP_PERF_DATA_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "fileName"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_CMD_MID",
+            "cc": "CFE_ES_STOP_PERF_DATA_CC",
+            "args": {
+              "Payload": {
+                "DataFileName": "fileName"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfeEsSetPerfFilterMaskAppCmd": {
+      "description": "Send and check CFE_ES_SET_PERF_FILTER_MASK_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "filterMaskNum",
+        "filterMask"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_CMD_MID",
+            "cc": "CFE_ES_SET_PERF_FILTER_MASK_CC",
+            "args": {
+              "Payload": {
+                "FilterMaskNum": "filterMaskNum",
+                "FilterMask": "filterMask"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfeEsSetPerfTriggerMaskAppCmd": {
+      "description": "Send and check CFE_ES_SET_PERF_TRIGGER_MASK_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "triggerMaskNum",
+        "triggerMask"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_CMD_MID",
+            "cc": "CFE_ES_SET_PERF_TRIGGER_MASK_CC",
+            "args": {
+              "Payload": {
+                "TrigerMaskNum": "triggerMaskNum",
+                "TriggerMask": "triggerMask"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfeEsOverwriteSyslogAppCmd": {
+      "description": "Send and check CFE_ES_OVER_WRITE_SYSLOG_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "mode"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_CMD_MID",
+            "cc": "CFE_ES_OVER_WRITE_SYSLOG_CC",
+            "args": {
+              "Payload": {
+                "Mode": "mode"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfeEsResetPrCountAppCmd": {
+      "description": "Send and check CFE_ES_RESET_PR_COUNT_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_CMD_MID",
+            "cc": "CFE_ES_RESET_PR_COUNT_CC",
+            "args": {}
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfeEsSetMaxPrCountAppCmd": {
+      "description": "Send and check CFE_ES_SET_MAX_PR_COUNT_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "maxCount"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_CMD_MID",
+            "cc": "CFE_ES_SET_MAX_PR_COUNT_CC",
+            "args": {
+              "Payload": {
+                "MaxPRCount": "maxCount"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfeEsDeleteCdsAppCmd": {
+      "description": "Send and check CFE_ES_DELETE_CDS_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "cdsName"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_CMD_MID",
+            "cc": "CFE_ES_DELETE_CDS_CC",
+            "args": {
+              "Payload": {
+                "CdsName": "cdsName"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfeSendMemPoolStatsAppCmd": {
+      "description": "Send and check CFE_ES_SEND_MEM_POOL_STATS_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "app",
+        "poolHandle"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_CMD_MID",
+            "cc": "CFE_ES_SEND_MEM_POOL_STATS_CC",
+            "args": {
+              "Payload": {
+                "Application": "app",
+                "PoolHandle": "poolHandle"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfeDumpCdsRegistryAppCmd": {
+      "description": "Send and check CFE_ES_DUMP_CDS_REGISTRY_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "fileName"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_CMD_MID",
+            "cc": "CFE_ES_DUMP_CDS_REGISTRY_CC",
+            "args": {
+              "Payload": {
+                "DumpFilename": "fileName"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    },
+    "SendCheckCfeQueryAllTasksAppCmd": {
+      "description": "Send and check CFE_ES_QUERY_ALL_TASKS_CC",
+      "varlist": [
+        "expectedCmdCnt",
+        "expectedErrCnt",
+        "fileName"
+      ],
+      "instructions": [
+        {
+          "instruction": "SendCfsCommand",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_CMD_MID",
+            "cc": "CFE_ES_QUERY_ALL_TASKS_CC",
+            "args": {
+              "Payload": {
+                "FileName": "fileName"
+              }
+            }
+          },
+          "wait": 0
+        },
+        {
+          "instruction": "CheckTlmValue",
+          "data": {
+            "target": "",
+            "mid": "CFE_ES_HK_TLM_MID",
+            "args": [
+              {
+                "variable": "Payload.CommandCounter",
+                "value": [
+                  "expectedCmdCnt"
+                ],
+                "compare": "=="
+              },
+              {
+                "variable": "Payload.CommandErrorCounter",
+                "value": [
+                  "expectedErrCnt"
+                ],
+                "compare": "=="
+              }
+            ]
+          },
+          "wait": 0
+        }
+      ]
+    }
+  }
+}

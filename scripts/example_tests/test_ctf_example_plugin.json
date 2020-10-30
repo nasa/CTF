@@ -1,0 +1,43 @@
+{
+  "test_number": "Example-Plugin-Test",
+  "test_name": "Example Plugin Test",
+  "requirements": {
+    "MyRequirement": "N/A"
+  },
+  "description": "Testing Example Plugin",
+  "owner": "CTF",
+  "test_setup": "Script will execute a single command, and a single verification",
+  "ctf_options": {
+    "verif_timeout": 2.0
+  },
+  "telemetry_watch_list": {},
+  "command_watch_list": {},
+  "tests": [
+        {
+            "case_number": "Example Plugin Test",
+            "description": "No description",
+            "instructions": [
+                {
+                    "instruction": "TestCommand",
+                    "data": {
+                        "arg1": 8,
+                        "arg2": 42
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "TestVerifyCommand",
+                    "data": {},
+                    "timeout": 5.0,
+                    "wait": 1
+                },
+                {
+                    "instruction": "TestSharedLibraryCommand",
+                    "data": {},
+                    "timeout": 5.0,
+                    "wait": 1
+                }
+            ]
+        }
+  ]
+}

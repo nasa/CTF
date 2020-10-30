@@ -1,0 +1,17 @@
+{
+  "group_name": "UserIOPlugin",
+  "instructions": [
+    {
+      "name": "WaitForUserInput",
+      "description": "",
+      "parameters": [
+        {
+          "name": "prompt",
+          "description": "",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "description": "CTF UserIO Plugin"
+}

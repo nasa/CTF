@@ -1,0 +1,163 @@
+{
+    "test_number": "CFS-TO-Functions-Test",
+    "test_name": "CFS TO Functions Test",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "description": "Testing TO Functions",
+    "owner": "CTF",
+    "test_setup": "Example Script Showing TO function usage",
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "telemetry_watch_list": {
+        "TO_HK_TLM_MID": [
+            "usCmdCnt",
+            "usCmdErrCnt"
+        ]
+    },
+    "command_watch_list": {
+        "TO_CMD_MID": [
+            "TO_NOOP_CC",
+            "TO_RESET_CC",
+            "TO_ENABLE_OUTPUT_CC",
+            "TO_PAUSE_OUTPUT_CC",
+            "TO_RESUME_OUTPUT_CC",
+            "TO_DISABLE_OUTPUT_CC",
+            "TO_ADD_TBL_ENTRY_CC",
+            "TO_REMOVE_TBL_ENTRY_CC",
+            "TO_DISABLE_TBL_ENTRY_CC",
+            "TO_ENABLE_TBL_ENTRY_CC",
+            "TO_ENABLE_GROUP_CC",
+            "TO_ENABLE_ALL_CC",
+            "TO_DISABLE_GROUP_CC",
+            "TO_DISABLE_ALL_CC",
+            "TO_SET_ROUTE_BY_MID_CC",
+            "TO_SET_SET_ROUTE_BY_GROUP_CC",
+            "TO_MANAGE_TABLE_CC",
+            "TO_SET_ACTIVATE_ROUTES_CC",
+            "TO_ACTIVATE_ROUTES_CC",
+            "TO_SET_ROUTE_PERIOD_CC",
+            "TO_SET_WAKEUP_TIMEOUT_CC",
+            "TO_SEND_DATA_TYPE_CC"
+        ]
+    },
+    "import": {
+        "../libs/ToFunctions.json": [
+            "SendCheckToNoopCmd",
+            "SendCheckToResetCmd",
+            "SendCheckToEnableOutputCmd",
+            "SendToPauseOutputCmd",
+            "SendCheckToResumeOutputCmd",
+            "SendCheckToDisableOutputCmd",
+            "SendCheckToAddTblEntryCmd",
+            "SendCheckToRemoveTblEntryCmd",
+            "SendCheckToDisableTblEntryCmd",
+            "SendCheckToEnableTblEntryCmd",
+            "SendCheckToEnableGroupCmd",
+            "SendCheckToEnableAllCmd",
+            "SendCheckToDisableGroupCmd",
+            "SendCheckToDisableAllCmd",
+            "SendCheckToSetRouteByMidCmd",
+            "SendCheckToSetRouteByGroupCmd",
+            "SendCheckToManageTableCmd",
+            "SendCheckToActivateRoutesCmd",
+            "SendCheckToDeactivateRoutesCmd",
+            "SendCheckToSetRoutePeriodCmd",
+            "SendCheckToSetWakeupTimeoutCmd",
+            "SendCheckToSendDataTypeCmd"
+        ]
+    },
+    "functions": {},
+    "tests": [
+        {
+            "case_number": "TO-Function-Test-001",
+            "description": "Start CFS, enable CFS output",
+            "instructions": [
+                {
+                    "instruction": "StartCfs",
+                    "wait": 1,
+                    "data": {
+            "target": ""}
+                },
+                {
+                    "instruction": "EnableCfsOutput",
+                    "wait": 1,
+                    "data": {
+            "target": ""}
+                }
+            ]
+        },
+        {
+            "case_number": "TO-Function-Test-002",
+            "description": "Test TO NOOP command",
+            "instructions": [
+                {
+                    "function": "SendCheckToNoopCmd",
+                    "wait": 1,
+                    "params": {
+                        "expectedCmdCnt": 2,
+                        "expectedErrCnt": 0
+                    }
+                }
+            ]
+        },
+        {
+            "case_number": "TO-Function-Test-003",
+            "description": "Test TO RESET command",
+            "instructions": [
+                {
+                    "function": "SendCheckToResetCmd",
+                    "wait": 1,
+                    "params": {
+                        "expectedCmdCnt": 0,
+                        "expectedErrCnt": 0
+                    }
+                }
+            ]
+        },
+        {
+            "case_number": "TO-Function-Test-004",
+            "description": "Test TO ENABLE OUTPUT command",
+            "instructions": [
+                {
+                    "function": "SendCheckToEnableOutputCmd",
+                    "wait": 1,
+                    "params": {
+                        "expectedCmdCnt": 1,
+                        "expectedErrCnt": 0,
+                        "destIp": "127.0.0.1",
+                        "destPort": 5011,
+                        "routeMask": 0,
+                        "fileDesc": 0
+                    }
+                }
+            ]
+        },
+        {
+            "case_number": "TO-Function-Test-005",
+            "description": "Test TO PAUSE OUTPUT command",
+            "instructions": [
+                {
+                    "function": "SendToPauseOutputCmd",
+                    "wait": 5,
+                    "params": {}
+                }
+            ]
+        },
+        {
+            "case_number": "TO-Function-Test-006",
+            "description": "Test TO RESUME OUTPUT command",
+            "instructions": [
+                {
+                    "function": "SendCheckToResumeOutputCmd",
+                    "wait": 2,
+                    "params": {
+                        "expectedCmdCnt": 3,
+                        "expectedErrCnt": 0
+                    }
+                }
+            ]
+        }
+    ]
+}

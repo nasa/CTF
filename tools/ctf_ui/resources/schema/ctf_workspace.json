@@ -1,0 +1,31 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "http://er6.jsc.nasa.gov/v1/ctf/ctf_workspace.json",
+    "title": "CTF GUI Workspace Definition",
+    "description": "An object that defines a CTF workspace.",
+    "type": "object",
+    "properties": {
+        "pluginDir": {
+            "description": "Absolute path to the plugins directory.",
+            "type": "string"
+        },
+        "projectDir": {
+            "description": "Absolute path to the scripts root directory.",
+            "type": "string"
+        },
+        "ccddAppsDir": {
+            "description": "Absolute path to the CCDD JSON apps directory.",
+            "type": "string"
+        },
+        "pythonScript": {
+            "description": "Command line call to run the python backend main script (e.g. python36 /path/to/main_application.py)",
+            "type": "number"
+        }
+    },
+    "required": [
+        "pluginDir",
+        "projectDir",
+        "ccddAppsDir",
+        "pythonScript"
+    ]
+}

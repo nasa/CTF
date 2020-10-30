@@ -1,0 +1,125 @@
+{
+    "test_number": "CFE-TIME-Functions-Test",
+    "test_name": "CFE TIME Functions Test",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "description": "Testing CFE TIME Functions",
+    "owner": "CTF",
+    "test_setup": "Example Script Showing TIME function usage",
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "telemetry_watch_list": {
+        "CFE_TIME_HK_TLM_MID": [
+            "Payload.CommandCounter",
+            "Payload.CommandErrorCounter"
+        ]
+    },
+    "command_watch_list": {
+        "CFE_TIME_CMD_MID": [
+            "CFE_TIME_NOOP_CC",
+            "CFE_TIME_RESET_COUNTERS_CC",
+            "CFE_TIME_ADD_DELAY_CC",
+            "CFE_TIME_SET_STATE_CC",
+            "CFE_TIME_SET_MET_CC",
+            "CFE_TIME_SEND_DIAGNOSTIC_TLM_CC",
+            "CFE_TIME_SUB_DELAY_CC",
+            "CFE_TIME_SET_TIME_CC",
+            "CFE_TIME_SET_LEAP_SECONDS_CC",
+            "CFE_TIME_SET_STCF_CC",
+            "CFE_TIME_SUB_ADJUST_CC",
+            "CFE_TIME_ADD_1HZ_ADJUSTMENT_CC",
+            "CFE_TIME_SET_SIGNAL_CC",
+            "CFE_TIME_SUB_1HZ_ADJUSTMENT_CC"
+        ]
+    },
+    "import": {
+        "../libs/CfeTimeFunctions.json": [
+            "SendCheckCfsTimeNoopCmd",
+            "SendCheckCfsTimeResetCmd",
+            "SendCheckCfsTimeSubDelayCmd",
+            "SendCheckCfsTimeSetStateCmd",
+            "SendCheckCfsTimeSetMetCmd",
+            "SendCheckCfsTimeSetSourceCmd",
+            "SendCheckCfsTimeSendDiagnosticTlmCmd",
+            "SendCheckCfsTimeAddDelayCmd",
+            "SendCheckCfsTimeSetTimeCmd",
+            "SendCheckCfsTimeSetLeapSecondsCmd",
+            "SendCheckCfsTimeSetStcfCmd",
+            "SendCheckCfsTimeSubAdjustCmd",
+            "SendCheckCfsTimeAdd1HzAdjustmentCmd",
+            "SendCheckCfsTimeSetSignalCmd",
+            "SendCheckCfsTimeSub1HzAdjustmentCmd"
+        ]
+    },
+    "functions": {},
+    "tests": [
+        {
+            "case_number": "CFE-6-7-Plugin-Test-001",
+            "description": "Start CFS, Send TO NOOP command",
+            "instructions": [
+                {
+                    "instruction": "StartCfs",
+                    "wait": 1,
+                    "data": {
+                        "target": ""
+                    }
+                },
+                {
+                    "instruction": "EnableCfsOutput",
+                    "wait": 1,
+                    "data": {
+                        "target": ""
+                    }
+                },
+                {
+                    "function": "SendCheckCfsTimeNoopCmd",
+                    "wait": 5,
+                    "params": {
+                        "expectedCmdCnt": 1,
+                        "expectedErrCnt": 0
+                    }
+                },
+                {
+                    "function": "SendCheckCfsTimeResetCmd",
+                    "wait": 1,
+                    "params": {
+                        "expectedCmdCnt": 0,
+                        "expectedErrCnt": 0
+                    }
+                },
+                {
+                    "function": "SendCheckCfsTimeSubDelayCmd",
+                    "wait": 1,
+                    "comment": "Off-nominal Case. Command gets accepted, but data is invalid",
+                    "params": {
+                        "expectedCmdCnt": 0,
+                        "expectedErrCnt": 1,
+                        "sec": 1,
+                        "ms": 100
+                    }
+                },
+                {
+                    "function": "SendCheckCfsTimeSetStateCmd",
+                    "wait": 1,
+                    "params": {
+                        "expectedCmdCnt": 1,
+                        "expectedErrCnt": 1,
+                        "state": 0
+                    }
+                },
+                {
+                    "function": "SendCheckCfsTimeSetMetCmd",
+                    "wait": 1,
+                    "params": {
+                        "expectedCmdCnt": 2,
+                        "expectedErrCnt": 1,
+                        "sec": 0,
+                        "ms": 100
+                    }
+                }
+            ]
+        }
+    ]
+}

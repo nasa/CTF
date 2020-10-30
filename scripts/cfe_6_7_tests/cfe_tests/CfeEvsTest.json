@@ -1,0 +1,139 @@
+{
+    "test_number": "CFE-EVS-Functions-Test",
+    "test_name": "CFE EVS Functions Test",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "description": "Testing CFE EVS Functions",
+    "owner": "CTF",
+    "test_setup": "Example Script Showing EVS function usage",
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "telemetry_watch_list": {
+        "CFE_EVS_HK_TLM_MID": [
+            "Payload.CommandCounter",
+            "Payload.CommandErrorCounter"
+        ]
+    },
+    "command_watch_list": {
+        "CFE_EVS_CMD_MID": [
+            "CFE_EVS_NOOP_CC",
+            "CFE_EVS_RESET_COUNTERS_CC",
+            "CFE_EVS_ENABLE_APP_EVENT_TYPE_CC",
+            "CFE_EVS_SET_LOG_MODE_CC",
+            "CFE_EVS_WRITE_LOG_DATA_FILE_CC",
+            "CFE_EVS_ENABLE_EVENT_TYPE_CC",
+            "CFE_EVS_DISABLE_EVENT_TYPE_CC",
+            "CFE_EVS_SET_EVENT_FORMAT_MODE_CC",
+            "CFE_EVS_ENABLE_APP_EVENTS_CC",
+            "CFE_EVS_DISABLE_APP_EVENT_TYPE_CC",
+            "CFE_EVS_DISABLE_APP_EVENTS_CC",
+            "CFE_EVS_RESET_APP_COUNTER_CC",
+            "CFE_EVS_SET_FILTER_CC",
+            "CFE_EVS_ENABLE_PORTS_CC",
+            "CFE_EVS_RESET_FILTER_CC",
+            "CFE_EVS_DISABLE_PORTS_CC",
+            "CFE_EVS_ADD_EVENT_FILTER_CC",
+            "CFE_EVS_RESET_ALL_FILTERS_CC",
+            "CFE_EVS_DELETE_EVENT_FILTER_CC",
+            "CFE_EVS_WRITE_APP_DATA_FILE_CC",
+            "CFE_EVS_CLEAR_LOG_CC"
+        ]
+    },
+    "import": {
+        "../libs/CfeEvsFunctions.json": [
+            "SendCheckCfeEvsNoopCmd",
+            "SendCheckCfeEvsResetCmd",
+            "SendCheckCfeEvsEnableAppEventTypeCmd",
+            "SendCheckCfeEvsSetLogModeCmd",
+            "SendCheckCfeEvsWriteLogDataFileCmd",
+            "SendCheckCfeEvsEnableEventTypeCmd",
+            "SendCheckCfeEvsDisableEventTypeCmd",
+            "SendCheckCfeEvsSetEventFormatModeTypeCmd",
+            "SendCheckCfeEvsEnableAppEventsCmd",
+            "SendCheckCfeEvsDisableAppEventTypeCmd",
+            "SendCheckCfeEvsDisableAppEventsCmd",
+            "SendCheckCfeEvsResetAppCounterCmd",
+            "SendCheckCfeEvsSetFilterCmd",
+            "SendCheckCfeEvsEnablePortsCmd",
+            "SendCheckCfeEvsResetFilterCmd",
+            "SendCheckCfeEvsDisablePortsCmd",
+            "SendCheckCfeEvsAddEventFilterCmd",
+            "SendCheckCfeEvsResetAllFiltersCmd",
+            "SendCheckCfeEvsDeleteEventFilterCmd",
+            "SendCheckCfeEvsWriteAppDataFileCmd",
+            "SendCheckCfeEvsClearLogCmd"
+        ]
+    },
+    "functions": {},
+    "tests": [
+        {
+            "case_number": "CFE-6-7-CFE-EVS-Test-001",
+            "description": "Start CFS, Send EVS NOOP, Reset commands, and 3 commands with arguments",
+            "instructions": [
+                {
+                    "instruction": "StartCfs",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "EnableCfsOutput",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1
+                },
+                {
+                    "function": "SendCheckCfeEvsNoopCmd",
+                    "wait": 5,
+                    "params": {
+                        "expectedCmdCnt": 1,
+                        "expectedErrCnt": 0
+                    }
+                },
+                {
+                    "function": "SendCheckCfeEvsResetCmd",
+                    "wait": 1,
+                    "comment": "Reset will set the counters to 0.",
+                    "params": {
+                        "expectedCmdCnt": 0,
+                        "expectedErrCnt": 0
+                    }
+                },
+                {
+                    "function": "SendCheckCfeEvsEnableAppEventTypeCmd",
+                    "wait": 1,
+                    "params": {
+                        "expectedCmdCnt": 1,
+                        "expectedErrCnt": 0,
+                        "appName": "TO",
+                        "bitMask": 1
+                    }
+                },
+                {
+                    "function": "SendCheckCfeEvsSetLogModeCmd",
+                    "wait": 1,
+                    "comment": "Off-Nominal Case - 'Set Log Mode Command Error: Log Mode = 2'",
+                    "params": {
+                        "expectedCmdCnt": 1,
+                        "expectedErrCnt": 1,
+                        "logMode": 2
+                    }
+                },
+                {
+                    "function": "SendCheckCfeEvsWriteLogDataFileCmd",
+                    "wait": 1,
+                    "comment": "Off-Nominal Case - 'Write Log File Command Error: OS_creat = 0xFFFFFF98, filename = CfeEvsWriteLogDataFileCmdOutput.txt'",
+                    "params": {
+                        "expectedCmdCnt": 1,
+                        "expectedErrCnt": 2,
+                        "fileName": "CfeEvsWriteLogDataFileCmdOutput.txt"
+                    }
+                }
+            ]
+        }
+    ]
+}

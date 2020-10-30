@@ -1,0 +1,36 @@
+{
+  "test_number": "Userio-Plugin-Test",
+  "test_name": "UseriO Plugin Test",
+  "requirements": {
+    "MyRequirement": "N/A"
+  },
+  "description": "Testing Userio Plugin",
+  "owner": "CTF",
+  "test_setup": "Script will execute a command for user to confirm, and a single verification",
+  "ctf_options": {
+    "verif_timeout": 2.0
+  },
+  "telemetry_watch_list": {},
+  "command_watch_list": {},
+  "tests": [
+        {
+            "case_number": "Userio Plugin Test",
+            "description": "No description",
+            "instructions": [
+                {
+                    "instruction": "WaitForUserInput",
+                    "data": {
+                      "prompt": "  "
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "TestVerifyCommand",
+                    "data": {},
+                    "timeout": 5.0,
+                    "wait": 1
+                }
+            ]
+        }
+  ]
+}

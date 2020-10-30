@@ -1,0 +1,17 @@
+{
+  "group_name": "CCSDS Plugin",
+  "instructions": [
+    {
+      "name": "ValidateCfsCcsdsData",
+      "description": "",
+      "parameters": [
+        {
+          "name": "name",
+          "description": "",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "description": "CTF CCSDS Plugin"
+}

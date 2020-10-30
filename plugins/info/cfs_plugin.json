@@ -1,0 +1,242 @@
+{
+  "group_name": "CFS Plugin",
+  "instructions": [
+    {
+      "name": "RegisterCfs",
+      "description": "",
+      "parameters": [
+        {
+          "name": "target",
+          "description": "Target CFS Name",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "BuildCfs",
+      "description": "",
+      "parameters": [
+        {
+          "name": "target",
+          "description": "Target CFS Name",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "StartCfs",
+      "description": "",
+      "parameters": [
+        {
+          "name": "target",
+          "description": "Target CFS Name",
+          "type": "string"
+        },
+        {
+          "name": "run_args",
+          "description": "",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "EnableCfsOutput",
+      "description": "",
+      "parameters": [
+        {
+          "name": "target",
+          "description": "Target CFS Name",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "SendCfsCommand",
+      "description": "",
+      "parameters": [
+        {
+          "name": "mid",
+          "description": "",
+          "type": "cmd_mid"
+        },
+        {
+          "name": "cc",
+          "description": "",
+          "type": "cmd_code"
+        },
+        {
+          "name": "args",
+          "description": "",
+          "type": "cmd_arg",
+          "isArray": true
+        },
+        {
+          "name": "target",
+          "description": "Target CFS Name",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "SendInvalidLengthCfsCommand",
+      "description": "",
+      "parameters": [
+        {
+          "name": "mid",
+          "description": "",
+          "type": "cmd_mid"
+        },
+        {
+          "name": "cc",
+          "description": "",
+          "type": "cmd_code"
+        },
+        {
+          "name": "args",
+          "description": "",
+          "type": "cmd_arg",
+          "isArray": true
+        },
+        {
+          "name": "target",
+          "description": "Target CFS Name",
+          "type": "number"
+        },
+        {
+          "name": "payload_length",
+          "description": "",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "CheckTlmValue",
+      "description": "",
+      "parameters": [
+        {
+          "name": "mid",
+          "description": "",
+          "type": "tlm_mid"
+        },
+        {
+          "name": "args",
+          "description": "",
+          "type": "comparison",
+          "isArray": true
+        },
+        {
+          "name": "target",
+          "description": "Target CFS Name",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "CheckTlmContinuous",
+      "description": "",
+      "parameters": [
+        {
+          "name": "verification_id",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "mid",
+          "description": "",
+          "type": "tlm_mid"
+        },
+        {
+          "name": "args",
+          "description": "",
+          "type": "comparison",
+          "isArray": true
+        },
+        {
+          "name": "target",
+          "description": "Target CFS Name",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "RemoveCheckTlmContinuous",
+      "description": "",
+      "parameters": [
+        {
+          "name": "verification_id",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "target",
+          "description": "Target CFS Name",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "CheckEvent",
+      "description": "",
+      "parameters": [
+        {
+          "name": "app",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "id",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "msg",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "msg_args",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name" : "is_regex",
+          "description": "Is the msg field a regular expression?",
+          "type": "boolean"
+        },
+        {
+          "name": "target",
+          "description": "Target CFS Name",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "ArchiveCfsFiles",
+      "description": "",
+      "parameters": [
+        {
+          "name": "source_path",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "target",
+          "description": "Target CFS Name",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "ShutdownCfs",
+      "description": "",
+      "parameters": [
+        {
+          "name": "target",
+          "description": "Target CFS Name",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "description": "Provide CFS command/telemetry support for CTF"
+}

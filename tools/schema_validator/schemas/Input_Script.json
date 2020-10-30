@@ -1,0 +1,182 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://example.com/root.json",
+  "type": "object",
+  "title": "The Root Schema",
+  "required": [
+    "test_name",
+    "test_number",
+    "description",
+    "owner",
+    "ctf_options",
+    "requirements",
+    "telemetry_watch_list",
+    "command_watch_list",
+    "tests"
+  ],
+  "properties": {
+    "test_name": {
+      "$id": "#/properties/test_name",
+      "type": "string",
+      "title": "The Test_name Schema",
+      "default": "",
+      "examples": [
+        "Simple_Test"
+      ],
+      "pattern": "^(.*)$"
+    },
+    "test_number": {
+      "$id": "#/properties/test_number",
+      "type": "string",
+      "title": "The Test_number Schema",
+      "default": "",
+      "examples": [
+        "1"
+      ],
+      "pattern": "^(.*)$"
+    },
+    "test_setup": {
+      "$id": "#/properties/test_setup",
+      "type": "string",
+      "title": "The Test_setup Schema",
+      "default": "",
+      "examples": [
+        "N/A"
+      ],
+      "pattern": "^(.*)$"
+    },
+    "description": {
+      "$id": "#/properties/description",
+      "type": "string",
+      "title": "The Description Schema",
+      "default": "",
+      "examples": [
+        "A Simple Test"
+      ],
+      "pattern": "^(.*)$"
+    },
+    "owner": {
+      "$id": "#/properties/owner",
+      "type": "string",
+      "title": "The Owner Schema",
+      "default": "",
+      "examples": [
+        "CTF"
+      ],
+      "pattern": "^(.*)$"
+    },
+    "ctf_options": {
+      "$id": "#/properties/ctf_options",
+      "type": "object",
+      "title": "The Ctf_options Schema"
+    },
+    "environment": {
+      "$id": "#/properties/environment",
+      "type": "object",
+      "title": "The Environment Schema",
+      "default": null
+    },
+    "requirements": {
+      "$id": "#/properties/requirements",
+      "type": "object",
+      "title": "The Requirements Schema"
+    },
+    "telemetry_watch_list": {
+      "$id": "#/properties/telemetry_watch_list",
+      "type": "object",
+      "title": "The Telemetry_watch_list Schema"
+    },
+    "command_watch_list": {
+      "$id": "#/properties/command_watch_list",
+      "type": "object",
+      "title": "The Command_watch_list Schema"
+    },
+    "functions": {
+      "$id": "#/properties/functions",
+      "type": "object",
+      "title": "The Functions Schema",
+      "default": null
+    },
+    "tests": {
+      "$id": "#/properties/tests",
+      "type": "array",
+      "title": "The Tests Schema",
+      "items": {
+        "$id": "#/properties/tests/items",
+        "type": "object",
+        "title": "The Items Schema",
+        "required": [
+          "case_number",
+          "description",
+          "instructions"
+        ],
+        "properties": {
+          "case_number": {
+            "$id": "#/properties/tests/items/properties/case_number",
+            "type": "string",
+            "title": "The Case_number Schema",
+            "default": "",
+            "examples": [
+              "Simple Function Call"
+            ],
+            "pattern": "^(.*)$"
+          },
+          "description": {
+            "$id": "#/properties/tests/items/properties/description",
+            "type": "string",
+            "title": "The Description Schema",
+            "default": "",
+            "examples": [
+              "No description"
+            ],
+            "pattern": "^(.*)$"
+          },
+          "instructions": {
+            "$id": "#/properties/tests/items/properties/commands",
+            "type": "array",
+            "title": "The Commands Schema",
+            "items": {
+              "$id": "#/properties/tests/items/properties/commands/items",
+              "type": "object",
+              "title": "The Items Schema",
+              "properties": {
+                "instruction": {
+                  "$id": "#/properties/tests/items/properties/commands/items/properties/command",
+                  "type": "string",
+                  "title": "The Command Schema",
+                  "default": "",
+                  "examples": [
+                    "StartCfs"
+                  ],
+                  "pattern": "^(.*)$"
+                },
+                "data": {
+                  "$id": "#/properties/tests/items/properties/commands/items/properties/data",
+                  "type": "object",
+                  "title": "The Data Schema",
+                  "default": null
+                },
+                "wait": {
+                  "$id": "#/properties/tests/items/properties/commands/items/properties/wait",
+                  "type": "number",
+                  "title": "The Wait Schema",
+                  "default": 0,
+                  "examples": [
+                    3
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "import": {
+      "$id": "#/properties/import",
+      "type": "object",
+      "title": "The Import Schema",
+      "default": null
+    }
+  }
+}

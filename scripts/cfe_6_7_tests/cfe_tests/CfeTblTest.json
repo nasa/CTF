@@ -1,0 +1,117 @@
+{
+    "test_number": "CFE-TBL-Functions-Test",
+    "test_name": "CFE TBL Functions Test",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "description": "Testing CFE TBL Functions",
+    "owner": "CTF",
+    "test_setup": "Example Script Showing TBL function usage",
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "telemetry_watch_list": {
+        "CFE_TBL_HK_TLM_MID": [
+            "Payload.CommandCounter",
+            "Payload.CommandErrorCounter"
+        ]
+    },
+    "command_watch_list": {
+        "CFE_TBL_CMD_MID": [
+            "CFE_TBL_NOOP_CC",
+            "CFE_TBL_RESET_COUNTERS_CC",
+            "CFE_TBL_LOAD_CC",
+            "CFE_TBL_DUMP_CC",
+            "CFE_TBL_VALIDATE_CC",
+            "CFE_TBL_DUMP_REGISTRY_CC",
+            "CFE_TBL_SEND_REGISTRY_CC",
+            "CFE_TBL_DELETE_CDS_CC",
+            "CFE_TBL_ABORT_LOAD_CC"
+        ]
+    },
+    "import": {
+        "../libs/CfeTblFunctions.json": [
+            "SendCheckCfsTblNoopCmd",
+            "SendCheckCfsTblResetCmd",
+            "SendCheckCfsTblLoadCmd",
+            "SendCheckCfsTblDumpCmd",
+            "SendCheckCfsTblValidateCmd",
+            "SendCheckCfsTblDumpRegistryCmd",
+            "SendCheckCfsTblActivateCmd",
+            "SendCheckCfsTblSendRegistryCmd",
+            "SendCheckCfsTblDeleteCdsCmd",
+            "SendCheckCfsTblAbortLoadCmd"
+        ]
+    },
+    "functions": {},
+    "tests": [
+        {
+            "case_number": "CFE-6-7-Plugin-Test-001",
+            "description": "Start CFS, Send TO NOOP command",
+            "instructions": [
+                {
+                    "instruction": "StartCfs",
+                    "wait": 1,
+                    "data": {
+                        "target": ""
+                    }
+                },
+                {
+                    "instruction": "EnableCfsOutput",
+                    "wait": 1,
+                    "data": {
+                        "target": ""
+                    }
+                },
+                {
+                    "function": "SendCheckCfsTblNoopCmd",
+                    "wait": 5,
+                    "params": {
+                        "expectedCmdCnt": 1,
+                        "expectedErrCnt": 0
+                    }
+                },
+                {
+                    "function": "SendCheckCfsTblResetCmd",
+                    "wait": 1,
+                    "params": {
+                        "expectedCmdCnt": 0,
+                        "expectedErrCnt": 0
+                    }
+                },
+                {
+                    "function": "SendCheckCfsTblLoadCmd",
+                    "wait": 1,
+                    "comment": "Off-nominal check due to invalid table filename",
+                    "params": {
+                        "expectedCmdCnt": 0,
+                        "expectedErrCnt": 1,
+                        "fileName": "INVALID_FILENAME"
+                    }
+                },
+                {
+                    "function": "SendCheckCfsTblDumpCmd",
+                    "wait": 1,
+                    "comment": "Off-nominal check due to invalid output filename",
+                    "params": {
+                        "expectedCmdCnt": 0,
+                        "expectedErrCnt": 2,
+                        "activeFlag": 1,
+                        "tableName": "TO.to_subs",
+                        "fileName": "CfeTblTest_SendCheckCfsTblDumpCmd_Output.txt"
+                    }
+                },
+                {
+                    "function": "SendCheckCfsTblValidateCmd",
+                    "wait": 1,
+                    "params": {
+                        "expectedCmdCnt": 1,
+                        "expectedErrCnt": 2,
+                        "activeFlag": 1,
+                        "tableName": "TO.to_subs"
+                    }
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,74 @@
+{
+  "name": "ctf-ui",
+  "version": "1.0.0",
+  "scripts": {
+    "build:prod": "cross-env NODE_ENV=production webpack --config webpack.config.prod.js",
+    "build:dev": "cross-env NODE_ENV=development webpack --config webpack.config.server.js",
+    "start:prod": "cross-env NODE_ENV=production electron . --no-sandbox",
+    "start:dev": "concurrently \"cross-env NODE_ENV=development webpack-dev-server --config webpack.config.server.js\" \"wait-on http://localhost:9000 && electron --remote-debugging-port=9222 --inspect=5858 . --no-sandbox\"",
+    "serve": "npm run build:dev && npm run start:dev",
+    "start": "npm run build:prod && npm run start:prod",
+    "pack": "npm run build:prod && electron-builder --dir",
+    "dist": "npm run build:prod && electron-builder"
+  },
+  "build": {
+    "appId": "electron.ctf-ui",
+    "files": [
+      "*.js",
+      "node_modules",
+      "./dist/main/main.js",
+      "./dist/render/gui.js",
+      "./dist/render/index.html"
+    ],
+    "linux": {
+      "target": [
+        "AppImage"
+      ]
+    }
+  },
+  "main": "./dist/main/main.js",
+  "devDependencies": {
+    "@babel/core": "^7.4.5",
+    "@babel/plugin-proposal-class-properties": "^7.4.4",
+    "@babel/polyfill": "^7.4.4",
+    "@babel/preset-env": "^7.4.5",
+    "@babel/preset-react": "^7.0.0",
+    "@babel/preset-typescript": "^7.3.3",
+    "@types/node": "^12.0.10",
+    "@types/react": "^16.8.22",
+    "@types/react-beautiful-dnd": "^11.0.2",
+    "@types/react-dom": "^16.8.4",
+    "@types/react-hot-loader": "^4.1.0",
+    "@types/redux": "^3.6.0",
+    "@types/uuid": "^3.4.5",
+    "awesome-typescript-loader": "^5.2.1",
+    "babel-loader": "^8.0.6",
+    "concurrently": "^4.1.1",
+    "cross-env": "^5.1.6",
+    "css-loader": "^3.0.0",
+    "electron": "^5.0.6",
+    "electron-builder": "^21.1.5",
+    "electron-packager": "^14.0.3",
+    "html-webpack-plugin": "^3.2.0",
+    "react-hot-loader": "^4.11.1",
+    "style-loader": "^0.23.1",
+    "typescript": "^3.5.2",
+    "wait-on": "^3.2.0",
+    "webpack": "^4.35.0",
+    "webpack-cli": "^3.3.5",
+    "webpack-dev-server": "^3.7.2"
+  },
+  "dependencies": {
+    "antd": "^3.20.3",
+    "electron-localshortcut": "^3.1.0",
+    "electron-react-titlebar": "^0.8.1",
+    "react": "^16.8.6",
+    "react-beautiful-dnd": "^11.0.4",
+    "react-dom": "^16.8.6",
+    "react-scroll": "^1.7.16",
+    "redux": "^4.0.1",
+    "rimraf": "^2.6.3",
+    "styled-components": "^4.3.2",
+    "uuid": "^3.3.2"
+  }
+}

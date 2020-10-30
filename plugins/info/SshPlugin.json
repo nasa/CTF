@@ -1,0 +1,233 @@
+{
+  "group_name": "SSH Plugin",
+  "instructions": [
+    {
+      "name": "SSH_RegisterTarget",
+      "description": "",
+      "parameters": [
+        {
+          "name": "name",
+          "description": "",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "SSH_InitSSH",
+      "description": "",
+      "parameters": [
+        {
+          "name": "host",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "user",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "port",
+          "description": "",
+          "type": "number"
+        },
+        {
+          "name": "gateway",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "ssh_config_path",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "args",
+          "description": "",
+          "type": "cmd_arg",
+          "isArray": true
+        },
+        {
+          "name": "name",
+          "description": "",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "SSH_RunRemoteCommand",
+      "description": "",
+      "parameters": [
+        {
+          "name": "command",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "cwd",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "prefix",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "description": "",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "SSH_RunLocalCommand",
+      "description": "",
+      "parameters": [
+        {
+          "name": "instruction",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "description": "",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "SSH_CheckOutput",
+      "description": "",
+      "parameters": [
+        {
+          "name": "output_contains",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "output_does_not_contain",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "exit_code",
+          "description": "",
+          "type": "number"
+        },
+        {
+          "name": "name",
+          "description": "",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "SSH_PutFile",
+      "description": "",
+      "parameters": [
+        {
+          "name": "local_path",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "remote_path",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "args",
+          "description": "",
+          "type": "cmd_arg",
+          "isArray": true
+        },
+        {
+          "name": "name",
+          "description": "",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "SSH_GetFile",
+      "description": "",
+      "parameters": [
+        {
+          "name": "remote_path",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "local_path",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "args",
+          "description": "",
+          "type": "cmd_arg",
+          "isArray": true
+        },
+        {
+          "name": "name",
+          "description": "",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "SSH_PutFTP",
+      "description": "",
+      "parameters": [
+        {
+          "name": "host",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "local_path",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "remote_path",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "description": "",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "SSH_GetFTP",
+      "description": "",
+      "parameters": [
+        {
+          "name": "host",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "remote_path",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "local_path",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "description": "",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "description": "SSH Plugin"
+}

@@ -1,0 +1,27 @@
+{
+  "group_name": "Example Plugin",
+  "instructions": [
+    {
+      "name": "TestCommand",
+      "description": "",
+      "parameters": [
+        {
+          "name": "arg1",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "arg2",
+          "description": "",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "TestVerifyCommand",
+      "description": "",
+      "parameters": []
+    }
+  ],
+  "description": "CTF Example Plugin"
+}

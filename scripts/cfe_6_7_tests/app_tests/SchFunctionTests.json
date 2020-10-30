@@ -1,0 +1,140 @@
+{
+    "test_number": "CFS-SCH-Functions-Test",
+    "test_name": "CFS SCH Functions Test",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "description": "Testing SCH Functions",
+    "owner": "CTF",
+    "test_setup": "Example Script Showing SCH function usage",
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "telemetry_watch_list": {
+        "SCH_HK_TLM_MID": [
+            "CmdCounter",
+            "ErrCounter"
+        ]
+    },
+    "command_watch_list": {
+        "SCH_CMD_MID": [
+            "SCH_NOOP_CC",
+            "SCH_RESET_CC",
+            "SCH_ENABLE_CC",
+            "SCH_DISABLE_CC",
+            "SCH_ENABLE_SYNC_CC",
+            "SCH_ENABLE_GROUP_CC",
+            "SCH_DISABLE_GROUP_CC",
+            "SCH_SEND_DIAG_TLM_CC"
+        ]
+    },
+    "import": {
+        "../libs/SchFunctions.json": [
+            "SendCheckSchNoopCmd",
+            "SendCheckSchResetCmd",
+            "SendCheckSchEnableCmd",
+            "SendCheckSchDisableCmd",
+            "SendCheckSchEnableSyncCmd",
+            "SendCheckSchEnableGroupCmd",
+            "SendCheckSchDisableGroupCmd",
+            "SendCheckSchSendDiagTlmCmd"
+        ]
+    },
+    "functions": {},
+    "tests": [
+        {
+            "case_number": "SCH-Function-Test-001",
+            "description": "Start CFS, enable CFS output",
+            "instructions": [
+                {
+                    "instruction": "StartCfs",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "EnableCfsOutput",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1
+                }
+            ]
+        },
+        {
+            "case_number": "SCH-Function-Test-002",
+            "description": "Test SCH NOOP command",
+            "instructions": [
+                {
+                    "function": "SendCheckSchNoopCmd",
+                    "wait": 5,
+                    "params": {
+                        "expectedCmdCnt": 1,
+                        "expectedErrCnt": 0
+                    }
+                }
+            ]
+        },
+        {
+            "case_number": "SCH-Function-Test-003",
+            "description": "Test SCH RESET command",
+            "instructions": [
+                {
+                    "function": "SendCheckSchResetCmd",
+                    "wait": 1,
+                    "params": {
+                        "expectedCmdCnt": 0,
+                        "expectedErrCnt": 0
+                    }
+                }
+            ]
+        },
+        {
+            "case_number": "SCH-Function-Test-004",
+            "description": "Test SendCheckSchEnableCmd function",
+            "instructions": [
+                {
+                    "function": "SendCheckSchEnableCmd",
+                    "wait": 1,
+                    "params": {
+                        "expectedCmdCnt": 1,
+                        "expectedErrCnt": 0,
+                        "slotNumber": 0,
+                        "entryNumber": 0
+                    }
+                }
+            ]
+        },
+        {
+            "case_number": "SCH-Function-Test-005",
+            "description": "Test SendCheckSchDisableCmd function",
+            "instructions": [
+                {
+                    "function": "SendCheckSchDisableCmd",
+                    "wait": 1,
+                    "params": {
+                        "expectedCmdCnt": 2,
+                        "expectedErrCnt": 0,
+                        "slotNumber": 0,
+                        "entryNumber": 0
+                    }
+                }
+            ]
+        },
+        {
+            "case_number": "SCH-Function-Test-006",
+            "description": "Test SendCheckSchEnableSyncCmd function",
+            "instructions": [
+                {
+                    "function": "SendCheckSchEnableSyncCmd",
+                    "wait": 3,
+                    "params": {
+                        "expectedCmdCnt": 3,
+                        "expectedErrCnt": 0
+                    }
+                }
+            ]
+        }
+    ]
+}

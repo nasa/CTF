@@ -1,0 +1,144 @@
+#!/usr/bin/env python
+
+# MSC-26646-1, "Core Flight System Test Framework (CTF)"
+#
+# Copyright (c) 2019-2020 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
+#
+# This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
+# distributed and modified only pursuant to the terms of that agreement.
+# See the License for the specific language governing permissions and limitations under the
+# License at https://software.nasa.gov/ .
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the
+# License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either expressed or implied.
+
+
+import traceback
+
+from lib.plugin_manager import PluginManager
+from lib.script_manager import ScriptManager
+from lib.readers.JSONScriptReader import JSONScriptReader
+from lib.status_manager import StatusManager, StatusDefs
+from lib.logger import logger as log, change_log_file
+from lib.time_manager import TimeManager
+from lib.Global import Global, Config, expand_path
+from lib.logger import logger as log, set_logger_options_from_config
+import argparse
+import glob
+import os
+import shutil
+from pathlib import Path
+
+def main():
+    try:
+        args = Global.args
+
+        set_logger_options_from_config()
+
+        #Use default CTF Time manager unless a plugin overrides that
+        Global.time_manager = TimeManager()
+
+        # Instantiate the status manager passing in the port argument
+        status_manager = StatusManager(port=args.port)
+
+        # Load plugins and determine list of commands they support.
+        log.info("Loading Plugins...")
+        plugin_paths = ['plugins']
+        additional_plugin_path = expand_path(Config.get("core", "additional_plugins_path", fallback=""))
+        if additional_plugin_path:
+            plugin_paths.append(additional_plugin_path)
+        plugins = PluginManager(plugin_paths)
+
+        if args.pluginInfo is not None:
+            plugins.create_plugin_info(args.pluginInfo)
+            return
+
+        # Instantiate the script manager
+        script_manager = ScriptManager(plugins, status_manager)
+
+        # Batch read in JSON Scripts from script_dir argument.
+        log.info("Reading Test Scripts...")
+        if args.script_dir:
+            if not os.path.isdir(args.script_dir):
+                log.error("Invalid Test Script Directory: {}. Skipping.".format(args.script_dir))
+            else:
+                for f in Path(args.script_dir).rglob("*.json"):
+                    script_reader = JSONScriptReader(f)
+                    if script_reader.valid_script:
+                        script_manager.add_script(script_reader.script)
+                    else:
+                        log.warning("Invalid Input Test JSON Script: {}. Skipping.".format(f))
+
+        # Read individual scripts from scripts argument.
+        for script_file in args.scripts:
+            if os.path.isdir(script_file):
+                log.info("Found directory at {}".format(script_file))
+                log.info("Processing Scripts")
+                for f in Path(script_file).rglob("*.json"):
+                    script_reader = JSONScriptReader(f)
+                    if script_reader.valid_script:
+                        script_manager.add_script(script_reader.script)
+                        log.info("Loaded Script: {}".format(script_reader.input_script_path))
+                    else:
+                        log.warning("Invalid Input Test JSON Script: {}. Skipping.".format(f))
+            else:
+                script_reader = JSONScriptReader(script_file)
+                if script_reader.valid_script:
+                    script_manager.add_script(script_reader.script)
+                    log.info("Loaded Script: {}".format(script_reader.input_script_path))
+                else:
+                    log.error("Error loading the following script: %s", script_file)
+
+        if len(script_manager.script_list) == 0:
+            log.error("No test scripts provided. Please add script path(s) to execute in the arguments.")
+            return
+
+    except Exception as e:
+        # Log the error and the stack trace and stop processing
+        log.error("Exception :", exc_info=True)
+        handle_exception(e)
+
+    log.info("Completed reading in the json script file/files passed in the arguments")
+
+    # Kick of scripts
+    try:
+        script_manager.run_all_scripts()
+    except Exception as e:
+        plugins.shutdown_plugins()
+        handle_exception(e)
+        raise
+
+    except KeyboardInterrupt as interrupt_exception:
+        log.info("Interrupt detected. Shutting down plugins...")
+        plugins.shutdown_plugins()
+        handle_exception(interrupt_exception)
+
+    try:
+        # Move the CTF_Log_File to the script results directory
+        if (os.path.exists(Global.CTF_log_dir_file) and os.path.exists(Global.test_log_dir)):
+            shutil.move(Global.CTF_log_dir_file, Global.test_log_dir)
+        shutil.rmtree(Global.CTF_log_dir, ignore_errors=True)  # remove the script log file
+
+    except Exception as e:
+        log.error("Could Not Move CTF Log File :", exc_info=True)
+        handle_exception(e)
+
+    return 0 if status_manager.status["status"] == StatusDefs.passed else -1
+
+def handle_exception(exception):
+    exit_code = -1
+    log.error(traceback.format_exc())
+    log.info("CTF Exiting with exit code {}".format(exit_code))
+    exit(exit_code)
+
+
+if __name__ == '__main__':
+    try:
+        exit_code = main()
+        exit(exit_code)
+    except KeyboardInterrupt as e:
+        handle_exception(e)
+    except Exception as e:
+        handle_exception(e)

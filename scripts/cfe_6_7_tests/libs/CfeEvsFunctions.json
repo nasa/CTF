@@ -1,0 +1,1055 @@
+{
+    "test_number": "Nominal-CFE_EVS-Commands",
+    "test_name": "Functions for nominal CFE_EVS commands",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "description": "Nominal CFE_EVS Functions",
+    "owner": "CTF",
+    "test_setup": "Functions for use in other tests",
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "telemetry_watch_list": {
+        "CFE_EVS_HK_TLM_MID": [
+            "Payload.CommandCounter",
+            "Payload.CommandErrorCounter"
+        ]
+    },
+    "command_watch_list": {
+        "CFE_EVS_CMD_MID": [
+            "CFE_EVS_NOOP_CC",
+            "CFE_EVS_RESET_COUNTERS_CC",
+            "CFE_EVS_ENABLE_EVENT_TYPE_CC",
+            "CFE_EVS_DISABLE_EVENT_TYPE_CC",
+            "CFE_EVS_SET_EVENT_FORMAT_MODE_CC",
+            "CFE_EVS_ENABLE_APP_EVENT_TYPE_CC",
+            "CFE_EVS_DISABLE_APP_EVENT_TYPE_CC",
+            "CFE_EVS_ENABLE_APP_EVENTS_CC",
+            "CFE_EVS_DISABLE_APP_EVENTS_CC",
+            "CFE_EVS_RESET_APP_COUNTER_CC",
+            "CFE_EVS_SET_FILTER_CC",
+            "CFE_EVS_ENABLE_PORTS_CC",
+            "CFE_EVS_DISABLE_PORTS_CC",
+            "CFE_EVS_RESET_FILTER_CC",
+            "CFE_EVS_RESET_ALL_FILTERS_CC",
+            "CFE_EVS_ADD_EVENT_FILTER_CC",
+            "CFE_EVS_DELETE_EVENT_FILTER_CC",
+            "CFE_EVS_WRITE_APP_DATA_FILE_CC",
+            "CFE_EVS_WRITE_LOG_DATA_FILE_CC",
+            "CFE_EVS_SET_LOG_MODE_CC",
+            "CFE_EVS_CLEAR_LOG_CC"
+        ]
+    },
+    "import": {},
+    "functions": {
+        "SendCheckCfeEvsNoopCmd": {
+            "description": "Send and check CFS_EVS_NOOP_CC",
+            "varlist": [
+                "expectedCmdCnt",
+                "expectedErrCnt"
+            ],
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_CMD_MID",
+                        "cc": "CFE_EVS_NOOP_CC",
+                        "args": []
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "Payload.CommandCounter",
+                                "value": [
+                                    "expectedCmdCnt"
+                                ],
+                                "compare": "=="
+                            },
+                            {
+                                "variable": "Payload.CommandErrorCounter",
+                                "value": [
+                                    "expectedErrCnt"
+                                ],
+                                "compare": "=="
+                            }
+                        ]
+                    },
+                    "wait": 0
+                }
+            ]
+        },
+        "SendCheckCfeEvsResetCmd": {
+            "description": "Send and check CFS_EVS_RESET_COUNTER_CC",
+            "varlist": [
+                "expectedCmdCnt",
+                "expectedErrCnt"
+            ],
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_CMD_MID",
+                        "cc": "CFE_EVS_RESET_COUNTERS_CC",
+                        "args": []
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "Payload.CommandCounter",
+                                "value": [
+                                    "expectedCmdCnt"
+                                ],
+                                "compare": "=="
+                            },
+                            {
+                                "variable": "Payload.CommandErrorCounter",
+                                "value": [
+                                    "expectedErrCnt"
+                                ],
+                                "compare": "=="
+                            }
+                        ]
+                    },
+                    "wait": 0
+                }
+            ]
+        },
+        "SendCheckCfeEvsEnableEventTypeCmd": {
+            "description": "Send and check CFE_EVS_ENABLE_EVENT_TYPE_CC",
+            "varlist": [
+                "expectedCmdCnt",
+                "expectedErrCnt",
+                "bitMask"
+            ],
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_CMD_MID",
+                        "cc": "CFE_EVS_ENABLE_EVENT_TYPE_CC",
+                        "args": {
+                            "Payload": {
+                                "BitMask": "bitMask"
+                            }
+                        }
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "Payload.CommandCounter",
+                                "value": [
+                                    "expectedCmdCnt"
+                                ],
+                                "compare": "=="
+                            },
+                            {
+                                "variable": "Payload.CommandErrorCounter",
+                                "value": [
+                                    "expectedErrCnt"
+                                ],
+                                "compare": "=="
+                            }
+                        ]
+                    },
+                    "wait": 0
+                }
+            ]
+        },
+        "SendCheckCfeEvsDisableEventTypeCmd": {
+            "description": "Send and check CFE_EVS_DISABLE_EVENT_TYPE_CC",
+            "varlist": [
+                "expectedCmdCnt",
+                "expectedErrCnt",
+                "bitMask"
+            ],
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_CMD_MID",
+                        "cc": "CFE_EVS_DISABLE_EVENT_TYPE_CC",
+                        "args": {
+                            "Payload": {
+                                "BitMask": "bitMask"
+                            }
+                        }
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "Payload.CommandCounter",
+                                "value": [
+                                    "expectedCmdCnt"
+                                ],
+                                "compare": "=="
+                            },
+                            {
+                                "variable": "Payload.CommandErrorCounter",
+                                "value": [
+                                    "expectedErrCnt"
+                                ],
+                                "compare": "=="
+                            }
+                        ]
+                    },
+                    "wait": 0
+                }
+            ]
+        },
+        "SendCheckCfeEvsSetEventFormatModeTypeCmd": {
+            "description": "Send and check CFE_EVS_SET_EVENT_FORMAT_MODE_CC",
+            "varlist": [
+                "expectedCmdCnt",
+                "expectedErrCnt",
+                "msgFormat"
+            ],
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_CMD_MID",
+                        "cc": "CFE_EVS_SET_EVENT_FORMAT_MODE_CC",
+                        "args": {
+                            "Payload": {
+                                "MsgFormat": "msgFormat"
+                            }
+                        }
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "Payload.CommandCounter",
+                                "value": [
+                                    "expectedCmdCnt"
+                                ],
+                                "compare": "=="
+                            },
+                            {
+                                "variable": "Payload.CommandErrorCounter",
+                                "value": [
+                                    "expectedErrCnt"
+                                ],
+                                "compare": "=="
+                            }
+                        ]
+                    },
+                    "wait": 0
+                }
+            ]
+        },
+        "SendCheckCfeEvsEnableAppEventTypeCmd": {
+            "description": "Send and check CFE_EVS_ENABLE_APP_EVENT_TYPE_CC",
+            "varlist": [
+                "expectedCmdCnt",
+                "expectedErrCnt",
+                "appName",
+                "bitMask"
+            ],
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_CMD_MID",
+                        "cc": "CFE_EVS_ENABLE_APP_EVENT_TYPE_CC",
+                        "args": {
+                            "Payload": {
+                                "AppName": "appName",
+                                "BitMask": "bitMask"
+                            }
+                        }
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "Payload.CommandCounter",
+                                "value": [
+                                    "expectedCmdCnt"
+                                ],
+                                "compare": "=="
+                            },
+                            {
+                                "variable": "Payload.CommandErrorCounter",
+                                "value": [
+                                    "expectedErrCnt"
+                                ],
+                                "compare": "=="
+                            }
+                        ]
+                    },
+                    "wait": 0
+                }
+            ]
+        },
+        "SendCheckCfeEvsDisableAppEventTypeCmd": {
+            "description": "Send and check CFE_EVS_DISABLE_APP_EVENT_TYPE_CC",
+            "varlist": [
+                "expectedCmdCnt",
+                "expectedErrCnt",
+                "appName",
+                "bitMask"
+            ],
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_CMD_MID",
+                        "cc": "CFE_EVS_DISABLE_APP_EVENT_TYPE_CC",
+                        "args": {
+                            "Payload": {
+                                "AppName": "appName",
+                                "BitMask": "bitMask"
+                            }
+                        }
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "Payload.CommandCounter",
+                                "value": [
+                                    "expectedCmdCnt"
+                                ],
+                                "compare": "=="
+                            },
+                            {
+                                "variable": "Payload.CommandErrorCounter",
+                                "value": [
+                                    "expectedErrCnt"
+                                ],
+                                "compare": "=="
+                            }
+                        ]
+                    },
+                    "wait": 0
+                }
+            ]
+        },
+        "SendCheckCfeEvsEnableAppEventsCmd": {
+            "description": "Send and check CFE_EVS_ENABLE_APP_EVENTS_CC",
+            "varlist": [
+                "expectedCmdCnt",
+                "expectedErrCnt",
+                "appName"
+            ],
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_CMD_MID",
+                        "cc": "CFE_EVS_ENABLE_APP_EVENTS_CC",
+                        "args": {
+                            "Payload": {
+                                "AppName": "appName"
+                            }
+                        }
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "Payload.CommandCounter",
+                                "value": [
+                                    "expectedCmdCnt"
+                                ],
+                                "compare": "=="
+                            },
+                            {
+                                "variable": "Payload.CommandErrorCounter",
+                                "value": [
+                                    "expectedErrCnt"
+                                ],
+                                "compare": "=="
+                            }
+                        ]
+                    },
+                    "wait": 0
+                }
+            ]
+        },
+        "SendCheckCfeEvsDisableAppEventsCmd": {
+            "description": "Send and check CFE_EVS_DISABLE_APP_EVENTS_CC",
+            "varlist": [
+                "expectedCmdCnt",
+                "expectedErrCnt",
+                "appName"
+            ],
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_CMD_MID",
+                        "cc": "CFE_EVS_DISABLE_APP_EVENTS_CC",
+                        "args": {
+                            "Payload": {
+                                "AppName": "appName"
+                            }
+                        }
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "Payload.CommandCounter",
+                                "value": [
+                                    "expectedCmdCnt"
+                                ],
+                                "compare": "=="
+                            },
+                            {
+                                "variable": "Payload.CommandErrorCounter",
+                                "value": [
+                                    "expectedErrCnt"
+                                ],
+                                "compare": "=="
+                            }
+                        ]
+                    },
+                    "wait": 0
+                }
+            ]
+        },
+        "SendCheckCfeEvsResetAppCounterCmd": {
+            "description": "Send and check CFE_EVS_RESET_APP_COUNTER_CC",
+            "varlist": [
+                "expectedCmdCnt",
+                "expectedErrCnt",
+                "appName"
+            ],
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_CMD_MID",
+                        "cc": "CFE_EVS_RESET_APP_COUNTER_CC",
+                        "args": {
+                            "Payload": {
+                                "AppName": "appName"
+                            }
+                        }
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "Payload.CommandCounter",
+                                "value": [
+                                    "expectedCmdCnt"
+                                ],
+                                "compare": "=="
+                            },
+                            {
+                                "variable": "Payload.CommandErrorCounter",
+                                "value": [
+                                    "expectedErrCnt"
+                                ],
+                                "compare": "=="
+                            }
+                        ]
+                    },
+                    "wait": 0
+                }
+            ]
+        },
+        "SendCheckCfeEvsSetFilterCmd": {
+            "description": "Send and check CFE_EVS_SET_FILTER_CC",
+            "varlist": [
+                "expectedCmdCnt",
+                "expectedErrCnt",
+                "appName",
+                "eventId",
+                "mask"
+            ],
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_CMD_MID",
+                        "cc": "CFE_EVS_SET_FILTER_CC",
+                        "args": {
+                            "Payload": {
+                                "AppName": "appName",
+                                "EventID": "eventId",
+                                "Mask": "mask"
+                            }
+                        }
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "Payload.CommandCounter",
+                                "value": [
+                                    "expectedCmdCnt"
+                                ],
+                                "compare": "=="
+                            },
+                            {
+                                "variable": "Payload.CommandErrorCounter",
+                                "value": [
+                                    "expectedErrCnt"
+                                ],
+                                "compare": "=="
+                            }
+                        ]
+                    },
+                    "wait": 0
+                }
+            ]
+        },
+        "SendCheckCfeEvsEnablePortsCmd": {
+            "description": "Send and check CFE_EVS_ENABLE_PORTS_CC",
+            "varlist": [
+                "expectedCmdCnt",
+                "expectedErrCnt",
+                "bitMask"
+            ],
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_CMD_MID",
+                        "cc": "CFE_EVS_ENABLE_PORTS_CC",
+                        "args": {
+                            "Payload": {
+                                "BitMask": "bitMask"
+                            }
+                        }
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "Payload.CommandCounter",
+                                "value": [
+                                    "expectedCmdCnt"
+                                ],
+                                "compare": "=="
+                            },
+                            {
+                                "variable": "Payload.CommandErrorCounter",
+                                "value": [
+                                    "expectedErrCnt"
+                                ],
+                                "compare": "=="
+                            }
+                        ]
+                    },
+                    "wait": 0
+                }
+            ]
+        },
+        "SendCheckCfeEvsDisablePortsCmd": {
+            "description": "Send and check CFE_EVS_DISABLE_PORTS_CC",
+            "varlist": [
+                "expectedCmdCnt",
+                "expectedErrCnt",
+                "bitMask"
+            ],
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_CMD_MID",
+                        "cc": "CFE_EVS_DISABLE_PORTS_CC",
+                        "args": {
+                            "Payload": {}
+                        }
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "Payload.CommandCounter",
+                                "value": [
+                                    "expectedCmdCnt"
+                                ],
+                                "compare": "=="
+                            },
+                            {
+                                "variable": "Payload.CommandErrorCounter",
+                                "value": [
+                                    "expectedErrCnt"
+                                ],
+                                "compare": "=="
+                            }
+                        ]
+                    },
+                    "wait": 0
+                }
+            ]
+        },
+        "SendCheckCfeEvsResetFilterCmd": {
+            "description": "Send and check CFE_EVS_RESET_FILTER_CC",
+            "varlist": [
+                "expectedCmdCnt",
+                "expectedErrCnt",
+                "appName",
+                "eventId"
+            ],
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_CMD_MID",
+                        "cc": "CFE_EVS_RESET_FILTER_CC",
+                        "args": {
+                            "Payload": {
+                                "AppName": "appName",
+                                "EventID": "eventId"
+                            }
+                        }
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "Payload.CommandCounter",
+                                "value": [
+                                    "expectedCmdCnt"
+                                ],
+                                "compare": "=="
+                            },
+                            {
+                                "variable": "Payload.CommandErrorCounter",
+                                "value": [
+                                    "expectedErrCnt"
+                                ],
+                                "compare": "=="
+                            }
+                        ]
+                    },
+                    "wait": 0
+                }
+            ]
+        },
+        "SendCheckCfeEvsResetAllFiltersCmd": {
+            "description": "Send and check CFE_EVS_RESET_ALL_FILTERS_CC",
+            "varlist": [
+                "expectedCmdCnt",
+                "expectedErrCnt",
+                "appName"
+            ],
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_CMD_MID",
+                        "cc": "CFE_EVS_RESET_ALL_FILTERS_CC",
+                        "args": {
+                            "Payload": {
+                                "AppName": "appName"
+                            }
+                        }
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "Payload.CommandCounter",
+                                "value": [
+                                    "expectedCmdCnt"
+                                ],
+                                "compare": "=="
+                            },
+                            {
+                                "variable": "Payload.CommandErrorCounter",
+                                "value": [
+                                    "expectedErrCnt"
+                                ],
+                                "compare": "=="
+                            }
+                        ]
+                    },
+                    "wait": 0
+                }
+            ]
+        },
+        "SendCheckCfeEvsAddEventFilterCmd": {
+            "description": "Send and check CFE_EVS_ADD_EVENT_FILTER_CC",
+            "varlist": [
+                "expectedCmdCnt",
+                "expectedErrCnt",
+                "appName",
+                "EventId",
+                "mask"
+            ],
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_CMD_MID",
+                        "cc": "CFE_EVS_ADD_EVENT_FILTER_CC",
+                        "args": {
+                            "Payload": {
+                                "AppName": "appName",
+                                "EventID": "eventId",
+                                "Mask": "mask"
+                            }
+                        }
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "Payload.CommandCounter",
+                                "value": [
+                                    "expectedCmdCnt"
+                                ],
+                                "compare": "=="
+                            },
+                            {
+                                "variable": "Payload.CommandErrorCounter",
+                                "value": [
+                                    "expectedErrCnt"
+                                ],
+                                "compare": "=="
+                            }
+                        ]
+                    },
+                    "wait": 0
+                }
+            ]
+        },
+        "SendCheckCfeEvsDeleteEventFilterCmd": {
+            "description": "Send and check CFE_EVS_DELETE_EVENT_FILTER_CC",
+            "varlist": [
+                "expectedCmdCnt",
+                "expectedErrCnt",
+                "appName",
+                "EventId"
+            ],
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_CMD_MID",
+                        "cc": "CFE_EVS_DELETE_EVENT_FILTER_CC",
+                        "args": {
+                            "Payload": {
+                                "AppName": "appName",
+                                "EventID": "eventId"
+                            }
+                        }
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "Payload.CommandCounter",
+                                "value": [
+                                    "expectedCmdCnt"
+                                ],
+                                "compare": "=="
+                            },
+                            {
+                                "variable": "Payload.CommandErrorCounter",
+                                "value": [
+                                    "expectedErrCnt"
+                                ],
+                                "compare": "=="
+                            }
+                        ]
+                    },
+                    "wait": 0
+                }
+            ]
+        },
+        "SendCheckCfeEvsWriteAppDataFileCmd": {
+            "description": "Send and check CFE_EVS_WRITE_APP_DATA_FILE_CC",
+            "varlist": [
+                "expectedCmdCnt",
+                "expectedErrCnt",
+                "fileName"
+            ],
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_CMD_MID",
+                        "cc": "CFE_EVS_WRITE_APP_DATA_FILE_CC",
+                        "args": {
+                            "Payload": {
+                                "AppDataFilename": "fileName"
+                            }
+                        }
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "Payload.CommandCounter",
+                                "value": [
+                                    "expectedCmdCnt"
+                                ],
+                                "compare": "=="
+                            },
+                            {
+                                "variable": "Payload.CommandErrorCounter",
+                                "value": [
+                                    "expectedErrCnt"
+                                ],
+                                "compare": "=="
+                            }
+                        ]
+                    },
+                    "wait": 0
+                }
+            ]
+        },
+        "SendCheckCfeEvsWriteLogDataFileCmd": {
+            "description": "Send and check CFE_EVS_WRITE_LOG_DATA_FILE_CC",
+            "varlist": [
+                "expectedCmdCnt",
+                "expectedErrCnt",
+                "fileName"
+            ],
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_CMD_MID",
+                        "cc": "CFE_EVS_WRITE_LOG_DATA_FILE_CC",
+                        "args": {
+                            "Payload": {
+                                "LogFilename": "fileName"
+                            }
+                        }
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "Payload.CommandCounter",
+                                "value": [
+                                    "expectedCmdCnt"
+                                ],
+                                "compare": "=="
+                            },
+                            {
+                                "variable": "Payload.CommandErrorCounter",
+                                "value": [
+                                    "expectedErrCnt"
+                                ],
+                                "compare": "=="
+                            }
+                        ]
+                    },
+                    "wait": 0
+                }
+            ]
+        },
+        "SendCheckCfeEvsSetLogModeCmd": {
+            "description": "Send and check CFE_EVS_SET_LOG_MODE_CC",
+            "varlist": [
+                "expectedCmdCnt",
+                "expectedErrCnt",
+                "logMode"
+            ],
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_CMD_MID",
+                        "cc": "CFE_EVS_SET_LOG_MODE_CC",
+                        "args": {
+                            "Payload": {
+                                "LogMode": "logMode"
+                            }
+                        }
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "Payload.CommandCounter",
+                                "value": [
+                                    "expectedCmdCnt"
+                                ],
+                                "compare": "=="
+                            },
+                            {
+                                "variable": "Payload.CommandErrorCounter",
+                                "value": [
+                                    "expectedErrCnt"
+                                ],
+                                "compare": "=="
+                            }
+                        ]
+                    },
+                    "wait": 0
+                }
+            ]
+        },
+        "SendCheckCfeEvsClearLogCmd": {
+            "description": "Send and check CFE_EVS_CLEAR_LOG_CC",
+            "varlist": [
+                "expectedCmdCnt",
+                "expectedErrCnt"
+            ],
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_CMD_MID",
+                        "cc": "CFE_EVS_CLEAR_LOG_CC",
+                        "args": []
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "Payload.CommandCounter",
+                                "value": [
+                                    "expectedCmdCnt"
+                                ],
+                                "compare": "=="
+                            },
+                            {
+                                "variable": "Payload.CommandErrorCounter",
+                                "value": [
+                                    "expectedErrCnt"
+                                ],
+                                "compare": "=="
+                            }
+                        ]
+                    },
+                    "wait": 0
+                }
+            ]
+        }
+    },
+    "tests": []
+}

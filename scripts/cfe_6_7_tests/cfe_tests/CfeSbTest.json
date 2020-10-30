@@ -1,0 +1,121 @@
+{
+    "test_number": "CFE-SB-Functions-Test",
+    "test_name": "CFE SB Functions Test",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "description": "Testing CFE SB Functions",
+    "owner": "CTF",
+    "test_setup": "Example Script Showing SB function usage",
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "telemetry_watch_list": {
+        "CFE_SB_HK_TLM_MID": [
+            "Payload.CommandCounter",
+            "Payload.CommandErrorCounter"
+        ]
+    },
+    "command_watch_list": {
+        "CFE_SB_CMD_MID": [
+            "CFE_SB_NOOP_CC",
+            "CFE_SB_RESET_COUNTERS_CC",
+            "CFE_SB_SEND_ROUTING_INFO_CC",
+            "CFE_SB_SEND_MAP_INFO_CC",
+            "CFE_SB_ENABLE_ROUTE_CC",
+            "CFE_SB_SEND_SB_STATS_CC",
+            "CFE_SB_DISABLE_ROUTE_CC",
+            "CFE_SB_SEND_PIPE_INFO_CC",
+            "CFE_SB_DISABLE_SUB_REPORTING_CC",
+            "CFE_SB_ENABLE_SUB_REPORTING_CC",
+            "CFE_SB_SEND_PREV_SUBS_CC"
+        ]
+    },
+    "import": {
+        "../libs/CfeSbFunctions.json": [
+            "SendCheckCfeSbNoopCmd",
+            "SendCheckCfeSbResetCounterCmd",
+            "SendCheckCfeSbSendRoutingInfoCmd",
+            "SendCheckCfeSbSendMapInfoCmd",
+            "SendCheckCfeSbEnableRouteCmd",
+            "SendCheckCfeSbSendSbStatsCmd",
+            "SendCheckCfeSbDisableRouteCmd",
+            "SendCheckCfeSbSendPipeInfoCmd",
+            "SendCheckCfeSbDisableSubReportingCmd",
+            "SendCheckCfeSbEnableSubReportingCmd",
+            "SendCheckCfeSbSendPrevSubsCmd"
+        ]
+    },
+    "functions": {},
+    "tests": [
+        {
+            "case_number": "CFE-6-7-CFE-SB-Test-001",
+            "description": "Start CFS, Send SB NOOP, Reset commands, and 3 commands with arguments",
+            "instructions": [
+                {
+                    "instruction": "StartCfs",
+                    "wait": 1,
+                    "data": {
+                        "target": ""
+                    }
+                },
+                {
+                    "instruction": "EnableCfsOutput",
+                    "wait": 1,
+                    "data": {
+                        "target": ""
+                    }
+                },
+                {
+                    "function": "SendCheckCfeSbNoopCmd",
+                    "wait": 5,
+                    "params": {
+                        "expectedCmdCnt": 1,
+                        "expectedErrCnt": 0
+                    }
+                },
+                {
+                    "function": "SendCheckCfeSbResetCounterCmd",
+                    "wait": 1,
+                    "comment": "Reset will set the counters to 0.",
+                    "params": {
+                        "expectedCmdCnt": 0,
+                        "expectedErrCnt": 0
+                    }
+                },
+                {
+                    "function": "SendCheckCfeSbSendRoutingInfoCmd",
+                    "wait": 1,
+                    "comment": "Off-Nominal Case - 'Error creating file SendCheckCfeSbSendRoutingInfoCmdParam.txt, stat=0xffffff98'",
+                    "params": {
+                        "expectedCmdCnt": 0,
+                        "expectedErrCnt": 1,
+                        "fileName": "SendCheckCfeSbSendRoutingInfoCmdParam.txt"
+                    }
+                },
+                {
+                    "function": "SendCheckCfeSbSendMapInfoCmd",
+                    "wait": 1,
+                    "comment": "Off-Nominal Case - 'Error creating file SendCheckCfeSbSendMapInfoCmdParam.txt, stat=0xffffff98'",
+                    "params": {
+                        "expectedCmdCnt": 0,
+                        "expectedErrCnt": 2,
+                        "fileName": "SendCheckCfeSbSendMapInfoCmdParam.txt"
+                    }
+                },
+                {
+                    "function": "SendCheckCfeSbEnableRouteCmd",
+                    "wait": 1,
+                    "comment": "Off-Nominal Case - 'Enbl Route Cmd:Invalid Param.Msg 0x2006,Pipe 112'",
+                    "params": {
+                        "expectedCmdCnt": 0,
+                        "expectedErrCnt": 3,
+                        "msgId": 8198,
+                        "pipe": 0,
+                        "spare": 0
+                    }
+                }
+            ]
+        }
+    ]
+}

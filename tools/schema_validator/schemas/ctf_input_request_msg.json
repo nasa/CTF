@@ -1,0 +1,36 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "http://er6.jsc.nasa.gov/v1/ctf/ctf_input_request_msg.json",
+    "title": "CTF GUI Input Request from Engine",
+    "description": "A message from the backend requesting user confirmation.",
+    "type": "object",
+    "properties": {
+        "path": {
+            "description": "Absolute path to script file.",
+            "type": "string"
+        },
+        "test_name": {
+            "description": "Test name from the script file",
+            "type": "string"
+        },
+        "case_number": {
+            "description": "Test case number from the script file's 'tests' list",
+            "type": "string"
+        },
+        "command_index": {
+            "description": "Index of command within the test's 'commands' list",
+            "type": "number"
+        },
+        "continue": {
+            "description": "The continue status of the command. If true, execution resumes.",
+            "type": "boolean"
+        }
+    },
+    "required": [
+        "path",
+        "test_name",
+        "case_number",
+        "command_index",
+        "continue"
+    ]
+}

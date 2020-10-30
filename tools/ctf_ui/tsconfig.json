@@ -1,0 +1,21 @@
+{
+    "compileOnSave": true,
+    "compilerOptions": {
+        "rootDir": "./",
+        "outDir": "./dist/",
+        "module": "commonjs",
+        "target": "es5",
+        "jsx": "preserve",
+        "lib": [
+            "esnext",
+            "dom",
+            "es2015",
+            "es2016",
+            "es2017"
+        ],
+        "sourceMap": true
+    },
+    "exclude": [
+        "node_modules"
+    ]
+}

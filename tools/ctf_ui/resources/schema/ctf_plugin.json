@@ -1,0 +1,67 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://er6.jsc.nasa.gov/v1/ctf/ctf_plugins.json",
+    "title": "CTF Editor Plugin Definition",
+    "description": "A set of instruction definitions to be used in the CTF Editor.",
+    "type": "object",
+    "properties": {
+        "group_name": {
+            "description": "A name for this group of instructions",
+            "type": "string"
+        },
+        "instructions": {
+            "description": "A list of instructions.",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "description": "The name of the instruction",
+                        "type": "string"
+                    },
+                    "description": {
+                        "description": "Description of the instruction",
+                        "type": "string"
+                    },
+                    "parameters": {
+                        "description": "An array containing the parameters of the instruction",
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "description": "The parameter's name",
+                                    "type": "string"
+                                },
+                                "description": {
+                                    "description": "Description of the parameter",
+                                    "type": "string"
+                                },
+                                "type": {
+                                    "description": "The type of parameter. string | comparison | cmd_id | cmd_code | cmd_arg | tlm_mid | tlm_field",
+                                    "type": "string"
+                                },
+                                "isArray": {
+                                    "description": "Whether or not this parameter is an array",
+                                    "type": "boolean"
+                                }
+                            },
+                            "required": [
+                                "name",
+                                "type"
+                            ]
+                        }
+                    }
+                },
+                "required": [
+                    "name",
+                    "parameters"
+                ]
+            },
+            "required": [
+                "groupName",
+                "instructions"
+            ]
+        }
+    }
+}

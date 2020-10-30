@@ -1,0 +1,31 @@
+{
+    "test_number": "Invalid-Test",
+    "test_name": "Invalid Test",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "description": "Demonstrates graceful handling of invalid commands",
+    "owner": "CTF",
+    "test_setup": "Script attempts to execute invalid commands",
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "telemetry_watch_list": {},
+    "command_watch_list": {},
+    "import": {},
+    "tests": [
+        {
+            "case_number": "Unknown",
+            "description": "Contains an unknown command",
+            "instructions": [
+                {
+                    "instruction": "NotARealCommand",
+                    "wait": 1,
+                    "data": {
+                        "param": "foo"
+                    }
+                }
+            ]
+        }
+    ]
+}

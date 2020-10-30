@@ -1,0 +1,106 @@
+{
+    "test_number": "Basic-CFE-6-7-Cfs-Plugin-Test",
+    "test_name": "Basic CFE-6-7 CFS Plugin Test",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "description": "Basic CTF Example Script Showing Simple Commands/Telemetry Verification",
+    "owner": "CTF",
+    "test_setup": "Script will start CFE-6-7, execute a verification command test and close CFE-6-7",
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "telemetry_watch_list": {
+        "TO_HK_TLM_MID": [
+            "usCmdErrCnt",
+            "usCmdCnt"
+        ]
+    },
+    "command_watch_list": {
+        "TO_CMD_MID": [
+            "TO_NOOP_CC",
+            "TO_RESET_CC"
+        ]
+    },
+    "import": {},
+    "tests": [
+        {
+            "case_number": "CFE-6-7-Plugin-Test-001",
+            "description": "Start CFS, Send TO NOOP command",
+            "instructions": [
+                {
+                    "instruction": "StartCfs",
+                    "data": {
+                        "target": "",
+                        "run_args": "-RPO"
+                    },
+                    "comment": "The above run_args are used as command-line arguments when starting the CFS instance.",
+                    "wait": 1
+                },
+                    {
+                    "instruction": "EnableCfsOutput",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1,
+                    "comment": "Need this to enable the telemetry thread. Enable Output counts as 1 TO cmd"
+                },
+
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_ES_CMD_MID",
+                        "cc": "CFE_ES_NOOP_CC",
+                        "args": {}
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_ES_HK_TLM_MID",
+                        "args": [
+                            {
+                                "compare": "==",
+                                "variable": "Payload.CommandCounter",
+                                "value": [
+                                    1.0
+                                ]
+                            }
+                        ]
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_ES_CMD_MID",
+                        "cc": "CFE_ES_RESET_COUNTERS_CC",
+                        "args": {}
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_ES_HK_TLM_MID",
+                        "args": [
+                            {
+                                "compare": "==",
+                                "variable": "Payload.CommandCounter",
+                                "value": [
+                                    0.0
+                                ]
+                            }
+                        ]
+                    },
+                    "wait": 1
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,5 @@
+============
+``packages``
+============
+
+.. automodule:: patchwork.packages
