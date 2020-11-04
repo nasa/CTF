@@ -304,6 +304,18 @@ export class Command extends React.Component<CommandState, CommandState> {
             .flat();
     }
 
+    mapVehicleDataToFilteredCommandParamsType(
+        vehicleData: VehicleData,
+        midFilter?: string,
+        ccFilter?: string
+    ): string[] {
+        return vehicleData.commands
+            .filter(cmd => cmd.mid === midFilter && cmd.cc === ccFilter)
+            .map(cmd => cmd.params.map(p => p.data_type))
+            .flat();
+    }
+
+
     // filters by param name or index
     mapVehicleDataToFilteredCommandEnums(
         vehicleData: VehicleData,
@@ -492,6 +504,14 @@ export class Command extends React.Component<CommandState, CommandState> {
                 this.state.cmdMidFilter,
                 this.state.ccFilter
             )[index];
+
+            const cmdParamType = this.mapVehicleDataToFilteredCommandParamsType(
+                context.vehicleData,
+                this.state.cmdMidFilter,
+                this.state.ccFilter
+            )[index];
+
+
             var cmd_arg_obj = {}
             if (!(value instanceof Object)){
                 this.setValue(cmd_arg_obj, cmdParamName, value);
@@ -501,6 +521,8 @@ export class Command extends React.Component<CommandState, CommandState> {
                 cmd_arg_obj = value;
             }
             return (
+                <Tooltip  placement="leftTop" title={cmdParamType} color='geekblue' key={cmdParamName + cmdParamType} >
+                <div>
                 <AutoCompleteField
                     title={cmdParamName}
                     style={style}
@@ -525,6 +547,8 @@ export class Command extends React.Component<CommandState, CommandState> {
                         onChange(param, cmd_arg_obj, index)
                     }}
                 />
+                </div>  
+                </Tooltip>  
             );
         } else if (param.type === 'tlm_arg') {
             return (
@@ -613,7 +637,7 @@ export class Command extends React.Component<CommandState, CommandState> {
             if (param === undefined || param === null) {
                 return;
             }
-            if (param.isArray) {
+            if (param.isArray) {                
                 if (param.type === 'cmd_arg') {
                     // show only the possible args (fixed length array)
                     const cmdParamNames = this.mapVehicleDataToFilteredCommandParams(
@@ -692,7 +716,7 @@ export class Command extends React.Component<CommandState, CommandState> {
                         </ParamArray>
                     );
                 }
-            } else {
+            } else {                
                 return (
                     <div>
                         {this.renderArgument(

@@ -494,7 +494,7 @@ export class RunStatusView
                         if (value.indexOf("DEBUG") > 0 && !this.state.debug_output)
                             return
 
-                        return <Timeline.Item color={color}>
+                        return <Timeline.Item color={color} key = {index}>
                                 <Typography.Text code={true}>{value.replace(/].*\*\*\*/, '').substr(1)}</Typography.Text>
                             </Timeline.Item>
                     })}

@@ -19,9 +19,11 @@ import { Enum } from './ccdd-json'
 export class Parameter {
     name: string;
     enum: Enum[];
-    constructor(name: string, enuMap: Enum[]) {
+    data_type: string;
+    constructor(name: string, enuMap: Enum[], data_type: string = null) {
         this.name = name
         this.enum = enuMap
+        this.data_type = data_type
     }
 }
 

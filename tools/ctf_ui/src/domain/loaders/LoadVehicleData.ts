@@ -44,7 +44,7 @@ export class LoadVehicleData {
                 if (type === "tlm"){
                     param = [new Parameter(
                         identifier ? identifier + '.' + field.name + array_selector: field.name + array_selector,
-                        field.enumeration
+                        field.enumeration, field.data_type
                     )];
                 }
                 if (type === "cmd"){
@@ -55,14 +55,14 @@ export class LoadVehicleData {
                                 identifier ? 
                                     identifier + '.' + field.name + array_index_selector
                                     : field.name + array_index_selector,
-                                field.enumeration    
+                                field.enumeration, field.data_type  
                             ))
                         } 
                     }
                     else{
                         param = [new Parameter(
                             identifier ? identifier + '.' + field.name: field.name,
-                            field.enumeration
+                            field.enumeration, field.data_type
                         )];    
                     }
                 }
