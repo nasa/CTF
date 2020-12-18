@@ -131,7 +131,7 @@ class Plugin(object):
                     ret = func(**data)
                 except Exception as e:
                     log.error("Error Applying Function {}".format(func))
-                    traceback.format_exc(e)
+                    log.debug(traceback.format_exc())
 
             elif (len(data) == 0 and (req_args + optional_args) == 0):
                 try:

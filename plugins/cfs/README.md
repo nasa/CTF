@@ -7,8 +7,8 @@ The CFS plugin draws many default values from the CTF config file. The section `
 
 If multiple CFS targets are to be registered, for each target name, the plugin will load values from a correspondingly named section.
 
-If no targets are explicitly registered by name by the time `StartCfs` is first executed, the plugin will automatically configure targets for each config section beginning with `cfs_`. If no such sections are found, the plugin will configure a single *local*
-target using the `[cfs]` config section.
+If no targets are explicitly registered by name by the time `StartCfs` is first executed, the plugin will automatically configure targets for each config section beginning with `cfs_`. If no such sections are found, the plugin will configure a single
+target using the `[cfs]` config section. Note that if the `cfs_protocol` field is not found in the `cfs` section, a local target will be registered.
 
 The precedence of values is first the named config section, if any, and then the `[cfs]` config section. A target cannot be registered, 
 explicitly nor automatically, without a correspondingly named config section.
@@ -56,7 +56,7 @@ CTF supports resolving macros from the ccsds_data_dir and replacing macros in th
 ###### Example 
 ```                
 {
-                    "command": "CheckTlmValue",
+                    "instruction": "CheckTlmValue",
                     "data": {
                         "mid": "CFE_EVS_HK_TLM_MID",
                         "args": [
@@ -83,7 +83,7 @@ override any value specified in the `[cfs]` section.
 Example:
 ```javascript
 {
-    "command": "RegisterCfs",
+    "instruction": "RegisterCfs",
     "data": {
         "target": "cfs_workstation"
     }
@@ -104,7 +104,7 @@ Builds a CFS target.
 Example:
 ```javascript
 {
-    "command": "BuildCfs",
+    "instruction": "BuildCfs",
     "data": {
         "target": "cfs_workstation"
     }
@@ -121,7 +121,7 @@ Starts a CFS target.
 Example:
 ```javascript
 {
-    "command": "StartCfs",
+    "instruction": "StartCfs",
     "data": {
         "target": "cfs_workstation",
         "run_args": "-R PO"
@@ -137,7 +137,7 @@ Enables CFS output. No parameters.
 Example:
 ```javascript
 {
-    "command": "EnableCfsOutput",
+    "instruction": "EnableCfsOutput",
     "data": {
         "target": "cfs_workstation"
     }
@@ -158,7 +158,7 @@ Example:
 Example:
 ```javascript
 {
-    "command":"SendCfsCommand",
+    "instruction":"SendCfsCommand",
     "data":{
         "target": "cfs_workstation",
         "mid":"TO_CMD_MID",
@@ -184,7 +184,7 @@ Checks that an event message matching the given parameters has been received fro
 Example:
 ```javascript
 {
-    "command":"CheckEvent",
+    "instruction":"CheckEvent",
     "data":{
         "target": "cfs_workstation",
         "app":"BEX",
@@ -196,7 +196,30 @@ Example:
     "wait": 1
 }
 ```
+### CheckNoEvent
+Checks that an event message matching the given parameters is no longer valid in received messages from the CFS target.
+- **target:** (Optional) A previously registered target name. If no name is given, applies to all registered targets.
+- **app**: The app that sent the event message.
+- **id**: The Event ID, taken from an EVS enum, to represent the criticality level of a message.  13 is information, 14 is error, and anything else should be updated into this wiki as you find it.
+- **msg**: (Optional) The expected message of the event. If blank, the msg field is not verified.
+- **is_regex**: (Optional) True if `msg` is to be used for a regex match instead of string comparison
+- **msg_args**: (optional) arguments that will be inserted into `msg`, similar to printf() functions
 
+Example:
+```javascript
+{
+  "instruction": "CheckNoEvent",
+  "data": {
+          "app": "TO",
+          "id": "3",
+          "msg": "TO - ENABLE_OUTPUT cmd succesful for routeMask:0x00000001",
+          "msg_args": "",
+          "target": "cfs_workstation"
+           },
+  "wait": 4,
+  "description": "ENABLE_OUTPUT cmd message is no longer valid in received messages"
+}
+```
 ### CheckTlmValue
 Checks that a telemetry message matching the given parameters has been received from the CFS target.
 - **target:** (Optional) A previously registered target name. If no name is given, applies to all registered targets.
@@ -217,7 +240,7 @@ can be listed here to check multiple attributes of a given packet at once.
 Example:
 ```javascript
 {
-    "command": "CheckTlmValue",
+    "instruction": "CheckTlmValue",
     "data": {
         "target": "cfs_workstation",
         "mid": "TO_HK_TLM_MID",
@@ -265,7 +288,7 @@ can be listed here to check multiple attributes of a given packet at once.
 Example:
 ```javascript
 {
-    "command": "CheckTlmContinuous",
+    "instruction": "CheckTlmContinuous",
     "data": {
         "target": "cfs_workstation",
         "verification_id": "TO_no_errors",
@@ -291,7 +314,7 @@ Cancels a continuous telemetry check by ID so that it is no longer performed.
 Example:
 ```javascript
 {
-    "command": "RemoveCheckTlmContinuous",
+    "instruction": "RemoveCheckTlmContinuous",
     "data": {
         "verification_id": "TO_no_errors"
     }
@@ -307,7 +330,7 @@ Copies files from a directory that have been modified during the current test ru
 Example:
 ```javascript
 {
-    "command": "ArchiveCfsFiles",
+    "instruction": "ArchiveCfsFiles",
     "data":{
         "target": "cfs_workstation",
         "source_path": "../../build/exe/lx1/cf/"
@@ -325,7 +348,7 @@ Note, the CFS plugin will automatically shutdown all CFS targets on test complet
 Example:
 ```javascript
 {
-    "command": "ShutdownCfs",
+    "instruction": "ShutdownCfs",
     "data": {
         "target": "cfs_workstation"
     }

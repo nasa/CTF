@@ -41,7 +41,10 @@ export const TestCase: React.FC<{
         updatedTest.instructions.splice(index, 1);
         if (onChange) onChange(updatedTest);
     };
-    return (
+
+
+    return (        
+
         <div className={className}>
             <Text
                 editable={{

@@ -21,6 +21,8 @@ class StatusDefs:
     failed = 'failed'
     error = 'error'
     timeout = 'timeout'
+    aborted = 'aborted'
+    disabled = 'disabled'
 
 InstructionStatus = {
     "instruction": "",
@@ -28,7 +30,8 @@ InstructionStatus = {
     "data": {},
     "status": StatusDefs.waiting,
     "details": "",
-    "comment": ""
+    "comment": "",
+    "description": ""
 }
 
 TestStatus = {
@@ -36,7 +39,8 @@ TestStatus = {
     "status": StatusDefs.waiting,
     "details": "",
     "instructions": [],
-    "comment": ""
+    "comment": "",
+    "description": ""
 }
 
 ScriptStatus = {

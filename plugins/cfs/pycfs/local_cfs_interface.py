@@ -8,6 +8,7 @@ import os
 from io import StringIO
 from subprocess import Popen, PIPE, STDOUT
 from distutils.spawn import find_executable
+import time
 
 # module dependencies
 from plugins.cfs.pycfs.cfs_interface import CfsInterface
@@ -46,12 +47,13 @@ class LocalCfsInterface(CfsInterface):
 
         # TODO - Test use of debug when running embedded
         if not self.config.cfs_run_in_xterm or find_executable('xterm') is None:
-            start_string = "./{} | tee -a {}".format(target, self.cfs_std_out_path)
+            start_string = "./{} >> {} 2>&1".format(target, self.cfs_std_out_path)
             if self.config.cfs_run_in_xterm:
                 log.error("Dependency 'xterm' not found. Attempting to run in an embedded terminal window instead.")
         else:
-            start_string = "xterm -l -hold -geometry 130X24+800+0 -e \"%s ./%s |& tee -a %s\"; wait &" % \
+            start_string = "xterm -l -geometry 130X24+800+0 -e \"script -c \'%s ./%s; wait &\' -q -f -e %s\"" % \
                            (debug, target, self.cfs_std_out_path)
+        log.info("Starting CFS with command: {}".format(start_string))
         return start_string
 
     def build_cfs(self):
@@ -102,7 +104,7 @@ class LocalCfsInterface(CfsInterface):
 
         # Report an error if given a bad directory
         if not os.path.exists(self.config.cfs_run_dir):
-            log.error("Couldn't find CFS run directory")
+            log.error("Couldn't find CFS run directory {}".format(self.config.cfs_run_dir))
             return_values["result"] = False
             return return_values
 
@@ -123,6 +125,8 @@ class LocalCfsInterface(CfsInterface):
             return_values["result"] = False
             return return_values
 
+        time.sleep(2)
+
         # Check the status of the CFS application
         if cfs_process.poll() is not None:
             log.error("Error Launching CFS Process.\nAttempted to launch: {}, returned: {}"
@@ -134,16 +138,4 @@ class LocalCfsInterface(CfsInterface):
 
         return return_values
 
-    # Send a command to enable output and check if we receive a response
-    def enable_output(self):
-        count = 0
-        while True:
-            count += 1
-            self.output_manager.enable_output()
-            Global.time_manager.wait(1)
 
-            if self.tlm_has_been_received:
-                return True
-            if count > 60:
-                log.error("Unable to connect to CFS mission")
-                return False

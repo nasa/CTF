@@ -64,7 +64,8 @@ class CfsConfig(object):
         self.cfs_run_in_xterm = None
         self.tlm_app_choice = None
         self.ccsds_ver = None
-        self.evs_event_mid_name = None
+        self.evs_long_event_mid_name = None
+        self.evs_short_event_mid_name = None
         self.evs_messages_clear_after_time = None
         # Logging fields
         self.evs_log_file = None
@@ -171,7 +172,9 @@ class CfsConfig(object):
             self.evs_messages_clear_after_time = self.load_field(section_name, "evs_messages_clear_after_time",
                                                                  Config.getint, self.validation.validate_number)
 
-            self.evs_event_mid_name = self.load_field(section_name, "evs_event_mid_name", Config.get)
+            self.evs_long_event_mid_name = self.load_field(section_name, "evs_event_mid_name", Config.get)
+
+            self.evs_short_event_mid_name = self.load_field(section_name, "evs_short_event_mid_name", Config.get)
 
             self.endianess_of_target = self.load_field(section_name, "endianess_of_target", Config.get)
             # endianness value should be lower-case

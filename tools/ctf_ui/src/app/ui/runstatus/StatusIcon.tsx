@@ -46,6 +46,12 @@ export const StatusIcon: React.FC<{
                     <Icon style={{ color: "red" }} type="close-circle" />
                 </Tooltip>
             );
+        case 'disabled':
+            return (
+                <Tooltip title="Instruction Disabled">
+                     <Icon style={{ color: "grey" }} type="stop" theme="twoTone"/>
+                </Tooltip>
+                );
         case 'error':
             return (
                 <Tooltip title="Error occured while running test">

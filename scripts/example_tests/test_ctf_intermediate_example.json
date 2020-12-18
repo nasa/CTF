@@ -141,6 +141,17 @@
                     "wait": 1
                 },
                 {
+                    "instruction": "SendCfsCommand",
+                    "disabled": true,
+                    "data": {
+                        "target": "",
+                        "mid": "BAD_DATA",
+                        "cc": "BAD_DATA",
+                        "args": {}
+                    },
+                    "wait": 1
+                },
+                {
                     "instruction": "CheckTlmValue",
                     "data": {
                         "target": "",

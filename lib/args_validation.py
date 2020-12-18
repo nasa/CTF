@@ -69,7 +69,7 @@ class ArgsValidation(object):
 
     def validate_symbol(self, symbol, file_path):
         new_symbol = None
-        file_path = self.validate_directory(file_path)
+        file_path = self.validate_file(file_path)
         if file_path is None:
             return new_symbol
         if self.verify_symbol(file_path, symbol):

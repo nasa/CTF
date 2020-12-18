@@ -202,6 +202,8 @@ class JSONScriptReader(object):
                         function_call_delay = command["wait"]
                     else:
                         function_call_delay = 1.0
+
+                    disabled = bool(command.get('disabled', False))
                     for c_index, c in enumerate(inline_commands):
                         # Set the default delay value of 0
                         # then obtain wait value from test script
@@ -210,12 +212,14 @@ class JSONScriptReader(object):
                             delay = c["wait"]
                         if c_index == 0:
                             delay += function_call_delay
-                        event_list.append(Command(delay, c, len(test_list), -1))
+                        disabled |= bool(c.get('disabled', False))
+                        event_list.append(Command(delay, c, len(test_list), -1, disabled))
                 else:
                     delay = 0
                     if "wait" in command.keys():
                         delay = command["wait"]
-                    event_list.append(Command(delay, command, len(test_list), -1))
+                    disabled = bool(command.get('disabled', False))
+                    event_list.append(Command(delay, command, len(test_list), -1, disabled))
 
             for i in range(len(event_list)):
                 event_list[i].command_index = i

@@ -34,7 +34,7 @@
                         "target": "",
                         "run_args": "-RPO"
                     },
-                    "comment": "The above run_args are used as command-line arguments when starting the CFS instance.",
+                    "description": "The above run_args are used as command-line arguments when starting the CFS instance.",
                     "wait": 1
                 },
                     {
@@ -43,7 +43,7 @@
                         "target": ""
                     },
                     "wait": 1,
-                    "comment": "Need this to enable the telemetry thread. Enable Output counts as 1 TO cmd"
+                    "description": "Need this to enable the telemetry thread. Enable Output counts as 1 TO cmd"
                 },
 
                 {

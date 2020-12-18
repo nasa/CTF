@@ -53,7 +53,7 @@ class StatusManager():
                 test_status["case_number"] = test.test_info["test_case"]
                 test_status["status"] = StatusDefs.waiting
                 test_status["details"] = ""
-                test_status["comment"] = test.test_info.get("comment", "")
+                test_status["description"] = test.test_info.get("description", "")
                 for c in test.event_list:
                     command_status = deepcopy(InstructionStatus)
                     command_status["instruction"] = c.command["instruction"]
@@ -66,7 +66,7 @@ class StatusManager():
 
                     command_status["status"] = StatusDefs.waiting
                     command_status["details"] = ""
-                    command_status["comment"] = c.command.get("comment", "")
+                    command_status["description"] = c.command.get("description", "")
                     test_status["instructions"].append(command_status)
                 script_status["tests"].append(test_status)
             status["scripts"].append(script_status)

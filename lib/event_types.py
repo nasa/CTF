@@ -19,12 +19,14 @@ class Event:
         self.commands = commands
         self.test = test
 
+
 class Command:
-    def __init__(self, delay, command, test, command_index):
+    def __init__(self, delay, command, test, command_index, disabled):
         self.delay = delay
         self.command = command
         self.test = test
         self.command_index = command_index
+        self.is_disabled = disabled
 
 
 class Verify:

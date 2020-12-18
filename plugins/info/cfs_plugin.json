@@ -211,6 +211,43 @@
       ]
     },
     {
+      "name": "CheckNoEvent",
+      "description": "",
+      "parameters": [
+        {
+          "name": "app",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "id",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "msg",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "is_regex",
+          "description": "",
+          "type": "boolean"
+        },
+        {
+          "name": "msg_args",
+          "description": "",
+          "type": "cmd_arg",
+          "isArray": true
+        },
+        {
+          "name": "target",
+          "description": "",
+          "type": "string"
+        }
+      ]
+    },
+    {
       "name": "ArchiveCfsFiles",
       "description": "",
       "parameters": [

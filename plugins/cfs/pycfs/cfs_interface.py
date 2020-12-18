@@ -43,11 +43,19 @@ class CfsInterface(object):
     def __init__(self, config, telemetry, command, mid_map, ccsds):
         self.config = config
 
-        if self.config.evs_event_mid_name in mid_map:
-            self.evs_event_msg_mid = mid_map[self.config.evs_event_mid_name]["MID"]
+        if self.config.evs_long_event_mid_name in mid_map:
+            self.evs_long_event_msg_mid = mid_map[self.config.evs_long_event_mid_name]["MID"]
         else:
-            self.evs_event_msg_mid = -1
-            log.error("{} not found in MID map! EVS event messages will not be captured.")
+            self.evs_long_event_msg_mid = -1
+            log.error("{} not found in MID map! EVS long event messages will not be captured."
+                      .format(self.config.evs_long_event_mid_name))
+
+        if self.config.evs_short_event_mid_name in mid_map:
+            self.evs_short_event_msg_mid = mid_map[self.config.evs_short_event_mid_name]["MID"]
+        else:
+            self.evs_short_event_msg_mid = -1
+            log.error("{} not found in MID map! EVS short event messages will not be captured."
+                      .format(self.config.evs_short_event_mid_name))
 
         self.init_passed = False
 
@@ -138,9 +146,9 @@ class CfsInterface(object):
             self.evs_log_file.write("%s/%s/%s %s: %s\n" %
                                     (payload.PacketID.SpacecraftID,
                                      payload.PacketID.ProcessorID,
-                                     payload.PacketID.AppName,
+                                     payload.PacketID.AppName.decode(),
                                      payload.PacketID.EventID,
-                                     payload.Message))
+                                     payload.Message.decode() if hasattr(payload, "Message") else ""))
         except UnicodeDecodeError:
             log.error("Failed to write event packet to EVS Log file for Event Payload: {}".format(str(payload)))
             traceback.format_exc()
@@ -240,7 +248,7 @@ class CfsInterface(object):
                                                                      Global.get_time_manager().exec_time))
                     self.tlm_has_been_received = True
                     self.unchecked_packet_mids.append(mid)
-                    if mid == self.evs_event_msg_mid:
+                    if mid in [self.evs_long_event_msg_mid, self.evs_short_event_msg_mid]:
                         # Write this packet to the CFS EVS Log File
                         self.write_evs_log(payload)
             except socket.timeout:
@@ -318,9 +326,6 @@ class CfsInterface(object):
             return False
 
     def check_value(self, actual, expected, compare, mask, mask_value):
-        if isinstance(actual, bytes):
-            actual = actual.decode()
-
         if compare == "streq":
             return self.check_strings(actual, expected, True)
         if compare == "strneq":
@@ -381,10 +386,10 @@ class CfsInterface(object):
         if mid not in self.received_mid_packets_dic:
             log.error("No messages received for MID: {} to clear.".format(hex(mid)))
             return
-        time_offset = 0
-        if mid == self.evs_event_msg_mid:
-            time_offset += self.config.evs_messages_clear_after_time
-        start_time = Global.current_verification_start_time - time_offset
+        if mid in [self.evs_long_event_msg_mid, self.evs_short_event_msg_mid]:
+            start_time = Global.time_manager.exec_time - self.config.evs_messages_clear_after_time
+        else:
+            start_time = Global.current_verification_start_time
         log.debug("Clearing received packets for MID: {} before time = {}"
                   .format(hex(mid), start_time))
         self.received_mid_packets_dic[mid] = [
@@ -485,7 +490,11 @@ class CfsInterface(object):
             except (SyntaxError, AttributeError) as e:
                 log.error("Failed to Evaluate: {}".format(eval_string))
                 log.debug(traceback.format_exc())
-                continue
+                packet_passed = False
+                break
+
+            if isinstance(actual, bytes):
+                actual = actual.decode()
 
             initial_result = self.check_value(actual, expected_value, arg["compare"], mask, mask_value)
 
@@ -512,3 +521,17 @@ class CfsInterface(object):
             packet_passed = packet_passed and arg_result
 
         return packet_passed
+
+    # Send a command to enable output and check if we receive a response
+    def enable_output(self):
+        count = 0
+        while True:
+            count += 1
+            self.output_manager.enable_output()
+            Global.time_manager.wait(1)
+
+            if self.tlm_has_been_received:
+                return True
+            if count > 60:
+                log.error("Unable to connect to CFS mission")
+                return False

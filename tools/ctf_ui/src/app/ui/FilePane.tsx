@@ -18,6 +18,8 @@ import { Dropdown, Empty, Tree, Menu, Popover, Tooltip } from 'antd';
 import * as React from 'react';
 import { FileTree } from '../../model/tree';
 import { PaneHeader } from './PaneHeader';
+import * as fs from 'fs';
+
 const { TreeNode, DirectoryTree } = Tree;
 
 export interface SelectedItem {
@@ -62,19 +64,20 @@ export class FilePane extends React.Component<FilePaneProps, FilePaneState> {
         this.setState(props);
     }
 
-    renderContextMenu = (text: string): React.ReactNode => {
+    renderContextMenu = (text: string, isfolder: boolean): React.ReactNode => {
         return (
             <Dropdown
                 overlay={
                     <Menu onClick={this.onContextMenuClicked}>
                         {this.state.contextMenu.map(item => {
-                            return (
-                                <Menu.Item key={item.key}>
-                                    {item.icon}
-                                    {item.title}
-                                </Menu.Item>
+                            if ( isfolder == true ) {
+                                return ( <Menu.Item key={item.key}>  {item.icon} {item.title} </Menu.Item> )
+                            } else if ( item.key != 'new-folder')  
+                                return (
+                                <Menu.Item key={item.key}>  {item.icon} {item.title} </Menu.Item>                                
                             );
-                        })}
+                           })
+                        }
                     </Menu>
                 }
                 trigger={['contextMenu']}
@@ -87,10 +90,10 @@ export class FilePane extends React.Component<FilePaneProps, FilePaneState> {
     renderTreeNode = (itemId: string) => {
         if (this.state.tree) {
             const node = this.state.tree.items[itemId];
-            if (node.children.length > 0) {
+            if (node.children.length > 0) {               
                 return (
                     <TreeNode
-                        title={this.renderContextMenu(node.title)}
+                        title={this.renderContextMenu(node.title, node.isDirectory)}
                         key={node.id}
                     >
                         {node.children.map(this.renderTreeNode)}
@@ -101,7 +104,7 @@ export class FilePane extends React.Component<FilePaneProps, FilePaneState> {
                     <TreeNode
                     title={
                         <Tooltip placement="top" title={(<div><p>{node.title}</p></div>)}>
-                        {this.renderContextMenu(node.title)}
+                        {this.renderContextMenu(node.title, node.isDirectory)}
                         </Tooltip>
                         }
                         key={node.id}

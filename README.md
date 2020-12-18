@@ -13,8 +13,8 @@
          * [New cFS Project Configuration](#new-cfs-project-configuration)
          * [Developing New Test Scripts](#developing-new-test-scripts)
       * [Developing or Extending CTF Plugins](#developing-or-extending-ctf-plugins)
+      * [Updating CTF](#updating-ctf)
       * [Release Notes](#release-notes)
-      * [Contact](#contact)
       * [License](#license)
 
 # cFS Test Framework
@@ -254,7 +254,120 @@ Plugin READMEs include documentation of their own instructions and configuration
 
 Refer to the [plugin guide](docs/ctf/ctf_plugin_guide.md) for information on creating custom CTF plugins.
 
+## Updating CTF
+
+CTF versions can be checked out by running `git checkout <version_tag>`. This updates the CTF submodule/repository to the selected version.
+
+In addition, the configuration (and test script) files may need to be updated with new configuration fields, or test script additions/changes.
+
+The sections below describe the changes needed to quickly update to a specific version. Note that the release notes contain a more complete set of changes.
+
+### Updating to v1.X
+
+CTF v1.0 introduces major additions to the configuration file, as well as changes to the test script schema and instructions.
+
+* Existing CTF Test Scripts
+    * Using a find & replace tool, update all references within a test script as follows
+        * All Instances
+            * `"commands"` -> `"instructions"`
+            * `"command`   -> `"instruction"`
+        * CFS Plugin Instructions
+            * `"name"`     -> `"target"` 
+            * `"set_length"` to `"payload_length"`
+            
+* Config changes (reference `configs/default_config.ini` for descriptions and examples)
+    * Add fields
+        * core:additional_plugin_path
+        * core:ignored_instructions
+        * core:delay_between_scripts
+        * cfs:CCSDS_target
+        * cfs:evs_event_mid_name
+    * Delete fields
+        * cfs:evs_event_msg_mid
+
+* CCSDS Message Definitions
+    * **Update to CCSDS Definition Schema (JSON) to support multiple MID values for the same message definitions**
+        * For command structure definitions
+            * Rename `command_id_name` to `cmd_mid_name`
+            * Remove `command_message_id`. Now maintained in a separate MID map file
+            * Add `cmd_description`
+            * Rename `command_codes` to `cmd_codes`
+                * Rename `name` to `cc_name`
+                * Rename `code` to `cc_value`
+                * Rename `description` to `cc_description`
+                * Add `cc_data_type`
+                * Rename `args` to `cc_parameters`
+                    * No changes needed within `cc_parameters` (previously `args`)
+        
+        * For telemetry structure definitions
+            * Rename `name` to `tlm_mid_name`
+            * Remove `mid`. Now maintained in a separate MID map file
+            * Rename `mid_name` to `tlm_data_type`
+            * Add `tlm_description`
+            * Rename `parameters` to `tlm_parameters`
+                * No changes to `name`, `array_size`, `description`, `bit_length`, `parameters`
+
+        * For alias and constant definitions
+            * Rename `cfs_type_name` to `alias_name`
+            * Rename `c_type` to `actual_name`
+            * Rename `cfs_macro_name` to `constant_name`
+            * Rename `c_macro` to `constant_value`
+
+        * MID Map JSON
+            * Move the "mid" field from each message definition to a separate MIDs map file, mapping between MID names and raw MID values per cFS target.
+            
+            * An array of objects mapping target to MID value as follows
+                ```
+                [
+                    {
+                        "target": "my_target",
+                        "mids": [ 
+                                    {"mid_name": "CFS_MID_NAME", "mid_value": "0x1234"}
+                                    ...
+                                ]
+                    }
+                ]
+                ```
+    * Refer to the `sample_cfs_workspace/ccdd/json` for reference (after extracting the workspace from `external/`)
+
 ## Release Notes
+### v1.1
+12/18/2020
+
+* CTF Core Changes
+    * Add support for a `disable` field to CTF instructions within a test script to temporarily disable that instruction.
+    
+    * Add support for a `description` field to CTF instructions within a test script to capture comments.
+    
+    * Add `end_test_on_fail_commands` attribute to the `Plugin` class, allowing plugins to define a list of critical commands that end the current test script on failure.
+    
+    * Minor improvements and bug fixes.
+
+* CFS Plugin Changes
+    * Add the `RegisterCfs` and `StartCfs` instructions to the `end_test_on_fail_commands` such that test execution is halted if registering or starting cFS fails.
+    
+    * Add support for Short Event Messages by setting the `cfs:evs_short_event_mid_name` field in the config to match the MID name of the `CFE_EVS_ShortEventTlm_t` within the CCSDS JSON definitions.
+    
+    * Add the CheckNoEvent instruction to check that an event message was *not* sent during the verification timeout.
+    
+    * Ensure args do not get malformed while sending a command to multiple cFS targets
+    
+    * Resolve CheckTlmValue passing if one or more variables fails to be evaluated from the telemetry packet.
+    
+    * Resolve connection and deployment issues with cFS targets running with the SP0 protocol (WIP)
+    
+    * Minor improvements and bug fixes.
+
+    
+* CTF Editor Changes
+    * Add support for disabling/enabling test instructions or test cases
+    
+    * Add support for viewing/editing descriptions (comments) within the test script
+    
+    * Add the ability to rename folders or test scripts within the editor
+    
+    * Minor improvements and bug fixes.
+     
 ### v1.0
 10/30/2020
 
@@ -268,53 +381,33 @@ Existing users should review the change logs below and ensure current configurat
     * Add `external/` directory with a self contained example CFS project. This project can be configured to utilize CTF out of the box. Refer to `external/README.md` for more information.
 
 * CTF Core Changes
+    
+    * **Update test script JSON schema with more accurate field names**
+        * Update `commands` array to `instructions`
+        * Update `command` object to `instruction`
+        * Refer to [Updating to v1.0](updating-to-v10) 
+        
     * Add an option to provide an additional plugin path within the configuration file. Custom plugins are loaded from that directory, in addition to CTF default plugins.
         * Add the `additional_plugin_path = <path_to_custom_plugins_dir>` field to the config ini.
         * Note - Give the custom plugin directory a unique name (do not use `plugins`, `lib`, etc...), so as to not shadow any modules within the CTF repo.
+    
     * Add an option to ignore specific CTF instructions within the configuration file. This is useful for CI or specific-configurations that may not have the ability to run certain instructions.
         * Add the `ignored_instructions = <instruction_1>, <instruction_2>, ...` field to the config ini. Specify the instructions to ignore (comma-seperated).
+    
     * Minor improvements and bug-fixes.
         
 * CCSDS Plugin Changes
     * **Update to CCSDS Definition Schema (JSON) to support multiple MID values for the same message definitions**
-        * Move the "mid" field from each message definition to a separate MID map file, mapping between MID names and raw MID values per cFS target.
-        * For command structure definitions
-            * Rename `command_id_name` to `cmd_mid_name`
-            * Remove `command_message_id`. Now maintained in a separate MID map file
-            * Add `cmd_description`
-            * Rename `command_codes` to `cmd_codes`
-                * Rename `name` to `cc_name`
-                * Rename `code` to `cc_value`
-                * Rename `description` to `cc_description`
-                * Add `cc_data_type`
-                * Rename `args` to `cc_parameters`
-                    * No changes needed within `cc_parameters` (previously `args`)
-        * For telemetry structure definitions
-            * Rename `name` to `tlm_mid_name`
-            * Remove `mid`. Now maintained in a separate MID map file
-            * Rename `mid_name` to `tlm_data_type`
-            * Add `tlm_description`
-            * Rename `parameters` to `tlm_parameters`
-                * No changes to `name`, `array_size`, `description`, `bit_length`, `parameters`
-        * MID Map JSON
-            * An array of objects mapping target to MID value as follows
-                ```
-                [
-                    {
-                        "target": "my_target",
-                        "mids": [ 
-                                    {"mid_name": "CFS_MID_NAME", "mid_value": "0x1234"}
-                                    ...
-                                ]
-                    }
-                ]
-                ```
-        * **Please update the CCSDS JSON Definitions according to the changes above. Refer to the sample_cfs_workspace/ccdd/json for reference (after extracting the workspace from `external/`)**
-    * Change config field `evs_event_msg_mid` to `evs_event_mid_name` which should now be set to the MID name for the Event Messages (for example `CFE_EVS_LONG_EVENT_MSG_MID`). The actual MID value will be retrieved from the CCSDS message definitions.
+        * Refer to [Updating to v1.0](updating-to-v10) 
+        
+    * **Change config field `evs_event_msg_mid` to `evs_event_mid_name` which should now be set to the MID name for the Event Messages (for example `CFE_EVS_LONG_EVENT_MSG_MID`).** 
+        * The actual MID value will be retrieved from the CCSDS message definitions.
+
 * CFS Plugin Changes
     * **Update `name` field to `target`**
         * The `name` field is used for *all* cFS Plugin Instructions. This field is now renamed to `target` for clarity, and specifies the cFS target to apply the instruction to.
             * **Please change all instances of `"name":` to `"target"` within existing test scripts. Example scripts have been updated as part of the release.**
+    
     * No longer validate `cfs_run_dir` on registration. Previously, if the cFS instance was not built (i.e the run directory does not exist), validation would fail.
     * Rename `set_length` to `payload_length` for the `SendInvalidLengthCfsCommand` test instruction.
     
@@ -327,6 +420,7 @@ Existing users should review the change logs below and ensure current configurat
 * CTF Editor Changes
     * Improvements to the Run Status View
         * Instructions can now be expanded while/after a test run to inspect instruction arguments and data.
+    
     * Updates to support CTF and CCSDS definition changes.
 
 ### v0.6
@@ -505,16 +599,6 @@ Major backend updates to improve reliability/maintainability of CTF.
     * Trick cFS (Removed for later release)
 
 * Initial CTF Editor Release
-
-## Contact
-
-Aly Shehata
-
-Software, Robotics and Simulation (ER6)
-
-NASA - Johnson Space Center (B32/224)
-
-Email - aly.shehata@nasa.gov
 
 ## License
 

@@ -97,7 +97,7 @@
                 {
                     "function": "SendCheckCfeEvsResetCmd",
                     "wait": 1,
-                    "comment": "Reset will set the counters to 0.",
+                    "description": "Reset will set the counters to 0.",
                     "params": {
                         "expectedCmdCnt": 0,
                         "expectedErrCnt": 0
@@ -116,7 +116,7 @@
                 {
                     "function": "SendCheckCfeEvsSetLogModeCmd",
                     "wait": 1,
-                    "comment": "Off-Nominal Case - 'Set Log Mode Command Error: Log Mode = 2'",
+                    "description": "Off-Nominal Case - 'Set Log Mode Command Error: Log Mode = 2'",
                     "params": {
                         "expectedCmdCnt": 1,
                         "expectedErrCnt": 1,
@@ -126,7 +126,7 @@
                 {
                     "function": "SendCheckCfeEvsWriteLogDataFileCmd",
                     "wait": 1,
-                    "comment": "Off-Nominal Case - 'Write Log File Command Error: OS_creat = 0xFFFFFF98, filename = CfeEvsWriteLogDataFileCmdOutput.txt'",
+                    "description": "Off-Nominal Case - 'Write Log File Command Error: OS_creat = 0xFFFFFF98, filename = CfeEvsWriteLogDataFileCmdOutput.txt'",
                     "params": {
                         "expectedCmdCnt": 1,
                         "expectedErrCnt": 2,

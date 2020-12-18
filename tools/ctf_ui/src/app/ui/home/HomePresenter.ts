@@ -30,6 +30,7 @@ import { BuildEmptyCtfFile } from '../../../domain/builders/BuildEmptyCtfFile';
 import { jsonclone } from '../../../domain/jsonclone';
 import { ResolveFunctionsAvailableForImport } from '../../../domain/editor-actions/ResolveAllAvailableFunctions';
 import * as path from 'path';
+import * as fs from 'fs';
 import { DeleteFiles } from '../../../domain/file-util/DeleteFiles';
 import { SelectedItem } from '../FilePane';
 import { CreateFolder } from '../../../domain/file-util/CreateFolder';
@@ -45,7 +46,8 @@ export interface IHomeView {
     showAlert(type: string, title: string, message?: string): void;
     promptForSaveLocation(): Promise<string>;
     promptForFileToImport(): void;
-    promptForNewFolderName(parentPath: string): void;
+    promptForNewFolderName(curPath: string): void;
+    promptForRenameFileorFolder(parentPath: string, filename: string): void;
     showRunStatusModal(pythonCmd: string, projectDir: string, scripts: string[]): void;
 }
 
@@ -62,7 +64,9 @@ export interface IHomePresenter {
     didClickDeleteFiles(paths: string[]): void;
     didClickRunFiles(paths: string[], configPath?: string): void;
     didClickCreateNewFolderOnFile(file: string): void;
+    didClickRenameFolderorFile(file: string): void;
     didChooseNewFolderName(name: string, parentPath: string);
+    didChooseRename(oldfullname: string, newname: string);
     getProjectDir(): string;
 }
 
@@ -376,10 +380,23 @@ export class HomePresenter implements IHomePresenter {
         const projectFolder = this.workspace.projectTree.items[
             this.workspace.projectTree.rootId
         ].path;
+
         this.view.promptForNewFolderName(
-            path.relative(projectFolder, path.dirname(file))
+            path.relative(projectFolder, file)
         );
     };
+
+     // override
+     didClickRenameFolderorFile = (file: string) => {
+        const projectFolder = this.workspace.projectTree.items[
+            this.workspace.projectTree.rootId
+        ].path;
+
+        this.view.promptForRenameFileorFolder(
+            path.relative(projectFolder, path.dirname(file)), file
+        );
+    };
+
 
     // override
     didChooseNewFolderName = (name: string, parentPath: string) => {
@@ -391,4 +408,33 @@ export class HomePresenter implements IHomePresenter {
             if (this.workspaceFile) this.openWorkspace(this.workspaceFile);
         });
     };
+
+    // override
+    didChooseRename = (oldfullname: string, newname: string) => {
+        const projectFolder = this.workspace.projectTree.items[
+            this.workspace.projectTree.rootId
+        ].path;
+
+        //does the new name end with json: if not, add .json at the end
+        const stat = fs.lstatSync(oldfullname);
+        const isfile = stat.isFile();
+        
+        const newnamesplit = newname.split('.');
+        if (isfile && newnamesplit[newnamesplit.length-1] != 'json' ) {
+            newname += '.json';
+        }
+
+        const splitnames = oldfullname.split('/');
+        splitnames.pop();
+        const strippedname = splitnames.join('/');
+        const modifiedname = path.resolve(strippedname, newname);
+
+        CreateFolder.rename(oldfullname, modifiedname).then(success => {
+            if (this.workspaceFile) this.openWorkspace(this.workspaceFile);
+        });
+
+    };
+
+
+
 }

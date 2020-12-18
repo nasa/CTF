@@ -42,7 +42,7 @@
                     },
 
                     "wait": 1,
-                    "comment": "Need this to enable the telemetry thread. Enable Output counts as 1 TO cmd"
+                    "description": "Need this to enable the telemetry thread. Enable Output counts as 1 TO cmd"
                 },
                 {
                     "instruction": "CheckEvent",
@@ -55,8 +55,20 @@
                     },
 
                     "wait": 1,
-                    "comment": "Need this to enable the telemetry thread. Enable Output counts as 1 TO cmd"
-                },
+                    "description": "Need this to enable the telemetry thread. Enable Output counts as 1 TO cmd"
+                },                
+                {
+                    "instruction": "CheckNoEvent",
+                    "data": {
+                        "app": "TO",
+                        "id": "3",
+                        "msg": "TO - ENABLE_OUTPUT cmd succesful for  routeMask:0x00000001",
+                        "msg_args": "",
+                        "target": ""
+                    },
+                    "wait": 4,
+                    "description": "ENABLE_OUTPUT cmd message is no longer valid in received messages"
+                },                
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
@@ -69,7 +81,7 @@
                 },
                 {
                     "instruction": "CheckTlmContinuous",
-                    "comment": "Change 'name' to 'cfs_name' for all instructions",
+                    "description": "Change 'name' to 'cfs_name' for all instructions",
                     "data": {
                         "target": "",
                         "verification_id": "no_error",
@@ -86,6 +98,8 @@
                     },
                     "wait": 1
                 },
+
+
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
@@ -130,6 +144,7 @@
                     },
                     "wait": 1
                 },
+                
                 {
                     "instruction": "RemoveCheckTlmContinuous",
                     "data": {

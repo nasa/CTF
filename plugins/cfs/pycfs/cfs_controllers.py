@@ -360,7 +360,7 @@ class CfsController(object):
         log.info("Removing continuous telemetry check {} on {}".format(v_id, self.config.name))
         return self.cfs.remove_tlm_condition(v_id)
 
-    def check_event(self, app, id, msg, is_regex=False, msg_args=None):
+    def check_event(self, app, id, msg=None, is_regex=False, msg_args=None):
         """Checks for an EVS event message in the telemetry packet history,
         assuming a particular structure for CFE_EVS_LongEventTlm_t.
         This can be generified in the future to determine the structure from the MID map.
@@ -386,13 +386,18 @@ class CfsController(object):
             {"compare": "==", "variable": "Payload.PacketID.EventID", "value": id}
         ]
 
-        if msg:
-            compare = "regex" if is_regex else "streq"
-            args.append({"compare": compare, "variable": "Payload.Message", "value": msg})
+        result = self.cfs.check_tlm_value(self.cfs.evs_short_event_msg_mid, args, discard_old_packets=False)
+        if result:
+            log.info("Received EVS_ShortEventTlm_t. Ignoring 'Message' field...")
         else:
-            log.warn("No msg provided; any message for App {} and Event ID {} will be matched.".format(app, id))
+            if msg:
+                compare = "regex" if is_regex else "streq"
+                args.append({"compare": compare, "variable": "Payload.Message", "value": msg})
+                result = self.cfs.check_tlm_value(self.cfs.evs_long_event_msg_mid, args, discard_old_packets=False)
+            else:
+                log.warn("No msg provided; any message for App {} and Event ID {} will be matched.".format(app, id))
+                result = self.cfs.check_tlm_value(self.cfs.evs_long_event_msg_mid, args, discard_old_packets=False)
 
-        result = self.cfs.check_tlm_value(self.cfs.evs_event_msg_mid, args, discard_old_packets=False)
         return result
 
     def archive_cfs_files(self, source_path):
@@ -604,19 +609,34 @@ if SP0CfsInterface:
             return self.sp0_plugin.get_files(source_path, artifacts_path, self.config.name)
 
         def shutdown_cfs(self):
+            log.info("Shutting down CFS on {}".format(self.config.name))
+
+            # TODO - Pull CFS stdout from SP0. Requires run_application to pipe output of process...
+            # stdout_final_path = os.path.join(Global.current_script_log_dir,
+            #                                  os.path.basename(self.cfs.cfs_std_out_path))
+            #
+            # if not os.path.exists(stdout_final_path):
+            #     if not self.sp0_plugin.get_file(self.cfs.cfs_std_out_path, stdout_final_path):
+            #         log.info("Cannot move CFS stdout file to script log directory.")
+            #         if self.sp0_plugin.last_result[self.config.name]:
+            #             log.debug(self.sp0_plugin.last_result[self.config.name].stdout.strip())
+
+            if self.cfs:
+                if self.cfs_running:
+                    log.info("Sending SP0 Reboot Command...")
+                    self.sp0_plugin.send_command("reboot()\n", timeout=2, name=self.config.name)
+                    self.cfs.stop_cfs()
+
+            # Wait 2 time units for shutdown to complete
+            Global.time_manager.wait_seconds(2)
+
+            self.cfs = None
+
+        # This function will shut down the CFS application being tested even if the JSON test file does not
+        # include the shutdown test command
+        def shutdown(self):
             log.info("Shutting down controller for {}".format(self.config.name))
             if self.cfs:
                 if self.cfs_running:
                     self.shutdown_cfs()
-                # Wait 2 time units for shutdown to complete
-                Global.time_manager.wait_seconds(2)
-
-                stdout_final_path = os.path.join(Global.current_script_log_dir,
-                                                 os.path.basename(self.cfs.cfs_std_out_path))
-                if not os.path.exists(stdout_final_path):
-                    if not self.sp0_plugin.get_file(self.cfs.cfs_std_out_path, stdout_final_path):
-                        log.info("Cannot move CFS stdout file to script log directory.")
-                        if self.sp0_plugin.last_result[self.config.name]:
-                            log.debug(self.sp0_plugin.last_result[self.config.name].stdout.strip())
-
                 self.cfs = None

@@ -115,10 +115,10 @@
                     },
 
                     "wait": 0,
-                    "comment": "Need this to enable the telemetry thread. Enable Output counts as 1 TO cmd"
+                    "description": "Need this to enable the telemetry thread. Enable Output counts as 1 TO cmd"
                 },
                 {
-                    "comment": "This will format the message with msg_args and then check for a regex match",
+                    "description": "This will format the message with msg_args and then check for a regex match",
                     "instruction": "CheckEvent",
                     "data": {
                         "app": "TO",
@@ -132,7 +132,7 @@
                     "wait": 0
                 },
                 {
-                    "comment": "This will format the message with msg_args and then check for a regex match",
+                    "description": "This will format the message with msg_args and then check for a regex match",
                     "instruction": "CheckEvent",
                     "data": {
                         "app": "TO",
@@ -146,7 +146,7 @@
                     "wait": 0
                 },
                 {
-                    "comment": "This will format the message with msg_args and then check for a regex match",
+                    "description": "This will format the message with msg_args and then check for a regex match",
                     "instruction": "CheckEvent",
                     "data": {
                         "app": "TO",

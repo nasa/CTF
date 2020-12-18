@@ -14,12 +14,15 @@
 # either expressed or implied.
 */
 
-import { Button, Divider, Popover, Tooltip, InputNumber } from "antd";
+import { Button, Divider, Popover, Tooltip, InputNumber, Input } from "antd";
 import Text from "antd/lib/typography/Text";
 import * as React from "react";
 import { CtfFunctionCall } from "../../../../model/ctf-file";
 import { EditingContext } from "../../../../model/editing-context";
 import { FillWidthAutoCompleteField } from "./AutoCompleteField";
+import { CheckCircleTwoTone, MessageOutlined,MessageTwoTone  } from '@ant-design/icons';
+
+const { TextArea } = Input;
 
 const FunctionCallStyle: React.CSSProperties = {
     flex: "1 1 auto",
@@ -32,6 +35,7 @@ export const FunctionCall: React.FC<{
     call: CtfFunctionCall;
     context: EditingContext;
     onChange?: (next: CtfFunctionCall) => void;
+
 }> = ({ call, context, onChange }) => {
     const changeHandler = (paramName, value) => {
         const next = Object.assign({}, call);
@@ -45,6 +49,26 @@ export const FunctionCall: React.FC<{
         next.wait = newWait;
         if (onChange) onChange(next);
     }
+
+    const renderDescription = (description: string) => {
+       
+        return (
+
+            <TextArea   name = 'description_input'
+                        defaultValue={description} 
+                        autoSize={{ minRows: 2, maxRows: 6 }}
+                        onChange = { e => {
+                            const next = Object.assign({}, call, {description: e.target.value});
+                            if (onChange) onChange(next);
+                         }
+                        
+                        }  
+            />             
+            )
+
+    }
+
+    
 
     const functionInfo = context.functions.find(f => f.name === call.function);
     if (functionInfo) {
@@ -67,9 +91,36 @@ export const FunctionCall: React.FC<{
                 delete call.params[param];
             }
         }
+
+        let buttondisabled = false;
+        let textbackgroundcolor = { backgroundColor: 'White' };
+        let groupcolor = 'blue'
+
+        if (call.hasOwnProperty("disabled") && call.disabled ) {
+            buttondisabled = true;
+            textbackgroundcolor = { backgroundColor: '#F3F3F3' };
+            groupcolor = '#F3F3F3' ;
+        } 
+
         return (
             <div style={FunctionCallStyle}>
-                    <Tooltip                         
+
+                <Tooltip title={call.description}>
+                        <Popover
+                            placement="rightTop"
+                            title="Description"
+                            trigger="click"
+                            content= {renderDescription(call.description)} 
+                        >
+                            
+                            <MessageTwoTone/>         
+                        
+                        </Popover>
+                </Tooltip> 
+
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+                <Tooltip                         
                         placement="top"
                         title={`Delay before running this instruction`}
                     >
@@ -82,8 +133,10 @@ export const FunctionCall: React.FC<{
                         size="small"
                         step={0.1}
                         min={0}
+                        disabled = {buttondisabled} 
                     />
-                    </Tooltip>
+                </Tooltip>
+
                 <Divider type="vertical" />
                 <Popover
                     placement="rightTop"
@@ -91,7 +144,7 @@ export const FunctionCall: React.FC<{
                     trigger="click"
                     content={
                         funcDef.varlist.length > 0 ? (
-                            funcDef.varlist.map(paramName => (
+                            funcDef.varlist.map((paramName, index) => (
                                 <FillWidthAutoCompleteField
                                     title={paramName}
                                     defaultValue={
@@ -99,6 +152,7 @@ export const FunctionCall: React.FC<{
                                             ? call.params[paramName]
                                             : ""
                                     }
+                                    key = {index}
                                     dataSource={dataSource}
                                     onChange={value =>
                                         changeHandler(paramName, value)
@@ -110,7 +164,7 @@ export const FunctionCall: React.FC<{
                         )
                     }
                 >
-                    <Button type="dashed" style={{ minWidth: 150 }}>
+                    <Button type="dashed" style={{ minWidth: 150 }} disabled = {buttondisabled} >
                         {call.function}
                     </Button>
                 </Popover>
@@ -118,12 +172,14 @@ export const FunctionCall: React.FC<{
                     {funcDef.varlist.map(arg => (
                         <span key={arg}>
                             <Divider type="vertical" />
-                            <Text type="secondary">
+                            <Text type="secondary" style={textbackgroundcolor} >
                                 {arg} = {JSON.stringify(call.params[arg])}
                             </Text>
                         </span>
                     ))}
                 </span>
+
+
             </div>
         );
     } else {

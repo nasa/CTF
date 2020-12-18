@@ -41,11 +41,11 @@
                         "target": ""
                     },
                     "wait": 1,
-                    "comment": "Need this to enable the telemetry thread. Enable Output counts as 1 TO cmd"
+                    "description": "Need this to enable the telemetry thread. Enable Output counts as 1 TO cmd"
                 },
                 {
                     "instruction": "SendCfsCommand",
-                    "comment": "This command won't actually succeed without valid arguments, so will count as an error.",
+                    "description": "This command won't actually succeed without valid arguments, so will count as an error.",
                     "data": {
                         "target": "",
                         "mid": "CFE_ES_CMD_MID",

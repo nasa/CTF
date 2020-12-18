@@ -76,7 +76,11 @@ class TestScript(object):
             for test in self.tests:
                 if self.verify_timeout: test.ctf_verification_timeout = self.verify_timeout
 
-                test.run_test(status_manager)
+                test_status = test.run_test(status_manager)
+                if test_status == StatusDefs.aborted:
+                    log.error("Aborted Test Script: {}".format(self.input_file))
+                    break
+
             self.time_taken = time.time() - self.start_time
             self.generateTestResults()
 
@@ -103,13 +107,15 @@ class TestScript(object):
         self.num_passed = 0
         self.num_failed = 0
         for test in self.tests:
-            if test.test_result:
-                self.num_passed += 1
-            else:
-                self.num_failed += 1
+            if test.test_run:
+                if test.test_result:
+                   self.num_passed += 1
+                else:
+                   self.num_failed += 1
 
         self.logTestProlog()
-        log.info("Number tests Run:                   %s" % self.num_tests)
+        log.info("Number tests To Run:                %s" % self.num_tests)
+        log.info("Number tests Ran:                   %s" % (self.num_passed+self.num_failed))
         log.info("Number tests Passed:                %s" % self.num_passed)
         log.info("Number tests Failed:                %s" % self.num_failed)
         # if self.SkippedCommands > 0:

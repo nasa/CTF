@@ -16,7 +16,7 @@
 
 import { CtfInstructionData as CtfInstructionData } from "./ctf-file";
 
-export type CtfRunStatus = 'waiting' | 'active' | 'stopped' | 'passed' | 'failed' | 'error' | 'timeout';
+export type CtfRunStatus = 'waiting' | 'active' | 'stopped' | 'passed' | 'failed' | 'error' | 'timeout' | 'disabled';
 
 export interface CtfInstructionStatus {
     status: CtfRunStatus;

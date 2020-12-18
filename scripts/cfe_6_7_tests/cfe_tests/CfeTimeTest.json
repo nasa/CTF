@@ -92,7 +92,7 @@
                 {
                     "function": "SendCheckCfsTimeSubDelayCmd",
                     "wait": 1,
-                    "comment": "Off-nominal Case. Command gets accepted, but data is invalid",
+                    "description": "Off-nominal Case. Command gets accepted, but data is invalid",
                     "params": {
                         "expectedCmdCnt": 0,
                         "expectedErrCnt": 1,

@@ -77,7 +77,7 @@
                 {
                     "function": "SendCheckCfeSbResetCounterCmd",
                     "wait": 1,
-                    "comment": "Reset will set the counters to 0.",
+                    "description": "Reset will set the counters to 0.",
                     "params": {
                         "expectedCmdCnt": 0,
                         "expectedErrCnt": 0
@@ -86,7 +86,7 @@
                 {
                     "function": "SendCheckCfeSbSendRoutingInfoCmd",
                     "wait": 1,
-                    "comment": "Off-Nominal Case - 'Error creating file SendCheckCfeSbSendRoutingInfoCmdParam.txt, stat=0xffffff98'",
+                    "description": "Off-Nominal Case - 'Error creating file SendCheckCfeSbSendRoutingInfoCmdParam.txt, stat=0xffffff98'",
                     "params": {
                         "expectedCmdCnt": 0,
                         "expectedErrCnt": 1,
@@ -96,7 +96,7 @@
                 {
                     "function": "SendCheckCfeSbSendMapInfoCmd",
                     "wait": 1,
-                    "comment": "Off-Nominal Case - 'Error creating file SendCheckCfeSbSendMapInfoCmdParam.txt, stat=0xffffff98'",
+                    "description": "Off-Nominal Case - 'Error creating file SendCheckCfeSbSendMapInfoCmdParam.txt, stat=0xffffff98'",
                     "params": {
                         "expectedCmdCnt": 0,
                         "expectedErrCnt": 2,
@@ -106,7 +106,7 @@
                 {
                     "function": "SendCheckCfeSbEnableRouteCmd",
                     "wait": 1,
-                    "comment": "Off-Nominal Case - 'Enbl Route Cmd:Invalid Param.Msg 0x2006,Pipe 112'",
+                    "description": "Off-Nominal Case - 'Enbl Route Cmd:Invalid Param.Msg 0x2006,Pipe 112'",
                     "params": {
                         "expectedCmdCnt": 0,
                         "expectedErrCnt": 3,

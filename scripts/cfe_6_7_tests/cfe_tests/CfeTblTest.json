@@ -82,7 +82,7 @@
                 {
                     "function": "SendCheckCfsTblLoadCmd",
                     "wait": 1,
-                    "comment": "Off-nominal check due to invalid table filename",
+                    "description": "Off-nominal check due to invalid table filename",
                     "params": {
                         "expectedCmdCnt": 0,
                         "expectedErrCnt": 1,
@@ -92,7 +92,7 @@
                 {
                     "function": "SendCheckCfsTblDumpCmd",
                     "wait": 1,
-                    "comment": "Off-nominal check due to invalid output filename",
+                    "description": "Off-nominal check due to invalid output filename",
                     "params": {
                         "expectedCmdCnt": 0,
                         "expectedErrCnt": 2,

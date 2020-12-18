@@ -197,7 +197,9 @@ class CCDDExportReader(CCSDSInterface):
             if type_name is None:
                 if self.config.log_ccsds_imports:
                     log.debug("{} has no fields.".format(data_type_name))
-                return create_type_class(data_type_name, self.ctype_structure, []), type_enums
+                data_type = create_type_class(data_type_name, self.ctype_structure, [])
+                self.type_dict[data_type_name] = data_type
+                return data_type, type_enums
             else:
                 data_type = self._build_data_type_and_field(type_dict, fields)
                 if data_type is None:
@@ -205,6 +207,7 @@ class CCDDExportReader(CCSDSInterface):
                     return
 
         data_type = create_type_class(data_type_name, self.ctype_structure, fields)
+        self.type_dict[data_type_name] = data_type
         return data_type, type_enums
 
     def process_telemetry(self, json_dict):
@@ -240,27 +243,58 @@ class CCDDExportReader(CCSDSInterface):
 
     def process_types(self, json_list):
         for typedef in json_list:
-            if 'alias_name' in typedef:
-                cfs_type_name = typedef['alias_name']
-                c_type_name = typedef['actual_name']
-                if c_type_name in ctypes.__dict__:
-                    c_type = ctypes.__dict__[c_type_name]
-                    self.type_dict[cfs_type_name] = c_type
+            try:
+                if 'alias_name' in typedef and 'actual_name' in typedef:
+                    # Aliases are type names that evaluate to ctype or custom types. Custom types must be mapped last.
+                    alias_name = typedef['alias_name']
+                    actual_name = typedef['actual_name']
+                    if alias_name not in self.type_dict:
+                        if actual_name in ctypes.__dict__:
+                            c_type = ctypes.__dict__[actual_name]
+                            self.type_dict[alias_name] = c_type
+                        elif self.config.log_ccsds_imports:
+                            log.debug("Alias {} is not a ctype, skipping...".format(alias_name))
+                    elif self.config.log_ccsds_imports:
+                        log.debug("Alias {} already defined, skipping...".format(alias_name))
+                elif 'constant_name' in typedef and 'constant_value' in typedef:
+                    # Constants are CFS macros that evaluate to literal values
+                    constant_name = typedef['constant_name']
+                    constant_value = typedef['constant_value']
+                    if constant_name not in self.type_dict:
+                        self.type_dict[constant_name] = constant_value
+                    elif self.config.log_ccsds_imports:
+                        log.debug("Alias {} already defined, skipping...".format(constant_name))
+                elif 'target' in typedef and 'mids' in typedef:
+                    # Targets are CFS target names that map MID names to values
+                    if typedef['target'] == self.config.CCSDS_target:
+                        if self.config.log_ccsds_imports:
+                            log.info("Found {} MIDs for {}".format(len(typedef['mids']), self.config.CCSDS_target))
+                        self.mids.update({mid['mid_name']: int(mid['mid_value'], 0) for mid in typedef['mids']})
                 else:
-                    log.error("Unknown ctype name {} in {}".format(c_type_name, self.current_file_name))
-            elif 'constant_name' in typedef:
-                cfs_macro_type = typedef['constant_name']
-                c_macro = typedef['constant_value']
-                self.type_dict[cfs_macro_type] = c_macro
-            elif 'target' in typedef:
-                if typedef['target'] == self.config.CCSDS_target:
-                    if self.config.log_ccsds_imports:
-                        log.info("Found {} MIDs for {}".format(len(typedef['mids']), self.config.CCSDS_target))
-                    self.mids.update({mid['mid_name']: int(mid['mid_value'], 0) for mid in typedef['mids']})
-            else:
-                log.error("Invalid type definition in {}".format(self.current_file_name))
+                    log.error("Invalid type definition in {}".format(self.current_file_name))
+            except Exception as e:
+                log.error("Unable to parse type definition in {}: {}".format(self.current_file_name, e))
 
-    def process_ccsds_json_file(self, filename, file_filter=None):
+    def process_types_second_pass(self, json_list):
+        for typedef in json_list:
+            try:
+                if 'alias_name' in typedef and 'actual_name' in typedef:
+                    # Any aliases left undefined should now evaluate to a custom type
+                    alias_name = typedef['alias_name']
+                    actual_name = typedef['actual_name']
+                    if alias_name not in self.type_dict:
+                        if actual_name in self.type_dict:
+                            self.type_dict[alias_name] = self.type_dict[actual_name]
+                            if self.config.log_ccsds_imports:
+                                log.debug("Mapped alias {} to type {}".format(actual_name, alias_name))
+                        else:
+                            log.error("Unknown alias name {} in {}".format(actual_name, self.current_file_name))
+                    elif self.config.log_ccsds_imports:
+                        log.debug("Alias {} already defined, skipping...".format(alias_name))
+            except Exception as e:
+                log.error("Unable to parse type definition in {}: {}".format(self.current_file_name, e))
+
+    def process_ccsds_json_file(self, filename, file_filter=None, second_pass=False):
         with open(filename) as file:
             try:
                 json_dict = json.load(file)
@@ -274,6 +308,8 @@ class CCDDExportReader(CCSDSInterface):
                     self.process_command(json_dict)
                 elif self.is_telemetry_msg(json_dict):
                     self.process_telemetry(json_dict)
+                elif second_pass:
+                    self.process_types_second_pass(json_dict)
                 else:
                     self.process_types(json_dict)
 
@@ -285,13 +321,16 @@ class CCDDExportReader(CCSDSInterface):
                 if fnmatch.fnmatch(basename, "*.json"):
                     filename = os.path.join(root, basename)
                     files.append(filename)
-        # Process only types & macros first, then others
+        # Process only types & macros first, then custom types, then macros again for custom type aliases
         for file in files:
             self.current_file_name = os.path.basename(file)
             self.process_ccsds_json_file(file, self.is_types_macros)
         for file in files:
             self.current_file_name = os.path.basename(file)
             self.process_ccsds_json_file(file, self.is_command_tlm)
+        for file in files:
+            self.current_file_name = os.path.basename(file)
+            self.process_ccsds_json_file(file, self.is_types_macros, True)
 
         # Collect and convert integer values from enum_map and type_dict
         macro_map = dict(filter(lambda item: isinstance(item[1], int), self.type_dict.items()))

@@ -31,6 +31,7 @@ import {
     Tooltip,
     Popover,
     Input,
+    Checkbox,
     Form
 } from 'antd';
 import Text from 'antd/lib/typography/Text';
@@ -57,6 +58,8 @@ import { TestCase } from './components/TestCase';
 import { AutoCompleteField } from './components/AutoCompleteField';
 import { FormProps, FormComponentProps } from 'antd/lib/form';
 import { RefObject } from 'react';
+import { CheckCircleTwoTone , CloseCircleTwoTone, ShrinkOutlined } from '@ant-design/icons';
+
 
 const { Panel } = Collapse;
 const { Content, Sider } = Layout;
@@ -187,6 +190,7 @@ class CtfFileEditor extends React.Component<EditorProps, EditorProps, any> {
     };
 
     onTestCaseChanged = (index: number, testCase: CtfTest) => {
+       
         const newFile = jsonclone(this.state.ctfFile);
         newFile.tests[index] = testCase;
         this.setState({ ctfFile: newFile });
@@ -253,6 +257,206 @@ class CtfFileEditor extends React.Component<EditorProps, EditorProps, any> {
         const newFile = jsonclone(this.state.ctfFile);
         delete newFile.import[filePath];
         if (this.state.onChange) this.state.onChange(newFile);
+    };
+
+
+    checkallinstructionsdisabled = (case_number: string) => {
+
+        let alltestsdisabled = false;
+        
+        if (this.state.ctfFile) {
+            const ctfFile = this.state.ctfFile;
+
+            if (ctfFile.tests) {
+                ctfFile.tests.map((test: CtfTest, testindex) => {
+
+                    if (test.case_number == case_number) {
+                        
+                            let i = 0;
+                            for (i = 0; i < test.instructions.length; i++) {
+                                
+                                if (!test.instructions[i].hasOwnProperty("disabled")) break;
+                                if (test.instructions[i].hasOwnProperty("disabled") && test.instructions[i].disabled != true)
+                                    break;
+                            }
+
+                            if ( i == test.instructions.length) {
+                                alltestsdisabled = true;
+                            }                                
+                                                        
+                    }      
+                        
+                        
+                }  );
+
+            } 
+        }   
+        
+        return alltestsdisabled;
+    }
+    
+    instructionsdisabled = (case_number: string) => {
+
+        let alltestsdisabled = this.checkallinstructionsdisabled(case_number);
+
+        if (alltestsdisabled) {
+            return 'Enable test case';
+        } else {
+            return 'Disable test case';
+        }      
+
+    }
+
+    getbuttonicon = (case_number: string) => {
+
+        let alltestsdisabled = this.checkallinstructionsdisabled(case_number);
+
+        if (alltestsdisabled) {
+            return 'close-circle-o';
+        } else {
+            return 'check-circle-o';
+        }      
+
+    }
+
+    getstyle = (case_number: string) => {
+
+        let alltestsdisabled = this.checkallinstructionsdisabled(case_number);
+
+        if (alltestsdisabled) {
+            return { color: "red", flex: "0 0 auto" };
+        } else {
+            return { color: "green", flex: "0 0 auto" };
+        }      
+
+    }
+
+
+
+
+    checkalltestdisabled = (case_number: string) => {
+
+        let checked = false;
+        
+        if (this.state.ctfFile) {
+            const ctfFile = this.state.ctfFile;
+
+            if (ctfFile.tests) {
+                ctfFile.tests.map((test: CtfTest, testindex) => {
+
+                    if (test.case_number == case_number) {
+                                                    
+                            let i = 0;
+                            for (i = 0; i < test.instructions.length; i++) {
+                                
+                                if (!test.instructions[i].hasOwnProperty("disabled")) break;
+                                if (test.instructions[i].hasOwnProperty("disabled") && test.instructions[i].disabled != true)
+                                    break;
+                            }
+
+                            if ( i == test.instructions.length) {
+                                checked = true;
+                            }                                
+                                                        
+                    }      
+                        
+                        
+                }  );
+
+            } 
+        }       
+
+        return checked;
+
+    }
+
+    onClickIcon = e => {
+        
+        if (this.state.ctfFile) {
+            const ctfFile = this.state.ctfFile;
+
+            if (ctfFile.tests) {
+                ctfFile.tests.map((test: CtfTest, testindex) => {
+
+                        if (test.case_number == e.target.id) {
+                            
+                            let alltestsdisabled = this.checkallinstructionsdisabled(test.case_number);
+                            let newdisable = !alltestsdisabled;
+
+                            const newtest =  Object.assign( {}, test );                            
+
+                            
+                            
+                            test.instructions.map((cmd, index) => { //instruction 
+                                   
+                                if (cmd.hasOwnProperty("instruction") || cmd.hasOwnProperty("function") ) {
+                                        const newcmd = Object.assign({}, cmd, {disabled: newdisable});
+                                        
+                                        newtest.instructions[index] = newcmd;                                        
+                                 }                                    
+
+                               }
+                            );     
+                            
+                            
+
+                            this.onTestCaseChanged( testindex, newtest );
+                          
+                        }
+                        
+                    } 
+                );               
+
+            } 
+
+           e.stopPropagation();
+        }
+
+    }
+
+    onChangeCheckbox = e => {
+        
+        if (this.state.ctfFile) {
+            const ctfFile = this.state.ctfFile;
+
+            if (ctfFile.tests) {
+                ctfFile.tests.map((test: CtfTest, testindex) => {
+
+                        if (test.case_number == e.target.name) {
+                            
+                            const newtest =  Object.assign( {}, test );
+                            
+
+                            
+                            test.instructions.map((cmd, index) => {
+                                   
+                                    if (cmd.hasOwnProperty("instruction")) {
+                                        
+                                        const newcmd = Object.assign({}, cmd, {disabled: e.target.checked});
+                                        
+                                        newtest.instructions[index] = newcmd;                                        
+                                    } 
+                                    else {  // function
+
+                                    }
+
+                                } 
+                            );     
+                            
+
+                            
+                            this.onTestCaseChanged( testindex, newtest );
+                          
+                        }
+                        
+                    } 
+                );               
+
+            } 
+
+            e.stopPropagation();
+        }
+        
     };
 
     reloadImports = () =>{
@@ -380,7 +584,7 @@ class CtfFileEditor extends React.Component<EditorProps, EditorProps, any> {
               <Descriptions.Item key="requirements" label="Requirements">
                 {data.requirements
                   ? Object.keys(data.requirements).map((req, index) => (
-                      <div>
+                      <div key={index} > 
                         {req} <Tag>{data.requirements[req]}</Tag>
                         <Tooltip title={"Delete Requirement"}>
                           <Popconfirm
@@ -459,6 +663,7 @@ class CtfFileEditor extends React.Component<EditorProps, EditorProps, any> {
     }
 
     renderCtfFilePane() {
+
         if (this.state.ctfFile) {
             const ctfFile = this.state.ctfFile;
             return (
@@ -467,11 +672,12 @@ class CtfFileEditor extends React.Component<EditorProps, EditorProps, any> {
                     <Content style={{ backgroundColor: 'white', overflowY: 'auto' }}>
                         <Divider>Imports</Divider>
                         {ctfFile.import && this.state.context ? (
-                            Object.keys(ctfFile.import).map(path => (
+                            Object.keys(ctfFile.import).map( (path, index) => (
                                 <Row
                                     type="flex"
                                     align="middle"
                                     style={{ marginBottom: 10 }}
+                                    key={index}
                                 >
                                     {this.state.context.import[path] ? (
                                         <Icon
@@ -562,7 +768,11 @@ class CtfFileEditor extends React.Component<EditorProps, EditorProps, any> {
                                               (test: CtfTest, index) => (
                                                   <Panel
                                                       header={
-                                                          <Text
+                                                          <div
+                                                            style={{display: 'flex',justifyContent: 'space-between'  }}  
+                                                          >
+                                                           <div>
+                                                            <Text
                                                               editable={{
                                                                   onChange: str =>
                                                                       this.onTestCaseChanged(
@@ -576,9 +786,35 @@ class CtfFileEditor extends React.Component<EditorProps, EditorProps, any> {
                                                                           )
                                                                       )
                                                               }}
-                                                          >
+                                                            >
                                                               {test.case_number}
-                                                          </Text>
+                                                            </Text>
+                                                            </div>
+
+                                                                                                                  
+                                                           
+
+                                                           <div
+                                                               
+                                                            >
+
+                                                                <Tooltip title={this.instructionsdisabled(test.case_number)}>
+                                                                        <Button
+                                                                             type="link"
+                                                                             style={this.getstyle(test.case_number)}
+                                                                             icon= {this.getbuttonicon(test.case_number)}
+                                                                             id = {test.case_number}
+                                                                             onClick = {this.onClickIcon}
+                                                                        />         
+
+                                                                 </Tooltip>                                                                 
+
+                                                           </div>
+
+                                                          
+
+
+                                                          </div>
                                                       }
                                                       key={test.id}
                                                   >
@@ -619,7 +855,9 @@ class CtfFileEditor extends React.Component<EditorProps, EditorProps, any> {
                                                                   DELETE
                                                               </DeleteButton>
                                                           </Popconfirm>
+
                                                       </div>
+
                                                   </Panel>
                                               )
                                           )

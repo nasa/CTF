@@ -136,6 +136,7 @@ conda install -c conda-forge pycparser -y
 conda install -c conda-forge PyNaCl -y
 conda install -c anaconda six -y
 conda install -c conda-forge pyelftools -y
+conda install -c conda-forge coverage -y
 
 
 if  [[ "$platform" == 'linux' ]]; then

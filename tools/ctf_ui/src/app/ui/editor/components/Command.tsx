@@ -36,6 +36,12 @@ import { Comparison } from './Comparison';
 import { ParamArray } from './ctf-file-editor-utils';
 import { CascaderOptionType } from 'antd/lib/cascader';
 
+import { CheckCircleTwoTone, MessageOutlined,MessageTwoTone  } from '@ant-design/icons';
+
+const { TextArea } = Input;
+
+
+
 const CommandStyle: React.CSSProperties = {
     flex: '1 1 auto',
     whiteSpace: 'nowrap',
@@ -547,8 +553,8 @@ export class Command extends React.Component<CommandState, CommandState> {
                         onChange(param, cmd_arg_obj, index)
                     }}
                 />
-                </div>  
-                </Tooltip>  
+                </div>
+                </Tooltip>
             );
         } else if (param.type === 'tlm_arg') {
             return (
@@ -630,14 +636,33 @@ export class Command extends React.Component<CommandState, CommandState> {
         }
     };
 
+
+    renderDescription(description: string) {
+
+        return (
+             <TextArea
+                    name = 'description_input'
+                    defaultValue={description}
+                    autoSize={{ minRows: 2, maxRows: 6 }}
+                    onChange = { e => {
+                          const newCommand: CtfInstruction = Object.assign({}, this.state.ctfCommand, {description: e.target.value} );
+                          this.setState({ ctfCommand: newCommand});
+                          if (this.state.onChange) this.state.onChange(newCommand);
+                        }
+                    }
+            /> )
+    }
+
     // Render the arguments as either arrays or regular
     renderArguments(params: CtfPluginInstructionParam[], data: CtfInstructionData) {
-        return Object.keys(data).map(paramName => {
+
+        return Object.keys(data).map( (paramName, index) => {
             const param = params.filter(p => p.name === paramName)[0];
             if (param === undefined || param === null) {
                 return;
             }
-            if (param.isArray) {                
+
+            if (param.isArray) {
                 if (param.type === 'cmd_arg') {
                     // show only the possible args (fixed length array)
                     const cmdParamNames = this.mapVehicleDataToFilteredCommandParams(
@@ -658,7 +683,7 @@ export class Command extends React.Component<CommandState, CommandState> {
                     
                     const valueArray = data[paramName] as CtfInstructionArg[];
                         return (
-                            <ParamArray name={paramName}>
+                            <ParamArray name={paramName} key = {index}>
                                 {cmdParamNames.map((name, i) => (
                                     <div key={i}>
                                         {this.renderArgument(
@@ -677,7 +702,7 @@ export class Command extends React.Component<CommandState, CommandState> {
                 } else {
                     // normal editable length array
                     return (
-                        <ParamArray name={paramName}>
+                        <ParamArray name={paramName} key = {index}>
                             {(data[paramName] as CtfInstructionArg[]).map(
                                 (arrayElem, i) => (
                                     <div key={i}>
@@ -716,9 +741,9 @@ export class Command extends React.Component<CommandState, CommandState> {
                         </ParamArray>
                     );
                 }
-            } else {                
+            } else {
                 return (
-                    <div>
+                    <div key = {index}>
                         {this.renderArgument(
                             param,
                             data[paramName] != undefined ? data[paramName]: "" as CtfInstructionArg,
@@ -735,9 +760,63 @@ export class Command extends React.Component<CommandState, CommandState> {
 
     render() {
         const { ctfCommand, definition, groupName, context } = this.state;
+
+        let buttondisabled = false;
+        let textbackgroundcolor = { backgroundColor: 'White' };
+        let groupcolor = 'blue'
+
+        if (ctfCommand.hasOwnProperty("disabled") && ctfCommand.disabled ) {
+            buttondisabled = true;
+            textbackgroundcolor = { backgroundColor: '#F3F3F3' };
+            groupcolor = '#F3F3F3' ;
+        }
+
+        let paramsrender = () => {
+
+            return (
+
+                definition.parameters.map(
+
+
+                    (param: CtfPluginInstructionParam) => (
+
+                        (param && ctfCommand.data)?
+                         <span key={param.name}>
+                            <Divider type="vertical" />
+                             <Text type="secondary">
+                                {param.name} ={' '}
+                                {JSON.stringify( ctfCommand.data[param.name] )}
+                             </Text>
+                         </span>
+                            :
+                        <span></span>
+
+                 )
+
+                )
+
+            )
+        };
+
         if (this.state.definition) {
             return (
                 <div style={CommandStyle}>
+
+                    <Tooltip title={ctfCommand.description}>
+                        <Popover
+                            placement="rightTop"
+                            title="Description"
+                            trigger="click"
+                            content= {this.renderDescription(ctfCommand.description)}
+                        >
+
+                           <MessageTwoTone/>
+
+                        </Popover>
+                    </Tooltip>
+
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
                     <Tooltip
                         placement="top"
                         title={`Delay before running this instruction`}
@@ -751,6 +830,7 @@ export class Command extends React.Component<CommandState, CommandState> {
                             size="small"
                             step={0.1}
                             min={0}
+                            disabled = {buttondisabled}
                         />
                     </Tooltip>
                     <Divider type="vertical" />
@@ -765,15 +845,16 @@ export class Command extends React.Component<CommandState, CommandState> {
                             : []
                         }
                     >
-                        <Button style={{ minWidth: 150 }}>
+                        <Button style={{ minWidth: 150 }} disabled = {buttondisabled} >
                             {ctfCommand.instruction}
                         </Button>
                         <Tag
-                            color="blue"
+                            color={groupcolor}
                             style={{
                                 textTransform: 'uppercase',
                                 fontSize: '0.75em',
-                                marginLeft: 10
+                                marginLeft: 10,
+                                color: 'blue'
                             }}
                         >
                             {groupName}
@@ -785,11 +866,10 @@ export class Command extends React.Component<CommandState, CommandState> {
                                 (param && ctfCommand.data)?
                                 <span key={param.name}>
                                     <Divider type="vertical" />
-                                    <Text type="secondary">
+                                    <Text type="secondary" style={textbackgroundcolor}  >
                                         {param.name} ={' '}
-                                        {JSON.stringify(
-                                            ctfCommand.data[param.name]
-                                        )}
+                                        {JSON.stringify( ctfCommand.data[param.name] )}
+
                                     </Text>
                                 </span>
                                 :
@@ -797,6 +877,7 @@ export class Command extends React.Component<CommandState, CommandState> {
                             )
                         )}
                     </span>
+
                 </div>
             );
         } else {

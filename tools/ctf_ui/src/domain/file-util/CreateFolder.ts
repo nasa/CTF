@@ -28,4 +28,16 @@ export class CreateFolder {
             });
         });
     }
+
+    static rename(oldname: string, newname:string): Promise<boolean> {
+        return new Promise((res, rej) => {
+            fs.rename(oldname, newname,  (err) => {
+                if (err) {
+                    rej(err);
+                } else {
+                    res(true);
+                }
+            });
+        });
+    }
 }

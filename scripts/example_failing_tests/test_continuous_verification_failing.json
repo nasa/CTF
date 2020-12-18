@@ -154,7 +154,7 @@
                 {
                     "function": "SendCheckCfeEsRestartCmd",
                     "wait": 1,
-                    "comment": "Testing Off Nominal Case, CFS Outputs Invalid Restart Type",
+                    "description": "Testing Off Nominal Case, CFS Outputs Invalid Restart Type",
                     "params": {
                         "expectedCmdCnt": 0,
                         "expectedErrCnt": 1,
@@ -183,7 +183,7 @@
                 {
                     "function": "SendCheckCfeEsStopPerfDataAppCmd",
                     "wait": 1,
-                    "comment": "Off-nominal Case due to output not being written",
+                    "description": "Off-nominal Case due to output not being written",
                     "params": {
                         "expectedCmdCnt": 1,
                         "expectedErrCnt": 3,
@@ -193,7 +193,7 @@
                 {
                     "function": "SendCheckCfeEsStartAppCmd",
                     "wait": 1,
-                    "comment": "Off-nominal Case due to mismatch between fileName size on CFS vs JSON",
+                    "description": "Off-nominal Case due to mismatch between fileName size on CFS vs JSON",
                     "params": {
                         "expectedCmdCnt": 1,
                         "expectedErrCnt": 4,

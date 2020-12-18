@@ -128,6 +128,19 @@ class CfsPlugin(Plugin):
             "CheckEvent":
                 (self.check_event,
                  [ArgTypes.string, ArgTypes.string, ArgTypes.string, ArgTypes.boolean, ArgTypes.cmd_arg, ArgTypes.string]),
+            # CheckNoEvent: Checks that an event message matching the given parameters is not received
+            # user needs to ensure the previous messages are cleared from buffer before calling CheckNoEvent instruction
+            # - app: The app that sent the event message
+            # - id: The Event ID, taken from an EVS enum, to represent the criticality level of a message
+            # - msg: The expected message of the event
+            # - is_regex: (Optional) True if msg is to be used for a regex match instead of string comparison
+            # - msg_args: (Optional) Arguments that will be inserted into msg, similar to printf() functions
+            # - target: (Optional) A previously registered target name, or empty for all registered targets
+            "CheckNoEvent":
+                (self.check_noevent,
+                 [ArgTypes.string, ArgTypes.string, ArgTypes.string, ArgTypes.boolean, ArgTypes.cmd_arg,
+                  ArgTypes.string]),
+
             # ArchiveCfsFiles: Copies files from a directory that have been modified
             # during the current test run into the test run's log directory
             # - source_path: A directory path from which to copy files
@@ -140,10 +153,12 @@ class CfsPlugin(Plugin):
                 (self.shutdown_cfs, [ArgTypes.string]),
         }
 
-        self.verify_required_commands = ["CheckTlmValue", "CheckEvent"]
+        self.verify_required_commands = ["CheckTlmValue", "CheckEvent", "CheckNoEvent"]
         # TODO - Utilize the commands below in the time manager, so that continuous instructions can be
         #              implemented here, and utilized by the time manager.
         self.continuous_commands = ["CheckTlmContinuous"]
+
+        self.end_test_on_fail_commands = ["RegisterCfs", "StartCfs"]
 
     def initialize(self) -> bool:
         """Initializes the plugin by creating the CfsTimeManager.
@@ -176,7 +191,7 @@ class CfsPlugin(Plugin):
             return False
 
         if target == self.FALLBACK_TARGET_NAME:
-            cfs_protocol = 'local'
+            cfs_protocol = Config.get(target, "cfs_protocol", fallback="local")
         elif target not in Config.sections():
             log.error("No CFS configuration defined in config file for {}.".format(target))
             return False
@@ -286,11 +301,9 @@ class CfsPlugin(Plugin):
             log.debug("SendCfsCommand - Target: {}, MID: {}, CC: {}, Args: {}, Set Length: {}, CType Args: {}"
                       .format(target, mid, cc, json.dumps(args), payload_length, ctype_args))
 
-        # Make a copy of arguments since send_cfs_command may change arguments structure
-        args_copy = deepcopy(args)
-
         # Collect the results of send_cfs_command on each specified target, and check that all passed
-        status = [t.send_cfs_command(mid, cc, args_copy, payload_length, ctype_args) for t in self.get_cfs_targets(target)]
+        # Make a copy of arguments since send_cfs_command may change arguments structure
+        status = [t.send_cfs_command(mid, cc, deepcopy(args), payload_length, ctype_args) for t in self.get_cfs_targets(target)]
 
         return all(status) if status else False
 
@@ -320,7 +333,7 @@ class CfsPlugin(Plugin):
         status = [t.remove_check_tlm_continuous(verification_id) for t in self.get_cfs_targets(target)]
         return all(status) if status else False
 
-    def check_event(self, app: str, id: str, msg: str, is_regex: bool = False,
+    def check_event(self, app: str, id: str, msg: str = None, is_regex: bool = False,
                     msg_args: str = None, target: str = None) -> bool:
         """Implements the instruction CheckEvent.
         'id' shadows the built-in function target but is kept because it exists in legacy test scripts."""
@@ -330,6 +343,29 @@ class CfsPlugin(Plugin):
         # Collect the results of check_event on each specified target, and check that all passed
         status = [t.check_event(app, id, msg, is_regex, msg_args) for t in self.get_cfs_targets(target)]
         return all(status) if status else False
+
+    def check_noevent(self, app: str, id: str, msg: str, is_regex: bool = False,
+                    msg_args: str = None, target: str = None) -> bool:
+        """Implements the instruction CheckNoEvent.
+        'id' shadows the built-in function target but is kept because it exists in legacy test scripts."""
+        log.info("CheckNoEvent for target - {}, APP {}, ID {}, MSG {}, Msg Args {}"
+                 .format(target, app, id, msg, json.dumps(msg_args)))
+
+        # Collect the results of check_event on each specified target, and check that all passed
+        status = [t.check_event(app, id, msg, is_regex, msg_args) for t in self.get_cfs_targets(target)]
+
+        if any(status):
+            log.info("CheckNoEvent found the event with status = {} !".format(status))
+            return False
+        else:
+        # Check_noevent is to verify No event happens during the CtfVerificationStage.
+        # This function will be called a few times by test.py, it only returns True at the end of verification stage
+            if Global.current_verification_stage == CtfVerificationStage.last_ver:
+                log.info("CheckNoEvent did not find event")
+                return True
+            else:
+                return False
+
 
     def shutdown_cfs(self, target: str = None) -> bool:
         """Implements the instruction ShutdownCfs.

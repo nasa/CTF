@@ -28,6 +28,10 @@ class Test(object):
         self.test_info = None
         self.event_list = None
         self.test_result = True
+        self.test_aborted = False
+        self.test_run = False
+        self.num_skipped = 0
+        self.num_ran = 0
 
         # Scheduler for test events
         self.event_schedule = sched.scheduler(time.time, time.sleep)
@@ -164,9 +168,22 @@ class Test(object):
             instruction_index = i.command_index
             instruction = i.command["instruction"]
 
+            if i.is_disabled:
+                status = StatusDefs.disabled
+                details = "Instruction is disabled. Skipping..."
+                self.status_manager.update_command_status(status, details, index=instruction_index)
+                self.status_manager.end_command()
+                log.info("Skipping disabled test instruction {} ".format(instruction))
+                self.num_skipped += 1
+                continue
+
             if instruction in self.ignored_instructions:
                 log.info("Ignoring test instruction {} ".format(instruction))
+                self.num_skipped += 1
                 continue
+
+            self.test_run = True
+            self.num_ran += 1
 
             # process the command delay
             log.info("Waiting {} time-units before executing {}".format(delay, instruction))
@@ -201,15 +218,14 @@ class Test(object):
                 self.test_result = False
                 log.test(False, False, "CtfConditionError: Condition not satisfied: {}".format(e))
 
-            if instruction in self.end_test_on_fail_commands and not self.test_result:
+            if (instruction in self.end_test_on_fail_commands or self.end_test_on_fail) and not self.test_result:
                 # instruction is already executed in execute_event above
                 # the test result is updated in self.test_result
-                log.error("{} Failed.".format(self.test_info["test_case"]))
-                break
-
-            # If configured to exit test of fail
-            if not self.test_result and self.end_test_on_fail:
-                log.error("{} Failed.".format(self.test_info["test_case"]))
+                log.error("Instruction: {} Failed. Aborting test...".format(instruction))
+                if self.end_test_on_fail:
+                    log.warning("Configuration field \"end_test_on_fail\" enabled. Ending testing.")
+                log.error("Test Case: {} Failed.".format(self.test_info["test_case"]))
+                self.test_aborted = True
                 break
 
     def run_test(self, status_manager):
@@ -229,6 +245,8 @@ class Test(object):
             else:
                 test_status = StatusDefs.failed
                 self.status_manager.update_test_status(test_status, "")
+            if self.test_aborted:
+                test_status = StatusDefs.aborted
 
         except Exception as e:
             self.test_result = False
@@ -236,5 +254,9 @@ class Test(object):
             self.status_manager.update_test_status(test_status, str(e))
             raise
 
+        log.info("Test %s: %s" % (self.test_info["test_case"], test_status))
+        log.info("Number instructions To Run:         %s" % len(self.event_list))
+        log.info("Number instructions Ran:            %s" % self.num_ran)
+        log.info("Number instructions Skipped:        %s" % self.num_skipped)
         self.status_manager.end_test()
         return test_status

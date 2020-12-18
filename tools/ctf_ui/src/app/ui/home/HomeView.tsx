@@ -124,23 +124,45 @@ class Home extends React.Component<object, HomeState> implements IHomeView {
     }
 
     // override
-    promptForNewFolderName = (parentPath: string): void => {
+    promptForNewFolderName = (curPath: string): void => {
         let name = '';
         Modal.confirm({
             title: 'New Folder',
+            width : 650,
             content: (
                 <Input
                     placeholder="Folder Name"
-                    addonBefore={parentPath}
+                    addonBefore={curPath}
                     onChange={it => (name = it.target.value)}
                     autoFocus
                 />
             ),
             onOk: () => {
-                this.state.presenter.didChooseNewFolderName(name, parentPath);
+                this.state.presenter.didChooseNewFolderName(name, curPath);
             }
         });
     };
+
+    // override
+    promptForRenameFileorFolder = (parentPath: string, oldfullfilename: string ): void => {
+        let splitfilename = oldfullfilename.split('/');
+        let nametochange = splitfilename.pop();
+        let newname = '';
+        Modal.confirm({
+            title: 'Rename to: ',
+            content: (
+                <Input
+                    defaultValue={nametochange}
+                    onChange={it => (newname = it.target.value)}
+                    autoFocus
+                />
+            ),
+            onOk: () => {
+                this.state.presenter.didChooseRename(oldfullfilename, newname);
+            }
+        });
+    };
+
 
     // override
     askIfShouldSave = (): Promise<boolean> => {
@@ -273,6 +295,11 @@ class Home extends React.Component<object, HomeState> implements IHomeView {
                                     icon: <Icon type="folder-add" />
                                 },
                                 {
+                                    key: 'rename',
+                                    title: 'Rename',
+                                    icon: <Icon type="edit" />
+                                },
+                                {
                                     key: 'delete',
                                     title: 'Delete',
                                     icon: <Icon type="delete" />
@@ -305,6 +332,10 @@ class Home extends React.Component<object, HomeState> implements IHomeView {
                                     );
                                 } else if (key === 'new-folder') {
                                     this.state.presenter.didClickCreateNewFolderOnFile(
+                                        items[0].value
+                                    );
+                                } else if (key === 'rename') {
+                                    this.state.presenter.didClickRenameFolderorFile(
                                         items[0].value
                                     );
                                 }

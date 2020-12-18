@@ -41,6 +41,9 @@ export interface CtfInstruction {
     instruction: string;
     data: CtfInstructionData;
     wait: number;
+    comment: string;
+    description: string;
+    disabled: boolean;   
 }
 
 export interface CtfFunctionCall {
@@ -50,6 +53,9 @@ export interface CtfFunctionCall {
         [name: string]: any;
     };
     wait: number;
+    comment: string;
+    description: string;
+    disabled: boolean;     
 }
 
 export interface CtfFunction {
