@@ -1,6 +1,11 @@
+"""
+@namespace lib.status
+Defines status messages to be sent out by CTF during a test run
+"""
+
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2020 United States Government as represented by the
+# Copyright (c) 2019-2021 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -14,6 +19,9 @@
 
 
 class StatusDefs:
+    """
+    This class defines enumerations for the status definitions used by CTF to send instruction status.
+    """
     waiting = 'waiting'
     active = 'active'
     stopped = 'stopped'
@@ -24,6 +32,8 @@ class StatusDefs:
     aborted = 'aborted'
     disabled = 'disabled'
 
+
+## Template Dictionary Definition of an Instruction Status Object. Includes all status fields at the instruction-level.
 InstructionStatus = {
     "instruction": "",
     "wait": 0,
@@ -34,6 +44,7 @@ InstructionStatus = {
     "description": ""
 }
 
+## Template Dictionary Definition of an Test Status Object. Includes all status fields at the test case level.
 TestStatus = {
     "case_number": "",
     "status": StatusDefs.waiting,
@@ -43,6 +54,7 @@ TestStatus = {
     "description": ""
 }
 
+## Template Dictionary Definition of an Scripts Status Object. Includes all status fields at the script level.
 ScriptStatus = {
     "path": "",
     "test_name": "",
@@ -51,6 +63,8 @@ ScriptStatus = {
     "tests": []
 }
 
+## Template Dictionary Definition of an Test Status Object. Includes all status fields at the test suite level (multiple
+## test scripts.
 SuiteStatus = {
     "elapsed_time": 0,
     "status": StatusDefs.waiting,

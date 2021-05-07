@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2020 United States Government as represented by the
+# Copyright (c) 2019-2021 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -23,6 +23,11 @@ from lib.logger import logger as log
 
 
 class CCSDSInterface:
+    """
+    This class provides an interface and partial implementation for a CCSDS reader to process CCSDS data from
+    a directory into dynamic type definitions. The method of parsing the data is left to a subclass.
+    """
+
     def __init__(self, config):
         self.mids = {}
         self.mid_map = {}
@@ -32,12 +37,21 @@ class CCSDSInterface:
         # Ensure CCSDS_header_info_included is set to True in config if
         #   CCSDS Primary/Secondary headers are included in the CCSDS Files.
         self.config = config
-        self.header_info_included = self.config.CCSDS_header_info_included
+        self.header_info_included = self.config.ccsds_header_info_included
         self.log_ccsds_imports = self.config.log_ccsds_imports
 
-    # TODO - Suggest reworking the mid_map field_names to make more sense.
+    # ENHANCE - Suggest reworking the mid_map field_names to make more sense.
     #  Potentially mirroring json field_name
     def add_telem_msg(self, mid_name, mid, name, parameters, parameter_enums=None):
+        """
+        Adds a telemetry message to the internal types
+
+        @param mid_name: Name of the MID associated with the command
+        @param mid: Value of the MID associated witht the command
+        @param name: Name of the telemetry message
+        @param parameters: Type of the telemetry message parameters
+        @param parameter_enums: Dictionary of enumerations associated with this telemetry message
+        """
         msg = {
             mid_name: {
                 "MID": mid if isinstance(mid, int) else int(mid, 0),
@@ -53,6 +67,14 @@ class CCSDSInterface:
             log.info("Added Telemetry Message {}:{} with MID {}".format(name, mid_name, mid))
 
     def add_cmd_msg(self, mid_name, mid, command_code_map, command_enums=None):
+        """
+        Adds a command message to the internal types
+
+        @param mid_name: Name of the MID associated with the command
+        @param mid: Value of the MID associated witht the command
+        @param command_code_map: Dictionary mapping command code values to their corresponding types
+        @param command_enums: Dictionary of enumerations associated with this command
+        """
         msg = {
             mid_name: {
                 "MID": mid if isinstance(mid, int) else int(mid, 0),
@@ -67,10 +89,21 @@ class CCSDSInterface:
             log.info("Added Command Message {}:{} with MID {}".format(mid_name, mid, command_code_map))
 
     def add_enumeration(self, key, value):
+        """
+        Adds an enumeration definition to the internal types
+
+        @param key: Name of the enumeration
+        @param value: Value of the enumeration
+        """
         self.enum_map.update({key: value})
         if self.log_ccsds_imports:
             log.info("Added Enumeration {}:{}".format(key, value))
 
     # Virtual Functions
     def get_ccsds_messages_from_dir(self, directory):
-        pass
+        """
+        Virtual function to be implemented by a reader.
+        Processes the CCSDS data from a directory and returns the data types defined in them.
+
+        @param directory: Path to the directory containing CCSDS data type definitions.
+        """

@@ -1,7 +1,7 @@
 /*
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2020 United States Government as represented by the
+# Copyright (c) 2019-2021 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -176,7 +176,7 @@ export class Command extends React.Component<CommandState, CommandState> {
         if (param.type === 'cmd_mid') this.cmdMidChanged(value as string);
         else if (param.type === 'tlm_mid') this.tlmMidChanged(value as string);
         else if (param.type === 'cmd_code' && !param.isArray)
-            this.ccChanged(value as string);      
+            this.ccChanged(value as string);
 
         if (this.state.onChange) this.state.onChange(newCommand);
     };
@@ -343,7 +343,7 @@ export class Command extends React.Component<CommandState, CommandState> {
             })
             .flat();
     }
-    
+
     mapObjectsToCascaderOptions(obj) : CascaderOptionType[] {
         var options: CascaderOptionType[] = [];
         const iterate = (obj: CascaderOptionType, prefix): CascaderOptionType[] => {
@@ -355,7 +355,7 @@ export class Command extends React.Component<CommandState, CommandState> {
                 }
                 else{
                     var option: CascaderOptionType = {label: key, value: prefix + '.' + key}
-                    new_options.push(option)       
+                    new_options.push(option)
                 }
             })
                 return new_options
@@ -363,7 +363,7 @@ export class Command extends React.Component<CommandState, CommandState> {
         Object.keys(obj).forEach(key => {
             var option = iterate(obj[key], key)
             options.push({label: key, value: key, children: option});
-        }) 
+        })
         return options
     }
 
@@ -547,7 +547,7 @@ export class Command extends React.Component<CommandState, CommandState> {
                         }
                     ].concat(dataSource)}
                     onChange={value => {
-                        const inputValue = value.length == 0? value : 
+                        const inputValue = value.length == 0? value :
                                             (isNaN(Number(value)) ? value : Number(value));
                         this.setValue(cmd_arg_obj, cmdParamName, inputValue)
                         onChange(param, cmd_arg_obj, index)
@@ -680,7 +680,7 @@ export class Command extends React.Component<CommandState, CommandState> {
                                 this.setValue(dict, name, "")
                             })
                         }
-                    
+
                     const valueArray = data[paramName] as CtfInstructionArg[];
                         return (
                             <ParamArray name={paramName} key = {index}>
@@ -705,7 +705,7 @@ export class Command extends React.Component<CommandState, CommandState> {
                         <ParamArray name={paramName} key = {index}>
                             {(data[paramName] as CtfInstructionArg[]).map(
                                 (arrayElem, i) => (
-                                    <div key={i}>
+                                    <div key={ `${i} : ${JSON.stringify(arrayElem)}` }>
                                         {this.renderArgument(
                                             param,
                                             arrayElem,

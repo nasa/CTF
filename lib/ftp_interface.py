@@ -1,6 +1,11 @@
+"""
+@namespace lib.ftp_interface
+FTP interface for CTF
+"""
+
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2020 United States Government as represented by the
+# Copyright (c) 2019-2021 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -14,273 +19,357 @@
 
 
 import os
+import ftplib
 import ftputil
-from ftplib import FTP
-from lib.Global import expand_path
+
+from lib.ctf_utility import expand_path
 from lib.logger import logger as log
 
-#ftputil does not work for the SP0 so the ftplib components FTP is also made available
+
+# ENHANCE - Identify if file is needed, move to a more appropriate location, and clean up if possible.
+
+# ftputil does not work for the SP0 so the ftplib components FTP is also made available
 
 
-class ftp_interface(object):
+class FtpInterface:
+    """
+    The FtpInterface class provides functionality to connect/disconnect to remote FTP server,
+    upload/download files, create folder on server.
+    @note - FtpInterface is used in SshController and SP0Plug
+    """
+
     def __init__(self):
-        self.uploadLevel = 0
+        """
+         Constructor for FtpInterface class. Set default values for FtpInterface attributes,
+         such as ipaddr, ftp_timeout, etc.
+        """
+        self.uploadlevel = 0
         self.ftp = None
-        self.curDir = ""
-        self.ip = ""
-        self.ftpConnect = False
+        self.curdir = ""
+        self.ipaddr = ""
+        self.ftpconnect = False
         self.ftp_timeout = 5
+        self.remotebase = None
 
-
-    def stor_file_FTP(self, path, file):
-
+    def store_file_ftp(self, path, file):
+        """
+        Transfer file to FTP server using the FTP command STOR. The file transfer is in binary mode.
+        @param path: the path of the transfer file on local computer.
+        @param file: the name of the transfer file on local computer.
+        @return bool: True if the file is transferred successfully, False otherwise.
+        """
         status = True
-        if self.ftpConnect:
-            fileToUpload = os.path.abspath(os.path.join(path, file))
-            log.debug("Uploading {}...".format(fileToUpload))
-            if os.path.isfile(fileToUpload):
-                fh = open(fileToUpload, 'rb')
+
+        if self.ftpconnect:
+            filetoupload = os.path.abspath(os.path.join(path, file))
+            log.debug("Uploading {}...".format(filetoupload))
+            if os.path.isfile(filetoupload):
+                fileobject = open(filetoupload, 'rb')
                 if self.ftp:
                     try:
-                        self.ftp.storbinary('STOR %s' % file, fh)
-                    except:
-                        log.warn("FTP put file failed {}".format(file))
+                        self.ftp.storbinary('STOR %s' % file, fileobject)
+                    except ftplib.all_errors:
+                        log.warning("FTP put file failed {}".format(file))
                         status = False
                 else:
-                    log.warn("FTP connection invalid for: %s."%self.ip)
+                    log.warning("FTP connection invalid for: {} ".format(self.ipaddr))
                     status = False
-                fh.close()
+                fileobject.close()
             else:
-                log.warn("File does not exist %s"%fileToUpload)
+                log.warning("File does not exist {}".format(filetoupload))
                 status = False
         else:
-            log.warn("FTP not Connected")
+            log.warning("FTP not Connected")
+            status = False
+
         return status
 
-    def get_file_FTP(self, remote_file, local_path=None):
-
+    def get_file_ftp(self, remote_file, local_path=None):
+        """
+        Download a file from the FTP server to the local computer.
+        @param remote_file: the path/name of the file on FTP server.
+        @param local_path: the path to store the transferred file on local computer.
+        @return bool: True if the file is downloaded successfully, False otherwise.
+        """
         status = True
-        remote_path,file = os.path.split(remote_file)
+        remote_path, file = os.path.split(remote_file)
         log.debug("fileToDownload {}...".format(file))
         if local_path:
-            local_file = os.path.join(local_path,file)
+            local_file = os.path.join(local_path, file)
         else:
             local_file = file
-        if self.ftpConnect:
-            fh = open(local_file, 'wb')
+        if self.ftpconnect:
+            fileobject = open(local_file, 'wb')
             if self.ftp:
                 def callback(data):
-                    fh.write(data)
+                    fileobject.write(data)
+
                 try:
                     self.ftp.retrbinary('RETR %s' % remote_file, callback)
-                except:
-                    log.warn("FTP get file failed {} ".format(remote_file))
+                except ftplib.all_errors:
+                    log.warning("FTP get file failed {} @ {} ".format(remote_file, remote_path))
                     status = False
             else:
-                log.warn("FTP connection invalid for: %s."%self.ip)
+                log.warning("FTP connection invalid for: {}".format(self.ipaddr))
                 status = False
-            fh.close()
-            if status == False:
+
+            fileobject.close()
+
+            if not status:
                 os.remove(file)
         else:
-            log.warn("FTP not connected.")
+            log.warning("FTP not connected.")
+            status = False
+
         return status
 
-
-    def upload_FTP(self, localpath, ip=None, remotepath=None, file=None, id=None):
+    def upload_ftp(self, localpath, ipaddr=None, remotepath=None, file=None, usr_id=None):
+        """
+        Upload a file or files from the local computer to the FTP server.
+        @param localpath: the path of the uploaded file/files on local computer.
+        @param ipaddr: the IP address of FTP server. If it is None, use the previous FTP connection,
+                        otherwise re-connect FTP server using ipaddr and usr_id.
+        @param remotepath: the path to store the uploaded file/files on the FTP server.
+        @param file: the file to be uploaded on local computer. If the file is None,
+                     all files in localpath will be uploaded.
+        @param usr_id: the user id to connect to the FTP server.
+        @return bool: True if upload successfully, False otherwise.
+        """
         status = True
-        if (ip):
-            self.ip = ip
-            status = self.connect_FTP(ip, id)
-            if status == False:
-                log.warn("FTP not connected.")
+        if ipaddr:
+            self.ipaddr = ipaddr
+            status = self.connect_ftp(ipaddr, usr_id)
+            if not status:
+                log.warning("FTP not connected.")
                 return status
         if remotepath:
             try:
                 self.ftp.cwd(remotepath)
-            except:
-                log.warn("FTP cwd Failed for %s@%s"%(remotepath,self.ip))
+            except ftplib.all_errors:
+                log.warning("FTP cwd Failed for {}@{}".format(remotepath, self.ipaddr))
                 status = False
         try:
             os.chdir(localpath)
-        except:
-            log.warn("Cwd Failed for %s"%(localpath))
+        except OSError:
+            log.warning("Cwd Failed for {}".format(localpath))
             status = False
 
         if status:
-            self.uploadLevel +=1
-            if (file):
-               files = [file]
+            self.uploadlevel += 1
+            if file:
+                files = [file]
             else:
                 files = os.listdir(".")
 
-            for f in files:
-                log.debug("Upload file  {}...".format(os.path.abspath(os.path.join(".",f))))
-                if os.path.isfile(f):
-                    status = self.stor_file_FTP(".", f)
-                    if (status == False):
+            for localfile in files:
+                log.debug("Upload file  {}...".format(os.path.abspath(os.path.join(".", localfile))))
+                if os.path.isfile(localfile):
+                    status = self.store_file_ftp(".", localfile)
+                    if status is False:
                         break
-                elif os.path.isdir(f):
+                elif os.path.isdir(localfile):
                     try:
-                        log.debug("Creating remote directory {}...".format(f))
-                        #The mkdir will fail if the directory already exist
-                        self.ftp.mkd(f)
-                    except:
-                        log.debug("Creating remote directory failed {}...".format(f))
-                        pass
-                    self.ftp.cwd(f)
-                    status = self.upload_FTP(f)
+                        log.debug("Creating remote directory {}...".format(localfile))
+                        # The mkdir will fail if the directory already exist
+                        self.ftp.mkd(localfile)
+                    except ftplib.all_errors:
+                        log.error("Creating remote directory failed {}...".format(localfile))
+                        status = False
+                        break
+
+                    self.ftp.cwd(localfile)
+                    status = self.upload_ftp(localfile)
                 else:
                     status = False
-            if self.uploadLevel != 1:
+
+            if self.uploadlevel != 1:
                 self.ftp.cwd('..')
                 os.chdir('..')
-            self.uploadLevel -= 1
-        if self.uploadLevel == 0:
+            self.uploadlevel -= 1
+        if self.uploadlevel == 0:
             log.debug("Upload complete.")
-            self.disconnect_FTP()
+            self.disconnect_ftp()
         return status
 
-
-    def download_FTP(self, remotepath, ip=None, localpath=None, file=None, id=None):
+    def download_ftp(self, remotepath, ipaddr=None, localpath=None, file=None, usr_id=None):
+        """
+        Download a file or files from the FTP server to the local computer.
+        @param remotepath: the path to the download file/files on the FTP server.
+        @param ipaddr: the IP address of FTP server. If it is None, use the previous FTP connection,
+                        otherwise re-connect FTP server using ipaddr and usr_id.
+        @param localpath: the path to store the downloaded file/files on local computer.
+        @param file: the file to be downloaded from the FTP server. If the file is None,
+                     all files in remotepath will be downloaded.
+        @param usr_id: the user id to connect to the FTP server.
+        @return bool: True if download successfully, False otherwise.
+        """
         status = True
         files = dict()
-        if (ip):
-            self.ip = ip
-            status = self.connect_FTP(ip, id)
-            if status == False:
-                log.warn("FTP not connected.")
+        if ipaddr:
+            self.ipaddr = ipaddr
+            status = self.connect_ftp(ipaddr, usr_id)
+            if not status:
+                log.warning("FTP not connected.")
                 return status
         if localpath:
             if not os.path.isdir(localpath):
                 log.debug("Creating local directory {}...".format(localpath))
-                os.mkdir(localpath)
+                os.makedirs(localpath)
             try:
                 os.chdir(localpath)
-            except:
-                log.warn("Cwd Failed for %s"%(localpath))
+            except OSError:
+                log.warning("Cwd Failed for {}".format(localpath))
                 status = False
 
         if status:
-            self.uploadLevel +=1
+            self.uploadlevel += 1
             try:
                 self.ftp.cwd(remotepath)
-            except:
-                log.warn("FTP invalid directory {}".format(remotepath))
+            except ftplib.all_errors:
+                log.warning("FTP invalid directory {}".format(remotepath))
                 status = False
 
             if status:
-                if (file):
-                   files[file] = "-rwxrwxrwx"
+                if file:
+                    files[file] = "-rwxrwxrwx"
                 else:
                     def getfiles(data):
                         parsedata = data.split(" ")
-                        files[parsedata[len(parsedata)-1]] = parsedata[0]
+                        files[parsedata[len(parsedata) - 1]] = parsedata[0]
 
-                    self.ftp.retrlines('LIST',getfiles)
+                    self.ftp.retrlines('LIST', getfiles)
 
-                for f in files.keys():
-                    log.debug("Download file  {}...".format(f))
-                    if "d" not in files[f]:
-                        status = self.get_file_FTP(f)
-                        if (status == False):
+                for remotefile in files:
+                    log.debug("Download file  {}...".format(remotefile))
+                    if "d" not in files[remotefile]:
+                        status = self.get_file_ftp(remotefile, os.getcwd())
+                        if not status:
                             break
                     else:
                         try:
-                            log.debug("Creating local directory {}...".format(f))
-                            os.mkdir(f)
-                        except:
-                            log.debug("Creating directory failed {}...".format(f))
-                            pass
-                        os.chdir(f)
-                        status = self.download_FTP(f)
+                            log.debug("Creating local directory {}...".format(remotefile))
+                            os.mkdir(remotefile)
+                        except OSError:
+                            log.error("Creating directory failed {}...".format(remotefile))
+                            status = False
+                            break
 
-            if self.uploadLevel != 1:
+                        os.chdir(remotefile)
+                        status = self.download_ftp(remotefile)
+
+            if self.uploadlevel != 1:
                 self.ftp.cwd('..')
                 os.chdir('..')
-            self.uploadLevel -= 1
-        if self.uploadLevel == 0:
+            self.uploadlevel -= 1
+        if self.uploadlevel == 0:
             log.debug("Download complete.")
-            self.disconnect_FTP()
+            self.disconnect_ftp()
         return status
 
-    def connect_FTP(self, ip, id):
+    def connect_ftp(self, ipaddr, usrid):
+        """
+        Connect to FTP server, and set the FtpInterface attributes.
+        @param ipaddr: the IP address of FTP server.
+        @param usrid: the user id to connect to the FTP server.
+        @return bool: True if successfully connect to FTP server, False otherwise.
+        """
         status = True
-        self.uploadLevel = 0
-        self.curDir = os.getcwd()
+        self.uploadlevel = 0
+        self.curdir = os.getcwd()
 
         try:
-            self.ftp = FTP(ip, id, "", timeout=self.ftp_timeout)
-        except:
+            self.ftp = ftplib.FTP(ipaddr, usrid, "", timeout=self.ftp_timeout)
+        except ftplib.all_errors:
             status = False
         if status:
             try:
                 self.ftp.login()
-                self.remoteBase = self.ftp.pwd()
-            except:
+                self.remotebase = self.ftp.pwd()
+            except ftplib.all_errors:
                 status = False
 
-        if status == False:
-            log.warn("FTP connection failed for {}".format(ip))
+        if not status:
+            log.warning("FTP connection failed for {}".format(ipaddr))
         else:
-            self.ftpConnect = True
+            self.ftpconnect = True
 
         return status
 
-    def disconnect_FTP(self):
-            if self.ftpConnect:
-                os.chdir(self.curDir)
-                self.ftp.cwd(self.remoteBase)
-                self.ftp.quit()
-                self.ftpConnect = False
-            else:
-                log.warn("FTP not connected.")
+    def disconnect_ftp(self):
+        """
+        Disconnect to FTP server, and reset the FtpInterface attributes.
+        @return None
+        """
+        if self.ftpconnect:
+            os.chdir(self.curdir)
+            self.ftp.cwd(self.remotebase)
+            self.ftp.quit()
+            self.ftpconnect = False
+        else:
+            log.warning("FTP not connected.")
 
-
-    def upload_ftputil(self, host, local_path, remote_path, id='anonymous'):
-        self.ip = host
+    def upload_ftputil(self, host, local_path, remote_path, usrid='anonymous'):
+        """
+        FTP upload utility: upload a whole folder content from the local computer to the FTP host.
+        @param host: FTP server host/IP.
+        @param local_path: the local computer path.
+        @param remote_path: the FTP server path to store the uploaded files.
+        @param usrid: the user id to connect to the FTP server. The default user is anonymous'
+        @return bool: True if upload successfully, False otherwise.
+        """
+        self.ipaddr = host
         try:
             os.chdir(expand_path(local_path))
             # noinspection PyDeprecation
-            with ftputil.FTPHost(host, id, '') as ftp:
-                ftp.login()
+            with ftputil.FTPHost(host, usrid, '') as ftp:
+                # ftp.login()
                 for path, dirs, files in os.walk('.'):
                     remote_dir = ftp.path.join(remote_path, path)
                     if not ftp.path.exists(remote_dir):
                         log.debug("Creating remote directory {}...".format(remote_dir))
                         ftp.makedirs(remote_dir)
                     for file in files:
-                        log.debug("Uploading {}...".format(file))
+                        log.debug("Uploading {} in {}...".format(file, dirs))
                         local_file = os.path.join(path, file)
                         remote_file = ftp.path.join(remote_dir, file)
                         ftp.upload(local_file, remote_file)
                 log.debug("FTP upload complete.")
-        except Exception as e:
-            log.warn("FTP upload failed: {}".format(e))
+        except ftplib.all_errors as exception:
+            log.warning("FTP upload failed: {}".format(exception))
+            os.chdir(self.curdir)
             return False
         else:
+            os.chdir(self.curdir)
             return True
 
-    def download_ftputil(self, host, remote_path, local_path, id='anonymous'):
-        self.ip = host
+    def download_ftputil(self, host, remote_path, local_path, usrid='anonymous'):
+        """
+        FTP download utility: download a whole folder content from the FTP host to the local computer.
+        @param host: FTP server host/IP.
+        @param remote_path: the FTP server path.
+        @param local_path: the local computer path to store downloaded files.
+        @param usrid: the user id to connect to the FTP server. The default user is anonymous'.
+        @return bool: True if download successfully, False otherwise.
+        """
+        self.ipaddr = host
         try:
             local_path = expand_path(local_path)
             # noinspection PyDeprecation
-            with ftputil.FTPHost(host, id, '') as ftp:
+            with ftputil.FTPHost(host, usrid, '') as ftp:
                 for path, dirs, files in ftp.walk(remote_path):
                     rel_path = os.path.relpath(path, remote_path)
                     local_dir = os.path.join(local_path, rel_path)
-                    if not ftp.path.exists(local_dir):
+                    if not os.path.exists(local_dir):
                         log.debug("Creating local directory {}...".format(local_dir))
                         os.makedirs(local_dir)
                     for file in files:
-                        log.debug("Downloading {}...".format(file))
+                        log.debug("Downloading {} to {}...".format(file, dirs))
                         remote_file = ftp.path.join(path, file)
                         local_file = os.path.join(local_dir, file)
                         ftp.download(remote_file, local_file)
                 log.debug("FTP download complete.")
-        except Exception as e:
-            log.warn("FTP download failed: {}".format(e))
+        except ftplib.all_errors as exception:
+            log.warning("FTP download failed: {}".format(exception))
             return False
         else:
             return True

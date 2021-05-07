@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2020 United States Government as represented by the
+# Copyright (c) 2019-2021 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -12,13 +12,23 @@
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 
+"""
+ccsds_plugin.py: CCSDS Plugin Implementation for CTF.
+
+- Defines the CCSDS Plugin command map with the CTF instructions for CCSDS.
+- Implements the ValidateCfsCcsdsData instruction.
+"""
 
 from lib.plugin_manager import Plugin, ArgTypes
 from lib.logger import logger as log
-from lib.Global import Global
+from lib.ctf_global import Global
 
 
 class CCSDSPlugin(Plugin):
+    """
+    The CCSDS Plugin provides CCSDS validation support for CTF
+    """
+
     def __init__(self):
         super().__init__()
         self.name = "CCSDS Plugin"
@@ -30,34 +40,54 @@ class CCSDSPlugin(Plugin):
         self.get_cfs_plugin()
 
     def get_cfs_plugin(self):
+        """
+        Returns the instance of the CFS Plugin registered with the plugin manager
+        """
         self.cfs_plugin = Global.plugins_available.get("CFS Plugin")
 
     def initialize(self):
         log.info("Initialized CCSDS Plugin")
 
-    def validate_cfs_ccsds_data(self, name=None):
+    def validate_cfs_ccsds_data(self, target=None):
+        """
+        Validates the CCSDS data types by sending an empty instance of each command code found in the MID map to CFS.
+
+        @note - This instruction will cause commands to be sent to the designated CFS target
+
+        @note - The plugin cannot directly verify that CFS is able to process the received data.
+                CFS output should be checked to ensure that no invalid length commands were received.
+
+        @param target: The name of the CFS target to be used for validation.
+                     If not provided, the default target will be used.
+        """
+
         self.get_cfs_plugin()
         if self.cfs_plugin is None:
             log.error("CFS Plugin Not Initialized... Cannot validate CFS CCSDS Data Integrity.")
             return False
 
-        name = name or self.cfs_plugin.FALLBACK_TARGET_NAME
-        target = self.cfs_plugin.targets.get(name)
+        target = target or self.cfs_plugin.FALLBACK_TARGET_NAME
 
-        if target is None:
+        if not self.cfs_plugin.targets.get(target):
+            log.error("Target {} is not registered with CfsPlugin".format(target))
             return False
 
-        mid_map = target.mid_map
-        result = True
+        mid_map = self.cfs_plugin.targets[target].mid_map
+        result = []
         for mid_name, data in mid_map.items():
             if 'CC' in data:
                 for command_name, command_args in data['CC'].items():
-                    log.info("CCSDS Validation - Sending Command: {} with arg structure".format(command_name, command_args))
-                    result = self.cfs_plugin.send_cfs_command(mid_name, command_name,
-                                                              command_args["ARG_CLASS"]() if command_args["ARG_CLASS"] is not None else [],
-                                                              name=name, payload_length=None, ctype_args=True)
+                    log.info("CCSDS Validation - Sending Command: {} with arg {} structure".format(command_name,
+                                                                                                   command_args))
+                    command_result = self.cfs_plugin.send_cfs_command(mid_name, command_name,
+                                                                      command_args["ARG_CLASS"]()
+                                                                      if command_args["ARG_CLASS"] is not None else [],
+                                                                      target=target,
+                                                                      payload_length=None,
+                                                                      ctype_args=True)
+                    result.append(command_result)
                     Global.time_manager.wait(1)
-        return result
+        return all(result)
 
     def shutdown(self):
         pass

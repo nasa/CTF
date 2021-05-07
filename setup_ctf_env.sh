@@ -137,6 +137,11 @@ conda install -c conda-forge PyNaCl -y
 conda install -c anaconda six -y
 conda install -c conda-forge pyelftools -y
 conda install -c conda-forge coverage -y
+conda install -c anaconda pytest'>=6.2.1' -y
+conda install -c anaconda pytest-cov -y
+conda install -c anaconda mock -y
+conda install -c anaconda pylint -y
+conda install -c conda-forge doxygen -y
 
 
 if  [[ "$platform" == 'linux' ]]; then

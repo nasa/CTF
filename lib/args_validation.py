@@ -1,6 +1,11 @@
+"""
+@namespace lib.args_validation
+Argument Validation Helper Utilities
+"""
+
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2020 United States Government as represented by the
+# Copyright (c) 2019-2021 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -11,63 +16,95 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
-
-
-from lib.Global import expand_path
-from lib.logger import logger as log
-
 import socket
-import ipaddress
 import os
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
+from lib.ctf_utility import expand_path
+from lib.logger import logger as log
 
-class ArgsValidation(object):
+
+class ArgsValidation():
+    """
+    Helper class to validate arguments and data used by CTF
+    """
+
     def __init__(self):
+        ## Tracks the number of errors encountered during validation
+        self.parameter_errors = 0
 
-        self.parameterErrors = 0
-
-    def add_error(self, field, exception = None):
+    def add_error(self, field, exception=None):
+        """
+        Increment the number of errors and log an exception if needed
+        @param field: Field name where validation error occurred
+        @param exception:  Whether to log an exception on failure or not
+        """
         log.error("Validation Error - Invalid {}.".format(field))
         if exception:
             log.debug(exception)
-        self.parameterErrors += 1
+        self.increment_error_count()
 
     def get_error_count(self):
-        return self.parameterErrors
+        """
+        Returns the number of errors encountered during validation so far
+        """
+        return self.parameter_errors
 
-    def is_param_none(self, param):
+    @staticmethod
+    def is_param_none(param):
+        """
+        Returns whether or not a given parameter is None
+        @param param: Parameter to check if None
+        """
         return param is None
 
     def increment_error_count(self):
-        self.parameterErrors += 1
+        """
+        Increment error count without logging an exception
+        """
+        self.parameter_errors += 1
 
-    def verify_symbol(self, file, symbol):
+    def verify_symbol(self, file_path, symbol):
+        """
+        Given a file path, verify that a given symbol exists within that file
+
+        @note - Primarily used to validate SP0 executables
+
+        @param file_path: Path to executable file to check
+        @param symbol: Name of symbol to verify within executable file
+        """
         if self.is_param_none(symbol):
-           log.error("Symbol not specified.")
-           return False
+            log.error("Symbol not specified.")
+            return False
         status = False
-        if os.path.isfile(file):
-            with open(file, 'rb') as f:
-                elffile = ELFFile(f)
-                log.debug('  %s sections' % elffile.num_sections())
+        if os.path.isfile(file_path):
+            with open(file_path, 'rb') as file:
+                elffile = ELFFile(file)
+                log.debug('{} sections'.format(elffile.num_sections()))
                 section = elffile.get_section_by_name('.symtab')
                 if not section:
                     log.error("Invalid ELF file no symbol table found.")
                     status = False
                 elif isinstance(section, SymbolTableSection):
                     num_symbols = section.num_symbols()
-                    for symbolNum in range(0, num_symbols):
-                        if section.get_symbol(symbolNum).name == symbol:
+                    for symbol_num in range(0, num_symbols):
+                        if section.get_symbol(symbol_num).name == symbol:
                             status = True
                             break
         else:
-            log.error("File {} does not exist.".format(file))
+            log.error("File {} does not exist.".format(file_path))
 
         return status
 
-
     def validate_symbol(self, symbol, file_path):
+        """
+        Given a file path, verify that a given symbol exists within that file
+
+        @note - Primarily used to validate SP0 executables
+
+        @param symbol: Name of symbol to verify within executable file
+        @param file_path: Path to executable file to check
+        """
         new_symbol = None
         file_path = self.validate_file(file_path)
         if file_path is None:
@@ -80,57 +117,83 @@ class ArgsValidation(object):
         return new_symbol
 
     def validate_file(self, file_path, fail_if_not_valid=False):
+        """
+        Given a file path, verify that the file exists on disk
+
+        @param file_path: Path to file to check
+        @param fail_if_not_valid: Whether to consider an invalid path a failure or not
+        @note fail_if_not_valid is useful when checking a file that is not guaranteed to exist
+        """
         new_file_path = file_path
         if not os.path.isfile(file_path):
             if fail_if_not_valid:
                 new_file_path = None
-                log.error("Invalid file path: {}".format(file_path))
+                self.add_error("Invalid file path: {}".format(file_path))
             else:
-                log.warn("File does not exist - {}".format(file_path))
+                log.warning("File does not exist - {}".format(file_path))
         return new_file_path
 
-    def expand_directory(self, directory):
+    @staticmethod
+    def expand_directory(directory):
+        """
+        Given a directory path, expand the path with the user directory and variables, returning the expanded path
+        """
         new_directory = expand_path(directory)
         return new_directory
 
-    def validate_directory(self, directory):
+    @staticmethod
+    def validate_directory(directory):
+        """
+        Given a directory path, verify that the directory exists on disk
+        """
         new_directory = expand_path(directory)
         if not os.path.isdir(new_directory):
             new_directory = None
-            log.warn("Directory does not exist - {}".format(directory))
+            log.warning("Directory does not exist - {}".format(directory))
         return new_directory
 
     def validate_number(self, number):
+        """
+        Verify that a given value is numerical
+        """
         new_number = None
         try:
             new_number = float(number)
-        except Exception as e:
-            self.add_error("Number (float)", e)
-            self.parameterErrors += 1
+        except ValueError as exception:
+            self.add_error("Number (float)", exception)
         return new_number
 
     def validate_int(self, integer):
+        """
+        Verify that a given value is an integer
+        """
         new_integer = None
         try:
             new_integer = int(integer)
-        except Exception as e:
-            self.add_error("Integer", e)
-
+        except ValueError as exception:
+            self.add_error("Integer", exception)
         return new_integer
 
-    def validate_ip(self, ip):
+    def validate_ip(self, ip_address):
+        """
+        Verify that the given value is a valid IP string
+        """
         new_ip = None
         try:
             # Test that the IP is valid
-            socket.gethostbyname(ip)
-            new_ip = ip
-        except Exception as e:
-            self.add_error("IP", e)
+            socket.gethostbyname(ip_address)
+            new_ip = ip_address
+        except socket.error as exception:
+            self.add_error("IP", exception)
+
         return new_ip
 
     def validate_boolean(self, value):
+        """
+        Verify that the given value is a valid boolean
+        """
         new_value = None
-        if type(value) is bool:
+        if isinstance(value, bool):
             new_value = value
         else:
             self.add_error("Boolean")

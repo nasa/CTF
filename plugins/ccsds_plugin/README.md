@@ -11,28 +11,28 @@ The CCSDS Plugin provides three header implementations: `ccsds_v1`, `ccsds_v2`, 
 
 ### ValidateCfsCcsdsData
 Validates the format of CFS data types by sending one of each known command with an empty (all zeroes) payload.
-- **name:** (string) The name of a registered CFS instance. See [CFS Plugin](../cfs/README.md) for registering instances.
+- **target:** (string) The name of a registered CFS target. See [CFS Plugin](../cfs/README.md) for registering targets.
 
 Example:
 ```javascript
 {
     "command": "RegisterCfs",
     "data": {
-        "name": "cfs_workstation"
+        "target": "cfs_workstation"
     },
     "wait": 1
 },
 {
     "command": "StartCfs",
     "data": {
-        "name": "cfs_workstation"
+        "target": "cfs_workstation"
     },
     "wait": 1
 },
 {
     "command": "ValidateCfsCcsdsData",
     "data": {
-        "name": "cfs_workstation"
+        "target": "cfs_workstation"
     },
     "wait": 1
 }

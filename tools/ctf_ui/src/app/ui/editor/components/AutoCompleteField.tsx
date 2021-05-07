@@ -1,7 +1,7 @@
 /*
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2020 United States Government as represented by the
+# Copyright (c) 2019-2021 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -82,7 +82,7 @@ export class AutoCompleteField extends React.Component<FieldProps, FieldState> {
                 className={this.state.className}
                 style={Object.assign({ marginBottom: 6 }, this.state.style)}
                 size={"small"}
-                autoFocus={false}
+                autoFocus={true}
                 defaultActiveFirstOption={true}
                 filterOption={(inputValue, option) => {
                     return (
@@ -102,8 +102,8 @@ export class AutoCompleteField extends React.Component<FieldProps, FieldState> {
                     if (this.state.onChange) this.state.onChange(value);
                 }}
             >
-                <Input 
-                    addonBefore={this.state.title} 
+                <Input
+                    addonBefore={this.state.title}
                     suffix={this.valueIsInOptions(this.state.defaultValue) ? <Icon type="check-circle" style={{ color: 'forestgreen' }}/> : undefined}
                     />
             </AutoComplete>

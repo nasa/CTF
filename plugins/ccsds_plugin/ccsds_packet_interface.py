@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2020 United States Government as represented by the
+# Copyright (c) 2019-2021 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -24,44 +24,75 @@ import os
 import sys
 from collections import namedtuple
 
-from lib.Global import Config, expand_path
+from lib.ctf_global import Global
 from lib.logger import logger as log
+from lib.exceptions import CtfTestError
+from lib.ctf_utility import expand_path
 
 CcsdsHeaderTypes = namedtuple('CcsdsHeaderTypes', 'CcsdsPrimaryHeader CcsdsCommand CcsdsTelemetry')
 
 
 class CcsdsVer(enum.IntEnum):
+    """
+    This class enumerates CCSDS versions as integer values
+    """
     Ccsds_ver_1 = 1
     Ccsds_ver_2 = 2
     Ccsds_ver_GW = 3
 
 
 class CcsdsPacketType(enum.IntEnum):
+    """
+    This class enumerates CCSDS packet types as integer values
+    """
     CommandPacket = 1
     TelemetryPacket = 0
 
 
 class CcsdsPacketInterface(ctypes.BigEndianStructure):
+    """
+    This class provides a common interface for CCSDS packets to get and set values in the headers
+    without knowing where they are defined
+
+    @note - Classes implementing interface for specific CCSDS packets should inherit from this type
+    and override all methods.
+    """
+
     def get_msg_id(self) -> int:
+        """Convenience method to get the message ID from the packet"""
         raise NotImplementedError
 
     def set_msg_id(self, msg_id: int) -> None:
+        """
+        Convenience method to set the message ID on the packet
+
+        @param msg_id: The message ID value
+        """
         raise NotImplementedError
 
     def has_secondary_header(self) -> bool:
         """Convenience method to check for the presence of a secondary header"""
         raise NotImplementedError
 
-    # Convenience methods to get values without knowing where they are found
     def get_function_code(self) -> int:
+        """Convenience method to get the function code from the packet"""
         raise NotImplementedError
 
     def set_function_code(self, function_code: int) -> None:
+        """
+        Convenience method to set the function code on the packet
+
+        @param function_code: The function code value
+        """
         raise NotImplementedError
 
 
 def import_ccsds_header_types():
-    headers_path = expand_path(Config.get("ccsds", "CCSDS_header_path"))
+    """
+    Dynamically imports the appropriate CCSDS primary header, command, and telemetry types from the location given
+    in the config value 'CCSDS_header_path' and if found, returns them in a tuple.
+    """
+    headers_path = expand_path(Global.config.get("ccsds", "CCSDS_header_path"))
     if not os.path.exists(headers_path):
         log.error("ccsds:CCSDS_header_path is not a valid path: {}".format(headers_path))
         return None
@@ -70,9 +101,9 @@ def import_ccsds_header_types():
     sys.path.append(os.path.dirname(headers_path))
     try:
         headers_module = importlib.import_module(os.path.basename(headers_path).replace(".py", ""))
-    except Exception as e:
-        log.error("Unable to import module {}".format(headers_path), e)
-        return None
+    except Exception as exception:
+        log.error("Unable to import module {}".format(headers_path))
+        raise CtfTestError("Error in import_ccsds_header_types") from exception
 
     if not hasattr(headers_module, "CcsdsPrimaryHeader"):
         log.error("No definition for CcsdsPrimaryHeader found in {}".format(headers_path))

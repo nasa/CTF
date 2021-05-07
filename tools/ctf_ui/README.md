@@ -1,4 +1,4 @@
-# CTF UI <!-- omit in toc -->
+# CTF UI
 An Electron/React/Typescript editor/runner for CTF test scripts.
 
 ## Table of Contents <!-- omit in toc -->
@@ -45,7 +45,7 @@ npm run serve
 
 ## User's Guide
 
-Refer the the following [Wiki Page](https://js-er-code.jsc.nasa.gov/aes/ctf_ui/wikis/user-guide) for a tutorial on how to use the editor.
+Refer the the following [Wiki Page](../../docs/ctf_editor/usage_guide.md) for a tutorial on how to use the editor.
 
 ## Design Overview
 The architecture of the GUI is based around a few key principles.

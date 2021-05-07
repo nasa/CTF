@@ -1,6 +1,11 @@
+"""
+@namespace lib.time_interface
+Interface definition for time managers to implement
+"""
+
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2020 United States Government as represented by the
+# Copyright (c) 2019-2021 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -15,20 +20,52 @@
 
 import time
 
-class TimeInterface(object):
+
+class TimeInterface:
+    """
+    Virtual class definition for custom plugins to implement their own time managers.
+
+    @note A custom plugin must set the global time manager used by CTF using Global.set_time_manager(time_manager)
+    """
     def __init__(self):
+        ## Execution time since the time manager was initialized
         self.exec_time = 0
+
+        ## Execution time when the last instruction was completed
         self.last_command_completion_time = 0
+
+        ## How much time has passed since the last instruction was completed.
         self.time_since_last_command = 0
 
-    def wait_seconds(self, seconds):
+    @staticmethod
+    def wait_seconds(seconds):
+        """
+        Helper utility to wait in seconds (OS Time)
+        """
         time.sleep(seconds)
 
     def wait(self, seconds):
-        pass
+        """
+        Virtual method to wait an amount of time.
 
-    def pre_command(self):
-        pass
+        @note - May include special logic to interface with external time sources
+        """
+        raise NotImplementedError()
 
-    def post_command(self):
-        pass
+    @staticmethod
+    def pre_command():
+        """
+        Optional implementation of logic to be executed *before* a CTF instruction is invoked.
+
+        @note - This is useful when pausing/resuming of frames on an external time source is needed.
+        """
+        return
+
+    @staticmethod
+    def post_command():
+        """
+        Optional implementation of logic to be executed *after* a CTF instruction is invoked.
+
+        @note - This is useful when pausing/resuming of frames on an external time source is needed.
+        """
+        return

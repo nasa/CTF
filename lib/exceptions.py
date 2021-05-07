@@ -1,6 +1,11 @@
+"""
+@namespace lib.exceptions
+Exception definitions for CTF
+"""
+
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2020 United States Government as represented by the
+# Copyright (c) 2019-2021 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -11,19 +16,33 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
+import traceback
+
+from lib.logger import logger as log
 
 
 class CtfTestError(Exception):
-    pass
+    """
+    General top-level exception that is thrown when a CTF Test Error occurs during a test run.
+    """
+    def __init__(self, message):
+        super().__init__(message)
+        log.debug(traceback.format_exc())
 
 
 class CtfConditionError(CtfTestError):
+    """
+    CTF Condition Error thrown when a CTF Instruction Condition is not met during test run.
+    """
     def __init__(self, message, test_condition):
         super().__init__(message)
         self.condition = test_condition
 
 
 class CtfParameterError(CtfTestError):
+    """
+    CTF Parameter Error thrown when a CTF Instruction Parameter is invalid.
+    """
     def __init__(self, message, parameter):
         super().__init__(message)
         self.parameter = parameter

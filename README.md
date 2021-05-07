@@ -14,6 +14,7 @@
          * [Developing New Test Scripts](#developing-new-test-scripts)
       * [Developing or Extending CTF Plugins](#developing-or-extending-ctf-plugins)
       * [Updating CTF](#updating-ctf)
+      * [CTF Validation Tools](#ctf-validation-tools)
       * [Release Notes](#release-notes)
       * [License](#license)
 
@@ -43,7 +44,7 @@ There are two methods to install dependencies.
 
 The `setup_ctf_env.sh` script will setup an Anaconda 3 environment, which contains Python3, along with the python components identified in `requirements.txt` along with NodeJS/NPM.
 
-To set up the CTF environment execute `source setup_ctf_env.sh`. Note: this may take several minutes depending on your network connection.
+To set up the CTF environment execute `source setup_ctf_env.sh`. Note: this may take several minutes depending on your network connection, and will consume about 5Gb of disk space for Anaconda 3 and NPM dependencies.
 
 After the initial setup to activate the ctf environment execute `source activate_ctf_env.sh`.
 
@@ -55,7 +56,10 @@ Install Python3 (on CentOS run `sudo yum install python3-devel python3 python3-p
 
 Install NodeJS/NPM, visit https://nodejs.org/en/ and install Node version >= 10.12.0 (tested with v12.5.0). NPM will be included in the installation.
 
+With NPM installed, the editor and its dependencies can be installed with `cd tools/ctf_ui && npm install`. Note: this may take several minutes depending on your network connection, and will consume about 0.5Gb of disk space.
+
 With Python 3 installed, PIP dependencies can be installed using `pip install -r requirements.txt`. Note: ensure that dependencies are installed to a PIP venv in order to easily update/reinstall packages, or install using  `--user` in the above pip command.
+
 
 #### CTF Prerequisites: Other applications needed
 
@@ -238,7 +242,7 @@ It is recommended to start with simple tests that start/stop cFS to verify that 
 
 ### Developing New Test Scripts
 
-The CTF tool provides a [CTF Editor](tools/ctf_ui) to assist in the creation, modification, and running of scripts. Currently, the editor can be obtained from the repository above. Please refer to the [CTF Editor User's Guide](docs/ctf_editor/usage_guide.md) for information on how to run and use the editor.
+The CTF tool provides a [CTF Editor](tools/ctf_ui/README.md) to assist in the creation, modification, and running of scripts. Currently, the editor can be obtained from the repository above. Please refer to the [CTF Editor User's Guide](docs/ctf_editor/usage_guide.md) for information on how to run and use the editor.
 
 
 Refer to the following [guide](docs/ctf/ctf_json_test_script_guide.md) for information on the JSON input script file description. This is useful when scripts are to be written manually without the aid of the editor.
@@ -249,6 +253,7 @@ Plugin READMEs include documentation of their own instructions and configuration
 * [CFS Plugin](plugins/cfs/README.md)
 * [Example Plugin](plugins/example_plugin/README.md)
 * [SSH Plugin](plugins/ssh/README.md)
+* [UserIO Plugin](plugins/userio_plugin/README.md)
 
 ## Developing or Extending CTF Plugins
 
@@ -259,6 +264,8 @@ Refer to the [plugin guide](docs/ctf/ctf_plugin_guide.md) for information on cre
 CTF versions can be checked out by running `git checkout <version_tag>`. This updates the CTF submodule/repository to the selected version.
 
 In addition, the configuration (and test script) files may need to be updated with new configuration fields, or test script additions/changes.
+
+It is also recommended to [rerun setup](#ctf-prerequisites) after updating CTF to ensure that you have all of the latest dependencies.
 
 The sections below describe the changes needed to quickly update to a specific version. Note that the release notes contain a more complete set of changes.
 
@@ -330,7 +337,71 @@ CTF v1.0 introduces major additions to the configuration file, as well as change
                 ```
     * Refer to the `sample_cfs_workspace/ccdd/json` for reference (after extracting the workspace from `external/`)
 
+## CTF Validation Tools
+
+#### Pylint Static Code Analysis.
+"Pylint is a tool that checks for errors in Python code, tries to enforce a coding standard and looks for code smells.
+ It can also look for certain type errors, it can recommend suggestions about how particular blocks can be refactored
+ and can offer you details about the code's complexity." - From Pylint User Manual
+
+To run CTF static code analysis, enter the following commands (ensure the CTF environment is activated).
+
+```
+cd ~/sample_cfs_workspace/tools/ctf/
+source activate_ctf_env.sh
+cd ../
+pylint --rcfile=./ctf/.pylintrc ./ctf
+```
+
+#### CTF Unit Test.
+Pytest is one of the widely used open-source python testing frameworks. It supports unit testing, functional testing 
+and API testing as well. The CTF unit test files are organized under the `tests` folder. Each plugin has its own unit tests, 
+which are symbolically linked under the `tests/plugins` folder.
+ 
+To run CTF unit tests, enter the following commands (ensure the CTF environment is activated).
+
+```
+cd ~/sample_cfs_workspace/tools/ctf/
+source activate_ctf_env.sh
+pytest -v ./tests/ --cov-config=.ctf_coveragerc --cov=plugins --cov=lib --cov-report=html
+```
+Upon completion, a summary will be printed to the console and the CTF unit test coverage report can be found in `UnitTests_Coverage/index.html`.
+
 ## Release Notes
+### v1.2
+05/06/2021
+
+* CTF Core Changes
+    * Minor improvements and bug fixes.
+
+* CFS Plugin Changes
+    * Update SP0 Protocol and FTP Interface with changes from GSFC functional testing.
+    
+    * Fix the use of CCDD macros in test scripts.
+    
+    * Improve argument type checking in `SendCfsCommand` instruction.
+    
+    * Improve validation of the SP0 and Remote CFS configs. `RegisterCfs` will fail if any errors are found.
+    
+    * Change `ValidateCcsdsData` parameter from `name` to `target` to match CFS instructions. 
+   
+    * Minor improvements and bug fixes.
+    
+* CTF Editor Changes
+    * Fix the bug of deleting arguments for `CheckTlmValue` and `CheckTlmContinuous` instructions. 
+      
+    * Minor improvements and bug fixes.
+    
+* CTF Documentation and Tool Changes
+    * Add pylint static code analysis.
+    
+    * Add pytest unit tests for plugins and library source files.
+    
+    * Update open source file header.
+    
+    * Split CI pipeline into two stages.
+             
+        
 ### v1.1
 12/18/2020
 
@@ -604,7 +675,7 @@ Major backend updates to improve reliability/maintainability of CTF.
 
 MSC-26646-1, "Core Flight System Test Framework (CTF)"
 
-Copyright (c) 2019-2020 United States Government as represented by the
+Copyright (c) 2019-2021 United States Government as represented by the
 Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 
 This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,

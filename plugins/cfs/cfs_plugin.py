@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2020 United States Government as represented by the
+# Copyright (c) 2019-2021 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -23,34 +23,45 @@ cfs_plugin.py: CFS Plugin Implementation for CTF.
   (once or continuous) functionality.
 """
 
-# TODO - Potentially support multiple names for the cfs instructions.
+# ENHANCE - Potentially support multiple names for the cfs instructions.
 #               Currently it is either a single target, or all
 
 import json
+from copy import deepcopy
 
-from lib.Global import Global, Config, CtfVerificationStage
+from lib.ctf_global import Global, CtfVerificationStage
+from lib.exceptions import CtfTestError
 from lib.logger import logger as log
 from lib.plugin_manager import Plugin, ArgTypes
 from plugins.cfs.cfs_time_manager import CfsTimeManager
 from plugins.cfs.pycfs.cfs_controllers import CfsController, RemoteCfsController
 from plugins.cfs.cfs_config import CfsConfig, RemoteCfsConfig, SP0CfsConfig
+
 try:
     from plugins.cfs.pycfs.cfs_controllers import SP0CfsController
 except ImportError:
     SP0CfsController = None
 
-from copy import deepcopy
-
 
 class CfsPlugin(Plugin):
+    """
+    The CFS Plugin provides CFS command/telemetry support for CTF.
 
+     @note The CFS plugin draws many default values from the CTF config file.
+            The section [cfs] defines defaults for all CFS targets and is always required.
+
+     @note If multiple CFS targets are to be registered, for each target name,
+            the plugin will load values from a correspondingly named section.
+
+     @note If no targets are explicitly registered by name by the time StartCfs is first executed,
+           the plugin will automatically configure targets for each config section beginning with cfs_.
+           If no such sections are found, the plugin will configure a single target using the [cfs] config section.
+           If the cfs_protocol field is not found in the cfs section, a local target will be registered.
+
+     @note The precedence of values is first the named config section, if any, and then the [cfs] config section.
+           A target cannot be registered, explicitly nor automatically, without a correspondingly named config section.
+    """
     FALLBACK_TARGET_NAME = 'cfs'
-    protocols = {
-        "local": (CfsConfig, CfsController),
-        "ssh": (RemoteCfsConfig, RemoteCfsController)
-    }
-    if SP0CfsController:
-        protocols["sp0"] = (SP0CfsConfig, SP0CfsController)
 
     def __init__(self):
         """Constructor for CfsPlugin.
@@ -63,7 +74,14 @@ class CfsPlugin(Plugin):
         self.targets = {}
         self.has_attempted_register = False
 
-        # TODO - instruction parameters are duplicated here and in function signatures
+        self.protocols = {
+            "local": (CfsConfig, CfsController),
+            "ssh": (RemoteCfsConfig, RemoteCfsController)
+        }
+        if SP0CfsController:
+            self.protocols["sp0"] = (SP0CfsConfig, SP0CfsController)
+
+        # ENHANCE - instruction parameters are duplicated here and in function signatures
         # See the CFS Plugin README for full documentation of the test instructions
         self.command_map = {
             # RegisterCfs: Declares a CFS target to be loaded according to the config file section of the same name
@@ -127,7 +145,8 @@ class CfsPlugin(Plugin):
             # - target: (Optional) A previously registered target name, or empty for all registered targets
             "CheckEvent":
                 (self.check_event,
-                 [ArgTypes.string, ArgTypes.string, ArgTypes.string, ArgTypes.boolean, ArgTypes.cmd_arg, ArgTypes.string]),
+                 [ArgTypes.string, ArgTypes.string, ArgTypes.string, ArgTypes.boolean, ArgTypes.cmd_arg,
+                  ArgTypes.string]),
             # CheckNoEvent: Checks that an event message matching the given parameters is not received
             # user needs to ensure the previous messages are cleared from buffer before calling CheckNoEvent instruction
             # - app: The app that sent the event message
@@ -154,7 +173,7 @@ class CfsPlugin(Plugin):
         }
 
         self.verify_required_commands = ["CheckTlmValue", "CheckEvent", "CheckNoEvent"]
-        # TODO - Utilize the commands below in the time manager, so that continuous instructions can be
+        # ENHANCE - Utilize the commands below in the time manager, so that continuous instructions can be
         #              implemented here, and utilized by the time manager.
         self.continuous_commands = ["CheckTlmContinuous"]
 
@@ -164,7 +183,7 @@ class CfsPlugin(Plugin):
         """Initializes the plugin by creating the CfsTimeManager.
         This method is intended to be called by the plugin manager before the test script runs.
         """
-        # TODO - May want to have a single CTF time manager, that allows adding and removal
+        # ENHANCE - May want to have a single CTF time manager, that allows adding and removal
         #              of pre/post-command callbacks.
         #              When re-adding Trick CFS, the Trick cfs_time_manager should be the only time manager
         #              used. There is a potential that the cfs_time_manager is used instead. Need to figure out
@@ -186,17 +205,18 @@ class CfsPlugin(Plugin):
         if target == "":
             return self.load_configured_targets(target)
 
+        # ENHANCE - Allow clean disconnect and reinit of registered targets consistent with SP0 behavior
         if target in self.targets:
             log.error("CFS target {} is already registered".format(target))
             return False
 
         if target == self.FALLBACK_TARGET_NAME:
-            cfs_protocol = Config.get(target, "cfs_protocol", fallback="local")
-        elif target not in Config.sections():
+            cfs_protocol = Global.config.get(target, "cfs_protocol", fallback="local")
+        elif target not in Global.config.sections():
             log.error("No CFS configuration defined in config file for {}.".format(target))
             return False
         else:
-            cfs_protocol = Config.get(target, "cfs_protocol", fallback=None)
+            cfs_protocol = Global.config.get(target, "cfs_protocol", fallback=None)
 
         if not cfs_protocol or cfs_protocol.lower() not in self.protocols:
             log.error("Missing or invalid protocol for CFS target {}".format(target))
@@ -225,9 +245,10 @@ class CfsPlugin(Plugin):
         as a local target using the values of the [cfs] section."""
         log.debug("CfsPlugin.load_configured_targets")
 
-        target_instances = [target] if target else [section for section in Config.sections() if section.startswith("cfs_")]
+        target_instances = [target] if target else \
+            [section for section in Global.config.sections() if section.startswith("cfs_")]
 
-        if not len(target_instances):
+        if not target_instances:
             log.info("No CFS targets found in config file. Registering default local target.")
             return self.register_cfs(self.FALLBACK_TARGET_NAME)
 
@@ -297,13 +318,15 @@ class CfsPlugin(Plugin):
         """Implements the instruction SendCfsCommand
         ctype_args is a flag to zero out the message structure for internal validation,
         and is not intended to be used by test instructions."""
+        # pylint: disable=invalid-name
         if not ctype_args:
             log.debug("SendCfsCommand - Target: {}, MID: {}, CC: {}, Args: {}, Set Length: {}, CType Args: {}"
                       .format(target, mid, cc, json.dumps(args), payload_length, ctype_args))
 
         # Collect the results of send_cfs_command on each specified target, and check that all passed
         # Make a copy of arguments since send_cfs_command may change arguments structure
-        status = [t.send_cfs_command(mid, cc, deepcopy(args), payload_length, ctype_args) for t in self.get_cfs_targets(target)]
+        status = [t.send_cfs_command(mid, cc, deepcopy(args), payload_length, ctype_args)
+                  for t in self.get_cfs_targets(target)]
 
         return all(status) if status else False
 
@@ -337,6 +360,7 @@ class CfsPlugin(Plugin):
                     msg_args: str = None, target: str = None) -> bool:
         """Implements the instruction CheckEvent.
         'id' shadows the built-in function target but is kept because it exists in legacy test scripts."""
+        # pylint: disable=invalid-name,redefined-builtin
         log.info("CheckEvent for target - {}, APP {}, ID {}, MSG {}, Msg Args {}"
                  .format(target, app, id, msg, json.dumps(msg_args)))
 
@@ -345,27 +369,26 @@ class CfsPlugin(Plugin):
         return all(status) if status else False
 
     def check_noevent(self, app: str, id: str, msg: str, is_regex: bool = False,
-                    msg_args: str = None, target: str = None) -> bool:
+                      msg_args: str = None, target: str = None) -> bool:
         """Implements the instruction CheckNoEvent.
         'id' shadows the built-in function target but is kept because it exists in legacy test scripts."""
+        # pylint: disable=invalid-name,redefined-builtin
         log.info("CheckNoEvent for target - {}, APP {}, ID {}, MSG {}, Msg Args {}"
                  .format(target, app, id, msg, json.dumps(msg_args)))
 
         # Collect the results of check_event on each specified target, and check that all passed
         status = [t.check_event(app, id, msg, is_regex, msg_args) for t in self.get_cfs_targets(target)]
-
+        returners = False
         if any(status):
             log.info("CheckNoEvent found the event with status = {} !".format(status))
-            return False
         else:
-        # Check_noevent is to verify No event happens during the CtfVerificationStage.
-        # This function will be called a few times by test.py, it only returns True at the end of verification stage
+            # Check_noevent is to verify No event happens during the CtfVerificationStage.
+            # This function will be called a few times by test.py, it only returns True at the end of verification stage
             if Global.current_verification_stage == CtfVerificationStage.last_ver:
                 log.info("CheckNoEvent did not find event")
-                return True
-            else:
-                return False
+                returners = True
 
+        return returners
 
     def shutdown_cfs(self, target: str = None) -> bool:
         """Implements the instruction ShutdownCfs.
@@ -384,7 +407,14 @@ class CfsPlugin(Plugin):
         log.info("ArchiveCfsFiles for target: {}, Source Path: {}".format(target, source_path))
 
         # Collect the results of archive_cfs_files on each specified target, and check that all passed
-        status = [t.archive_cfs_files(source_path) for t in self.get_cfs_targets(target)]
+        status = []
+        for cfs_target in self.get_cfs_targets(target):
+            try:
+                status.append(cfs_target.archive_cfs_files(source_path))
+            except CtfTestError:
+                status.append(False)
+                log.error("Error: ArchiveCfsFiles for target {}, Source Path: {}".format(cfs_target, source_path))
+
         return all(status) if status else False
 
     def shutdown(self) -> None:

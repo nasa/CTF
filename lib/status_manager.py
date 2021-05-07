@@ -1,6 +1,10 @@
+"""
+@namespace lib.status_manager
+Publishes CTF status messages over a UDP socket (utilized by the CTF editor)
+"""
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2020 United States Government as represented by the
+# Copyright (c) 2019-2021 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -11,36 +15,52 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
-
-
-from lib.status import *
-from lib.logger import logger as log
-
+import traceback
 from copy import deepcopy
-
 import socket
 import json
 import time
 
+from lib.status import StatusDefs, SuiteStatus, ScriptStatus, TestStatus, InstructionStatus
+from lib.logger import logger as log
 
-class StatusManager():
-    def __init__(self, ip="127.0.0.1", port=None):
+
+class StatusManager:
+    """
+    The StatusManager class established a status stream with the current test suite status. The status packets are sent
+    over a UDP socket over the specified port. Clients listening on that port will receive periodic CTF status messages
+    during test execution
+
+    @param ip_address: IP of the external listener to connect to
+    @param: port: Port used by the external listener to receive status messages
+    """
+    def __init__(self, ip_address="127.0.0.1", port=None):
         self.status = self.blank_status_msg(list())
         self.script_index = 0
         self.test_index = 0
         self.command_index = 0
-        self.ip = ip
+        self.ip_address = ip_address
         self.port = port
         self.socket = None
         self.start_time = None
 
     def set_start_time(self):
+        """
+        Set the start time of test suite execution in the status message.
+        """
         self.start_time = time.time()
 
     def set_scripts(self, scripts):
+        """
+        Set the script status entry for each script with default values
+        """
         self.status = self.blank_status_msg(scripts)
 
-    def blank_status_msg(self, scripts):
+    @staticmethod
+    def blank_status_msg(scripts):
+        """
+        Get a blank status message that contains status objects for each script loaded by CTF
+        """
         status = deepcopy(SuiteStatus)
         for script in scripts:
             script_status = deepcopy(ScriptStatus)
@@ -54,25 +74,28 @@ class StatusManager():
                 test_status["status"] = StatusDefs.waiting
                 test_status["details"] = ""
                 test_status["description"] = test.test_info.get("description", "")
-                for c in test.event_list:
+                for command_obj in test.event_list:
                     command_status = deepcopy(InstructionStatus)
-                    command_status["instruction"] = c.command["instruction"]
-                    if ("wait" in c.command.keys()):
-                        command_status["wait"] = c.command["wait"]
+                    command_status["instruction"] = command_obj.command["instruction"]
+                    if "wait" in command_obj.command.keys():
+                        command_status["wait"] = command_obj.command["wait"]
                     else:
                         command_status["wait"] = 0
                     # command_status["data"] = self.sanitize_data(c.command.get("data")) or {}
-                    command_status["data"] = c.command.get("data")
+                    command_status["data"] = command_obj.command.get("data")
 
                     command_status["status"] = StatusDefs.waiting
                     command_status["details"] = ""
-                    command_status["description"] = c.command.get("description", "")
+                    command_status["description"] = command_obj.command.get("description", "")
                     test_status["instructions"].append(command_status)
                 script_status["tests"].append(test_status)
             status["scripts"].append(script_status)
         return status
 
     def update_suite_status(self, status, details):
+        """
+        Given an updated status (and details), update the suite status with the latest state.
+        """
         status = self.sanitize_param(status)
         details = self.sanitize_param(details)
 
@@ -81,12 +104,18 @@ class StatusManager():
         self.send_update()
 
     def finalize_suite_status(self):
+        """
+        Set the test suit status (pass/fail) based on the status of all scripts within the suite.
+        """
         suite_passed = True
         for i in self.status["scripts"]:
             suite_passed &= i["status"] == StatusDefs.passed
         self.status["status"] = StatusDefs.passed if suite_passed else StatusDefs.failed
 
     def update_script_status(self, status, details):
+        """
+        Update the status of a single script within the test suite.
+        """
         status = self.sanitize_param(status)
         details = self.sanitize_param(details)
 
@@ -95,6 +124,9 @@ class StatusManager():
         self.send_update()
 
     def update_test_status(self, status, details):
+        """
+        Update the status of a single script within the test suite.
+        """
         status = self.sanitize_param(status)
         details = self.sanitize_param(details)
 
@@ -102,8 +134,11 @@ class StatusManager():
         self.status["scripts"][self.script_index]["tests"][self.test_index]["details"] = details
         self.send_update()
 
-    def update_command_status(self, status, details, index = None):
-        if (index == None):
+    def update_command_status(self, status, details, index=None):
+        """
+        Update the status of a single command within a test script.
+        """
+        if index is None:
             index = self.command_index
 
         status = self.sanitize_param(status)
@@ -116,23 +151,41 @@ class StatusManager():
         self.send_update()
 
     def end_command(self):
+        """
+        Increment the current active command index.
+        """
         self.command_index += 1
 
     def end_test(self):
+        """
+        Increment the current active test case index. Reset the command index to 0.
+        """
         self.command_index = 0
         self.test_index += 1
 
     def end_script(self):
+        """
+        Increment the current active script. Reset the test and command indices to 0.
+        """
+
         self.command_index = 0
         self.test_index = 0
         self.script_index += 1
 
-    def sanitize_param(self, param):
+    @staticmethod
+    def sanitize_param(param):
+        """
+        Sanitize a test instruction parameter by attempting to decode it if needed
+        """
         if not isinstance(param, str):
             param = param.decode()
         return param
 
-    def sanitize_data(self, data):
+    @staticmethod
+    def sanitize_data(data):
+        """
+        Sanitize test instruction data by attempting to decode every field if needed
+        """
         if isinstance(data, dict):
             args = data.get("args")
         else:
@@ -140,25 +193,28 @@ class StatusManager():
 
         if args is not None:
             try:
-                for index, arg in enumerate(args):
+                for args_index, arg in enumerate(args):
                     if isinstance(arg, dict):
-                        for key in arg:
-                            value = arg[key]
+                        for arg_key in arg:
+                            value = arg[arg_key]
                             if isinstance(value, bytes):
-                                args[key] = value.decode()
+                                arg[arg_key] = value.decode()
                     else:
                         if isinstance(arg, bytes):
-                            args[index] = arg.decode()
+                            args[args_index] = arg.decode()
                 return args
-            except Exception as e:
-                log.error("Cannot decode arguments. Ensure command arguemnts are formatted as follows\n"
+            except (TypeError, UnicodeDecodeError) as exception:
+                log.error("Cannot decode arguments. Ensure command arguments are formatted as follows\n"
                           "[1, 2, 3] or \n"
                           "[{'arg1': 1, 'arg2': 2, 'arg3': 3}]")
-                log.debug(e)
+                log.debug(exception)
                 return None
         return None
 
     def sanitize_status(self):
+        """
+        Sanitize test script data by attempting to decode every field at the test script level if needed
+        """
         status = self.status
         for script_index, script in enumerate(self.status["scripts"]):
             for test_index, test in enumerate(script["tests"]):
@@ -171,22 +227,33 @@ class StatusManager():
         return status
 
     def send_update(self):
+        """
+        Send the latest status packet over the UDP socket.
+
+
+        @note - If the UDP socket encounters an error for any reason, the current status packet is not sent, and the
+                socket is re-initialized at the next attempt to send an update
+        """
         # Initialize connection if the first time sending an update
-        if (self.socket is None and self.port != None):
+        if self.socket is None and self.port is not None:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             try:
-                self.socket.connect((self.ip, self.port))
-            except socket.error as e:
-                log.error("Status Manager cannot connect to server {}:{}. Disabling status updates...".format(self.ip, self.port))
+                self.socket.connect((self.ip_address, self.port))
+            except socket.error as exception:
+                log.error(exception)
+                log.error("Status Manager cannot connect to server {}:{}. Disabling status updates..."
+                          .format(self.ip_address, self.port))
+                log.debug(traceback.format_exc())
                 self.port = None
 
-        # If socket is connect, send status messages
+        # If socket is connected, send status messages
         self.status["elapsed_time"] = time.time() - self.start_time
         if self.port is not None:
             self.status = self.sanitize_status()
             try:
                 data = json.dumps(self.status, sort_keys=False, separators=(",", ":"), ensure_ascii=False)
                 self.socket.sendall(data.encode())
-            except socket.error as e:
-                log.error("Status Manager cannot send status to {}:{}. Disabling status updates. Error: {}".format(self.ip, self.port, e))
+            except socket.error as exception:
+                log.error("Status Manager cannot send status to {}:{}. Disabling status updates. Error: {}"
+                          .format(self.ip_address, self.port, exception))
                 self.port = None

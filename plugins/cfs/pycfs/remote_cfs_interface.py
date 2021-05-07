@@ -1,3 +1,17 @@
+# MSC-26646-1, "Core Flight System Test Framework (CTF)"
+#
+# Copyright (c) 2019-2021 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
+#
+# This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
+# distributed and modified only pursuant to the terms of that agreement.
+# See the License for the specific language governing permissions and limitations under the
+# License at https://software.nasa.gov/ .
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the
+# License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either expressed or implied.
+
 """
 remote_cfs_interface.py: Lower-level interface to communicate with cFS remotely over SSH.
 
@@ -5,18 +19,31 @@ remote_cfs_interface.py: Lower-level interface to communicate with cFS remotely 
 """
 import os
 
-from lib.Global import Global
+from lib.ctf_global import Global
 from lib.logger import logger as log
 from plugins.cfs.pycfs.local_cfs_interface import LocalCfsInterface
 
 
 class RemoteCfsInterface(LocalCfsInterface):
+    """
+    RemoteCfsInterface implements lower-level interface to communicate with cFS remotely over SSH.
+    Inherits Cfs Interface - extends some of it's functionality specifically for SSH.
+    """
 
     def __init__(self, config, telemetry, command, mid_map, ccsds, execution):
+        """
+        Constructor implementation for RemoteCfsInterface.
+        Pass arguments to base class.
+        """
         self.execution_controller = execution
         super().__init__(config, telemetry, command, mid_map, ccsds)
 
     def get_start_string(self, run_args):
+        """
+        Build the start string for starting cFS instance.
+        @param run_args: run_args is used to build start string
+        @return string: command to start cFS instance, including remote cFS path.
+        """
         target = self.config.cfs_run_cmd
 
         if len(run_args) > 0:
@@ -31,6 +58,12 @@ class RemoteCfsInterface(LocalCfsInterface):
         return start_string
 
     def start_cfs(self, run_args):
+        """
+         Start the remote cfs instance process.
+         @param run_args: run_args is used to build the start_string.
+         @return dictionary: the return result_values is a dictionary, including 'results': True if cfs instance
+                 starts successfully, otherwise False;  and 'pid': the pid of cfs instance process.
+         """
         start_string = self.get_start_string(run_args)
         return_values = {
             "result": None,
@@ -50,6 +83,11 @@ class RemoteCfsInterface(LocalCfsInterface):
         return return_values
 
     def build_cfs(self):
+        """
+        Build remote cfs image. The path of cFS source is configured in config init file.
+        The build output folder is also configured in init file.
+        @return bool: True if build succeed, otherwise False
+        """
         log.info("Building Remote CFS")
 
         build_out_file = os.path.join("/tmp", "{}_build_cfs_output.txt".format(self.config.name))
@@ -62,7 +100,7 @@ class RemoteCfsInterface(LocalCfsInterface):
         stdout_final_path = os.path.join(Global.current_script_log_dir, os.path.basename(build_out_file))
         if not os.path.exists(stdout_final_path):
             if not self.execution_controller.get_file(build_out_file, stdout_final_path, {'delete': True}):
-                log.warn("Cannot move CFS build output file to script log directory.")
+                log.warning("Cannot move CFS build output file to script log directory.")
                 if self.execution_controller.last_result:
                     log.debug(self.execution_controller.last_result.stdout.strip())
 

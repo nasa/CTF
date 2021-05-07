@@ -1,4 +1,20 @@
+# MSC-26646-1, "Core Flight System Test Framework (CTF)"
+#
+# Copyright (c) 2019-2021 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
+#
+# This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
+# distributed and modified only pursuant to the terms of that agreement.
+# See the License for the specific language governing permissions and limitations under the
+# License at https://software.nasa.gov/ .
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the
+# License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either expressed or implied.
+
 """
+@namespace plugins.cfs.pycfs.local_cfs_interface
+
 local_cfs_interface.py: Lower-level interface to communicate with cFS locally (linux).
 
 - Inherits CFS Interface
@@ -15,22 +31,39 @@ from plugins.cfs.pycfs.cfs_interface import CfsInterface
 
 # external dependencies
 from lib.logger import logger as log
-from lib.Global import Global
+from lib.ctf_global import Global
+from lib.exceptions import CtfTestError
 
 
 class LocalCfsInterface(CfsInterface):
+    """
+    Lower-level interface to communicate with cFS locally (linux)
+    """
+
     def __init__(self, config, telemetry, command, mid_map, ccsds):
-        super(LocalCfsInterface, self).__init__(config, telemetry, command, mid_map, ccsds)
+        """
+        Constructor implementation for LocalCfsInterface Class.
+        if configured to build cfs, build cfs. otherwise set init_passed to True
+        """
+        super().__init__(config, telemetry, command, mid_map, ccsds)
 
         # Are we building a CFS application? If not than hardcode
         # self.init_passed to True so that the code can continue
         # otherwise call the build_cfs function
         if self.config.build_cfs is True:
-            self.init_passed = self.build_cfs()
+            try:
+                self.init_passed = self.build_cfs()
+            except CtfTestError:
+                self.init_passed = False
         else:
             self.init_passed = True
 
     def get_start_string(self, run_args):
+        """
+        Get the command string/path to start cfs (linux)
+        @param run_args: run_time argument to start cfs
+        @return String: full command string to start cfs
+        """
         target = self.config.cfs_run_cmd
         if len(run_args) > 0:
             target = target + " " + run_args
@@ -45,7 +78,7 @@ class LocalCfsInterface(CfsInterface):
         cfs_std_out_filename = "{}_{}".format(self.config.name, self.config.cfs_output_file)
         self.cfs_std_out_path = os.path.join(os.path.abspath(Global.current_script_log_dir), cfs_std_out_filename)
 
-        # TODO - Test use of debug when running embedded
+        # ENHANCE - Test use of debug when running embedded
         if not self.config.cfs_run_in_xterm or find_executable('xterm') is None:
             start_string = "./{} >> {} 2>&1".format(target, self.cfs_std_out_path)
             if self.config.cfs_run_in_xterm:
@@ -57,7 +90,11 @@ class LocalCfsInterface(CfsInterface):
         return start_string
 
     def build_cfs(self):
-        # Attempt to build CFS project from config build_cmd
+        """
+        Build cfs image. The path of cFS source is configured in config init file.
+        The build output folder is also configured in init file.
+        @return bool: True if build succeed, otherwise False
+        """
         build_success = True
         cwd = self.config.cfs_build_dir
         log.info("Building Mission FSW")
@@ -80,18 +117,21 @@ class LocalCfsInterface(CfsInterface):
                     build_success = False
                     return build_success
 
-        except Exception as e:
+        except Exception as exception:
             log.error("Exception Building CFS Project")
-            log.error(e)
-            build_success = False
-            return build_success
-
-        if not build_success:
-            log.error("Failed to Build CFS Project")
+            log.error(exception)
+            raise CtfTestError('Error from build_cfs') from exception
 
         return build_success
 
     def start_cfs(self, run_args):
+        """
+        Start the cfs instance process.
+        @param run_args: run_args is used to build the start_string.
+        @return dictionary: the return result_values is a dictionary, including 'results': True if cfs instance
+                starts successfully, otherwise False;  and 'pid': the pid of cfs instance process.
+        """
+
         start_string = self.get_start_string(run_args)
         # Did CFS startup and if so what is the pid?
         return_values = {
@@ -111,19 +151,14 @@ class LocalCfsInterface(CfsInterface):
         # Start CFS process
         try:
             cfs_process = Popen(start_string, cwd=self.config.cfs_run_dir,
-                                shell=True, universal_newlines=True, preexec_fn=os.setsid)
+                                shell=True, universal_newlines=True)
             return_values["pid"] = cfs_process.pid
 
-        except OSError:
-            log.error("OSError: Could not open file while attempting to execute command: {}".format(start_string))
-            return_values["result"] = False
-            return return_values
-
-        except Exception as e:
+        except Exception as exception:
             log.error("Error attempting to execute command: {}".format(start_string))
-            log.debug(e)
+            log.debug(exception)
             return_values["result"] = False
-            return return_values
+            raise CtfTestError("Error in start_cfs") from exception
 
         time.sleep(2)
 
@@ -137,5 +172,3 @@ class LocalCfsInterface(CfsInterface):
         return_values["result"] = True
 
         return return_values
-
-

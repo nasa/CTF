@@ -1,17 +1,32 @@
+# MSC-26646-1, "Core Flight System Test Framework (CTF)"
+#
+# Copyright (c) 2019-2021 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
+#
+# This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
+# distributed and modified only pursuant to the terms of that agreement.
+# See the License for the specific language governing permissions and limitations under the
+# License at https://software.nasa.gov/ .
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the
+# License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either expressed or implied.
+
 """
+@namespace plugins.cfs.pycfs.cfs_interface
 cfs_interface.py: Base-class Lower-level interface to communicate with cFS.
 """
-
+import importlib
 import os
 import re
-import sys
 import ctypes
 import socket
 import traceback
 from collections import namedtuple
+import functools
 
 # external dependencies
-from lib.Global import Global, CtfVerificationStage
+from lib.ctf_global import Global, CtfVerificationStage
 from lib.exceptions import CtfConditionError
 from lib.logger import logger as log
 
@@ -29,8 +44,15 @@ Packet = namedtuple('Packet', 'mid payload packetCount timestamp')
 TlmCondition = namedtuple('TlmCondition', 'mid args')
 
 
-class TelemetryVerification(object):
+class TelemetryVerification:
+    """
+    Telemetry Verification class
+    """
+
     def __init__(self, v_id, condition):
+        """
+        Constructor for TelemetryVerification class.  Assign attribute default values.
+        """
         self.verification_id = v_id
         self.condition = condition
         self.passed = False
@@ -38,9 +60,16 @@ class TelemetryVerification(object):
         self.fail_count = 0
 
 
-class CfsInterface(object):
+class CfsInterface:
+    """
+    CfsInterface: Base-class Lower-level interface to communicate with cFS.
+    """
 
     def __init__(self, config, telemetry, command, mid_map, ccsds):
+        """
+        Constructor for CfsInterface class.  Assign config, telemetry, command, mid_map,
+        and ccsds arguments to interface attributes
+        """
         self.config = config
 
         if self.config.evs_long_event_mid_name in mid_map:
@@ -74,7 +103,9 @@ class CfsInterface(object):
 
         # This call will determine which output app to use and instantiate it
         log.debug("Imported CFS Output Interface")
-        tlm_app_choice = getattr(sys.modules['plugins.cfs.pycfs.output_app_interface'], self.config.tlm_app_choice)
+        output_app_interface = importlib.import_module('plugins.cfs.pycfs.output_app_interface')
+        tlm_app_choice = getattr(output_app_interface, self.config.tlm_app_choice)
+
         self.output_manager = tlm_app_choice(self.config.ctf_ip,
                                              self.config.tlm_udp_port,
                                              self.command,
@@ -93,25 +124,34 @@ class CfsInterface(object):
         self.tlm_verifications_by_mid_and_vid = {}
 
         self.cmd_packet_list = []
-        self.received_mid_packets_dic = {mid: [] for mid in self.mid_payload_map.keys()}
+        self.received_mid_packets_dic = {mid: [] for mid in self.mid_payload_map}
 
         # These two arrays are used to ensure that the code only prints that it is receiving packets from each specific
         # mid once and not every time a packet is received
-        self.has_received_mid = {mid: False for mid in self.mid_payload_map.keys()}
+        self.has_received_mid = {mid: False for mid in self.mid_payload_map}
 
         self.ccsds = ccsds
         self.pheader_offset = ctypes.sizeof(self.ccsds.CcsdsPrimaryHeader())
-        self.should_skip_header = not self.config.CCSDS_header_info_included
+        self.should_skip_header = not self.config.ccsds_header_info_included
         self.tlm_header_offset = ctypes.sizeof(self.ccsds.CcsdsTelemetry)
         self.cmd_header_offset = ctypes.sizeof(self.ccsds.CcsdsCommand)
 
     def build_cfs(self):
+        """
+        Abstract class method, raise NotImplementedError exception
+        """
         raise NotImplementedError
 
     def start_cfs(self, run_args):
+        """
+        Abstract class method, raise NotImplementedError exception
+        """
         raise NotImplementedError
 
     def stop_cfs(self):
+        """
+        Stop CFS executable instance, close command and telemetry sockets.
+        """
         log.info("Stopping CFS Executable")
 
         # Close command and telemetry sockets
@@ -125,6 +165,9 @@ class CfsInterface(object):
                 log.info("Number times Failed:                {}".format(verification.fail_count))
 
     def write_tlm_log(self, payload, mid):
+        """
+        Write payload and mid to telemetry log file. if log file does not exist, create one.
+        """
         if self.tlm_log_file is None:
             tlm_log_file_path = os.path.join(Global.current_script_log_dir, self.config.name + "_tlm_msgs.log")
             self.tlm_log_file = open(tlm_log_file_path, "w+")
@@ -132,11 +175,14 @@ class CfsInterface(object):
         try:
             self.tlm_log_file.write("{}: {}\n\t{}\n".format(Global.get_time_manager().exec_time, hex(mid),
                                                             str(payload).replace("\n", "\n\t")))
-        except (IOError, Exception):
+        except IOError:
             log.error("Failed to write telemetry packet received for {}".format(hex(mid)))
             traceback.format_exc()
 
     def write_evs_log(self, payload):
+        """
+        Write payload and mid to evs log file. if log file does not exist, create one.
+        """
         # If this is the first call then the file will need to be opened
         payload = payload.Payload
         if self.evs_log_file is None:
@@ -153,13 +199,16 @@ class CfsInterface(object):
             log.error("Failed to write event packet to EVS Log file for Event Payload: {}".format(str(payload)))
             traceback.format_exc()
 
-    # read_sb_packets() is responsible for receiving packets coming from the CFS application that is being tested
-    # and placing them in a dictionary of lists that is ordered by mids as shown below.
-    # received_mid_packets_dic = {
-    #   "mid1": ["The last packet received with mid1"],
-    #   "mid2": ["The last packet received with mid2"]
-    # }
     def read_sb_packets(self):
+        """
+        read_sb_packets() is responsible for receiving packets coming from the CFS application that is being tested
+        and placing them in a dictionary of lists that is ordered by mids as shown below.
+        received_mid_packets_dic = {
+            "mid1": ["The last packet received with mid1"],
+            "mid2": ["The last packet received with mid2"]
+         }
+         }
+        """
         while True:
             # Read from the socket until no more data available
             try:
@@ -175,89 +224,118 @@ class CfsInterface(object):
 
                 # If the packet is a command packet it is handled differently
                 if pheader.is_command():
-                    # Pull the command header from the received data
-                    try:
-                        header = self.ccsds.CcsdsCommand.from_buffer(recvd[0:self.cmd_header_offset])
-                        mid = header.get_msg_id()
-                    except ValueError:
-                        log.debug("Cannot retrieve command header.")
-                        continue
-
-                    cmd_dict = self.mid_payload_map[mid]
-                    cc_class = None
-                    for value in cmd_dict.values():
-                        if value["CODE"] == header.get_function_code():
-                            cc_class = value["ARG_CLASS"]
-
-                    payload = {
-                        "CC": header.get_function_code(),
-                        "ARGS": cc_class.from_buffer(
-                            recvd[self.cmd_header_offset:]) if cc_class is not None else None
-                    }
-                    if not self.has_received_mid[mid]:
-                        log.info("Receiving command packets for MID: %s", hex(mid))
-                        self.has_received_mid[mid] = True
-                    packet_count = len(self.received_mid_packets_dic[mid]) + 1
-                    # Add the received packet to the dictionary under the correct mid
-                    self.received_mid_packets_dic[mid].append(Packet(mid, payload, packet_count,
-                                                                     Global.get_time_manager().exec_time))
-                    self.tlm_has_been_received = True
-                    self.unchecked_packet_mids.append(mid)
+                    self.parse_command_packet(recvd)
                 else:
-                    try:
-                        header = self.ccsds.CcsdsTelemetry.from_buffer(recvd[0:self.tlm_header_offset])
-                        mid = header.get_msg_id()
-                    except ValueError:
-                        log.debug("Cannot retrieve command header.")
-                        continue
-                    # The received packet is a telemetry packet and its mid must be in the telemetry_watch
-                    # list of the test script being executed
-                    if mid not in self.mid_payload_map:
-                        msg = "Received Message with MID = {}. This MID is not in the CCSDS MID Map. Ignoring..."\
-                            .format(hex(mid))
-                        if mid not in self.has_received_mid:
-                            log.warn(msg)
-                            self.has_received_mid[mid] = True
-                        # Always print error in debug to indicate to user that an MID is missing
-                        log.debug(msg)
-                        continue
-                    # Retrieve the payload from the received packet
-                    try:
-                        payload = self.mid_payload_map[mid].from_buffer(
-                            recvd[self.tlm_header_offset if self.should_skip_header else 0:])
-                        self.write_tlm_log(payload, mid)
-                    except (ValueError, Exception):
-                        if not self.has_received_mid[mid]:
-                            log.error("Cannot retrieve payload from TLM packet with MID {}.".format(hex(mid)))
-                            self.has_received_mid[mid] = True
-                            log.debug(traceback.format_exc())
-                        continue
-
-                    # If this is the first time receiving a packet with the given mid than print
-                    # the value of the mid.
-                    if not self.has_received_mid[mid]:
-                        log.info("Receiving Telemetry Packets for Data Type: {} with MID: {}"
-                                 .format(self.mid_payload_map[mid].__name__, hex(mid)))
-
-                        # Update the print_once_tlm array so that the message is not printed again
-                        self.has_received_mid[mid] = True
-
-                    payload_count = len(self.received_mid_packets_dic[mid]) + 1
-                    # Add the received packet to the dictionary under the correct mid
-                    self.received_mid_packets_dic[mid].append(Packet(mid, payload, payload_count,
-                                                                     Global.get_time_manager().exec_time))
-                    self.tlm_has_been_received = True
-                    self.unchecked_packet_mids.append(mid)
-                    if mid in [self.evs_long_event_msg_mid, self.evs_short_event_msg_mid]:
-                        # Write this packet to the CFS EVS Log File
-                        self.write_evs_log(payload)
+                    self.parse_telemetry_packet(recvd)
             except socket.timeout:
-                log.warn("No telemetry received from CFS. Socket timeout...")
+                log.warning("No telemetry received from CFS. Socket timeout...")
                 break
-        return
+
+    def parse_command_packet(self, buffer):
+        """
+        Parse command packets from received buffer.
+        """
+        try:
+            header = self.ccsds.CcsdsCommand.from_buffer(buffer[0:self.cmd_header_offset])
+            mid = header.get_msg_id()
+        except ValueError:
+            log.debug("Cannot retrieve command header.")
+            return
+
+        if mid not in self.mid_payload_map:
+            self.log_unknown_packet_mid(mid)
+            return
+
+        cmd_dict = self.mid_payload_map[mid]
+        cc_class = None
+        offset = self.cmd_header_offset if self.should_skip_header else 0
+        for value in cmd_dict.values():
+            if value["CODE"] == header.get_function_code():
+                cc_class = value["ARG_CLASS"]
+
+        try:
+            payload = {
+                "CC": header.get_function_code(),
+                "ARGS": cc_class.from_buffer(buffer[offset:]) if cc_class is not None else None
+            }
+        except (ValueError, IOError):
+            self.log_invalid_packet(mid)
+            return
+
+        self.on_packet_received(mid, payload)
+
+    def parse_telemetry_packet(self, buffer):
+        """
+        Parse telemetry packets from received buffer.
+        """
+        try:
+            header = self.ccsds.CcsdsTelemetry.from_buffer(buffer[0:self.tlm_header_offset])
+            mid = header.get_msg_id()
+        except ValueError:
+            log.debug("Cannot retrieve telemetry header.")
+            return
+
+        if mid not in self.mid_payload_map:
+            self.log_unknown_packet_mid(mid)
+            return
+
+        param_class = self.mid_payload_map[mid]
+        offset = self.tlm_header_offset if self.should_skip_header else 0
+        try:
+            payload = param_class.from_buffer(buffer[offset:])
+            self.write_tlm_log(payload, mid)
+        except (ValueError, IOError):
+            self.log_invalid_packet(mid)
+            return
+
+        self.on_packet_received(mid, payload)
+        if mid in [self.evs_long_event_msg_mid, self.evs_short_event_msg_mid]:
+            # Write this packet to the CFS EVS Log File
+            self.write_evs_log(payload)
+
+    def log_unknown_packet_mid(self, mid):
+        """
+        If this is the first time receiving a packet with the given mid, log the message.
+        """
+        msg = "Received Message with MID = {}. This MID is not in the CCSDS MID Map. Ignoring..." \
+            .format(hex(mid))
+        if mid not in self.has_received_mid:
+            log.warning(msg)
+            self.has_received_mid[mid] = True
+        # Always print error in debug to indicate to user that an MID is missing
+        log.debug(msg)
+
+    def log_invalid_packet(self, mid):
+        """
+        If this is the first time receiving a packet with the given mid, log the packet.
+        """
+        if not self.has_received_mid[mid]:
+            log.error("Cannot retrieve payload from packet with MID {}.".format(hex(mid)))
+            self.has_received_mid[mid] = True
+            log.debug(traceback.format_exc())
+
+    def on_packet_received(self, mid: int, payload: any) -> None:
+        """
+        If this is the first time receiving a packet with the given mid then print the value of the mid.
+        """
+        if not self.has_received_mid[mid]:
+            log.info("Receiving Packet for Data Type: {} with MID: {}".format(type(payload), hex(mid)))
+
+            # Update the array so that the message is not printed again
+            self.has_received_mid[mid] = True
+
+        payload_count = len(self.received_mid_packets_dic[mid]) + 1
+        # Add the received packet to the dictionary under the correct mid
+        packet = Packet(mid, payload, payload_count, Global.get_time_manager().exec_time)
+        self.received_mid_packets_dic[mid].append(packet)
+        self.tlm_has_been_received = True
+        self.unchecked_packet_mids.append(mid)
 
     def add_tlm_condition(self, v_id, mid, args):
-        if [v_ids for v_ids in self.tlm_verifications_by_mid_and_vid if v_id in v_ids]:
+        """
+        Add verification condition (with ID) to telemetry verification dictionary and do verification based on id
+        """
+        if [v_ids for v_ids in self.tlm_verifications_by_mid_and_vid.values() if v_id in v_ids]:
             log.error("Condition with id {} is already registered! Check your test instructions".format(v_id))
             return False
 
@@ -270,6 +348,9 @@ class CfsInterface(object):
         return True
 
     def remove_tlm_condition(self, v_id):
+        """
+        Remove verification condition (with ID) from telemetry verification dictionary.
+        """
         verification = next((ids[v_id] for ids in self.tlm_verifications_by_mid_and_vid.values() if v_id in ids), None)
         if not verification:
             if self.config.remove_continuous_on_fail:
@@ -287,6 +368,10 @@ class CfsInterface(object):
         return True
 
     def check_tlm_conditions(self):
+        """
+        Check all unchecked telemetry message by mid and vid.
+        If verification fails, raise CtfConditionError exception.
+        """
         for mid in self.unchecked_packet_mids:
             if mid in self.tlm_verifications_by_mid_and_vid:
                 for v_id, verification in self.tlm_verifications_by_mid_and_vid[mid].items():
@@ -305,53 +390,63 @@ class CfsInterface(object):
         self.unchecked_packet_mids.clear()
 
     def send_command(self, msg_id, function_code, data):
-        sent_bytes = self.command.send_command(msg_id, function_code, data, self.config.ccsds_ver)
-        return sent_bytes
-
-    def send_telemetry(self, msg_id, data):
-        sent_bytes = self.command.send_telemetry(msg_id, data)
+        """
+        Send instruction to CFS instance through command interface.
+        """
+        sent_bytes = self.command.send_command(msg_id, function_code, data)
         return sent_bytes
 
     @staticmethod
     def check_strings(actual, expected, equal):
-        if isinstance(actual, str):  # if there is a string to compare
+        """
+        Check whether string argument actual == string argument expected,
+        if yes, return argument equal, otherwise return not equal
+        """
+        check_status = not equal
+        if isinstance(actual, str) and isinstance(expected, str):
             if actual == expected:
-                return equal
+                check_status = equal
             else:
-                log.warn('String comparison failed, actual value:%s streq expected value: %s', actual, expected)
-                return not equal
+                log.warning('String comparison failed, actual value:%s streq expected value: %s', actual, expected)
+                check_status = not equal
 
         else:  # if there was no string to compare
-            log.warn('String comparison failed, actual value:%s streq expected value: %s', actual, expected)
-            return False
+            log.warning('String comparison failed, actual value:%s streq expected value: %s', actual, expected)
+            check_status = False
+
+        return check_status
 
     def check_value(self, actual, expected, compare, mask, mask_value):
+        """
+        Based on the argument compare value, use different method to compare argument actual and expected
+        """
         if compare == "streq":
             return self.check_strings(actual, expected, True)
         if compare == "strneq":
             return self.check_strings(actual, expected, False)
         if compare == "regex":
-            if isinstance(actual, str):
+            regex_cmpstatus = False
+            if isinstance(actual, str) and isinstance(expected, str):
                 if re.search(expected, actual):
-                    return True
+                    regex_cmpstatus = True
                 else:
-                    log.warn('Regex match failed, actual value:%s regex value: %s', actual, expected)
-                    return False
+                    log.warning('Regex match failed, actual value:%s regex value: %s', actual, expected)
             else:
-                log.warn('Regex match failed, actual value:%s regex value: %s', actual, expected)
-                return False
+                log.warning('Regex match failed, actual value:%s regex value: %s', actual, expected)
+
+            return regex_cmpstatus
 
         # Strings are processed above, at this point we are processing numbers
 
-        # TODO - Add type and overflow checking based on the ctype of the actual value.
+        # ENHANCE - Add type and overflow checking based on the ctype of the actual value.
         #           We need to either parse the message type's fields to determine the actual ctype and its size,
         #           or extend the types when they are created to expose the ctype used for primitive fields
         if compare in OPERATION_DIC:
             try:
                 actual = float(actual)
                 expected = float(expected)
-            except ValueError as e:
-                log.error("Failed to convert args: {}".format(e))
+            except ValueError as exception:
+                log.error("Failed to convert args: {}".format(exception))
                 return False
 
             if mask is not None and mask_value is not None:
@@ -365,8 +460,8 @@ class CfsInterface(object):
                     else:
                         log.error("Invalid Mask Value: {}".format(mask))
                         result = False
-                except ValueError as e:
-                    log.error("Failed to apply mask: {}".format(e))
+                except (TypeError, ValueError) as exception:
+                    log.error("Failed to apply mask: {}".format(exception))
                     result = False
             elif mask is not None:
                 log.error("Invalid comparison: mask provided without maskValue")
@@ -383,7 +478,11 @@ class CfsInterface(object):
         return result
 
     def clear_received_msgs_before_verification_start(self, mid):
-        if mid not in self.received_mid_packets_dic:
+        """
+        Given a mid argument, iterate over all received packets.
+        If packets' received time expires, clear the packets with matching mid.
+        """
+        if not self.received_mid_packets_dic.get(mid):
             log.error("No messages received for MID: {} to clear.".format(hex(mid)))
             return
         if mid in [self.evs_long_event_msg_mid, self.evs_short_event_msg_mid]:
@@ -399,23 +498,27 @@ class CfsInterface(object):
         ]
         return
 
-    # Given an MID to check and arguments, iterate over all received packets
-    # since the start of the verification. Validate each packet until a success
-    # is seen, or there are no more packets to check.
     def check_tlm_value(self, mid, args, discard_old_packets=True):
+        """
+         Given a mid and a arguments, iterate over all received packets since the start of the verification.
+         Validate each packet until a success is seen, or there are no more packets to check.
+        """
         # Flag indicating result of current CheckTlmValue
         check_tlm_result = True
         if isinstance(mid, dict):
             mid_name = mid
             mid = mid.get("MID")
             if mid is None:
-                log.error("Failed to get MID Value for MID Name: {}".format(mid_name))
+                log.error("No MID Value found in: {}".format(mid_name))
                 check_tlm_result = False
+        if mid not in self.received_mid_packets_dic:
+            log.error("Unknown MID value {}".format(mid))
+            check_tlm_result = False
 
         if Global.current_verification_stage == CtfVerificationStage.first_ver:
             self.clear_received_msgs_before_verification_start(mid)
 
-        if len(self.received_mid_packets_dic[mid]) == 0:
+        if check_tlm_result and len(self.received_mid_packets_dic[mid]) == 0:
             log.debug("No messages received between polling to check. MID = {}".format(hex(mid)))
             check_tlm_result = False
 
@@ -444,6 +547,9 @@ class CfsInterface(object):
         return check_tlm_result
 
     def check_tlm_packet(self, payload, args):
+        """
+        Check telemetry message's value based on argument payload and args
+        """
         packet_passed = True
         # Compare the current packet to the expected packet using each variable in args.
         for arg in args:
@@ -463,7 +569,7 @@ class CfsInterface(object):
                 # If there is no expected value provided, check_tlm_value will fail before
                 # checking packets since there is no value to compare to.
                 if Global.current_verification_stage == CtfVerificationStage.first_ver:
-                    log.error("No expected 'value' provided in arg: {}.".format(arg))
+                    log.error("No expected 'value' provided in arg: {}. with payload {}".format(arg, payload))
                 packet_passed = False
 
             if variable is None:
@@ -486,9 +592,17 @@ class CfsInterface(object):
             eval_string = ""
             try:
                 eval_string = "payload.{}".format(variable)
-                actual = eval(eval_string)
-            except (SyntaxError, AttributeError) as e:
-                log.error("Failed to Evaluate: {}".format(eval_string))
+
+                def _rgetattr(obj, attr, *args):
+                    def _getattr(obj, attr):
+                        return getattr(obj, attr, *args)
+
+                    return functools.reduce(_getattr, [obj] + attr.split('.'))
+
+                actual = _rgetattr(payload, variable)
+
+            except (SyntaxError, AttributeError) as exception:
+                log.error("Failed to Evaluate: {} error as {}".format(eval_string, exception))
                 log.debug(traceback.format_exc())
                 packet_passed = False
                 break
@@ -511,7 +625,7 @@ class CfsInterface(object):
                 arg_result = arg_result or (tol_plus_result and tol_minus_result)
 
             if not arg_result:
-                log.warn(
+                log.warning(
                     'FAILED Intermediate Check - {}: Actual: {}, Expected: {}, Comparison: {}, Tol: +{}, -{}'.format(
                         variable, actual, expected_value, arg["compare"], tol_plus, tol_minus))
             else:
@@ -522,8 +636,10 @@ class CfsInterface(object):
 
         return packet_passed
 
-    # Send a command to enable output and check if we receive a response
     def enable_output(self):
+        """
+        Send a command to enable output and check if we receive a response
+        """
         count = 0
         while True:
             count += 1

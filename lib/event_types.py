@@ -1,6 +1,11 @@
+"""
+@namespace lib.event_types
+Event Type definitions for CTF
+"""
+
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2020 United States Government as represented by the
+# Copyright (c) 2019-2021 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -13,28 +18,19 @@
 # either expressed or implied.
 
 
-class Event:
-    def __init__(self, time, commands, test):
-        self.time = time
-        self.commands = commands
-        self.test = test
-
-
 class Command:
+    """
+    Represents a single CTF Test Instruction.
+
+    @param delay: The amount of time to wait before executing this instruction
+    @param command: The instruction dict object
+    @param test: Test case index where instruction exists
+    @param command_index: Instruction index within the test case
+    @param disabled: Whether or not the instruction is disabled
+    """
     def __init__(self, delay, command, test, command_index, disabled):
         self.delay = delay
         self.command = command
         self.test = test
         self.command_index = command_index
         self.is_disabled = disabled
-
-
-class Verify:
-    def __init__(self, command, data, start_time, time_expire, test_index, started):
-        self.command = command
-        self.data = data
-        self.start_time = start_time
-        self.time_expire = time_expire
-        self.test_index = test_index
-        self.verified = None
-        self.started = started

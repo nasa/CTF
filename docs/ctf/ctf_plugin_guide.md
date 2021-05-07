@@ -12,6 +12,8 @@ There are two types of supported test commands
 # Plugin Creation
 To create a new plugin, create a directory with the `plugin-name` under `plugins/`. For example we can create `example_plugin` at the directory `ctf/plugins/example_plugin`.
 
+**Note:** Plugins must conform to a naming convention in order to be loaded by CTF. The module containing the plugin class must end with `_plugin` and **not** contain the word `tests` in its module path. If you provide unit tests for your plugin, place them in a directory named `tests` under `plugin-name`.
+
 In the `example_plugin` directory, we create a new .py file `example_plugin.py`. containing our plugin class, which inherits from the `Plugin` base class. Each plugin is required to define the following properties
 
 *  `name` - plugin name

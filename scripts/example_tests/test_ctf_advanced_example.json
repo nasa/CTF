@@ -104,7 +104,7 @@
                     },
                     "wait": 5
                 },
-                                {
+                {
                     "instruction": "CheckEvent",
                     "data": {
                         "app": "TO",
@@ -286,6 +286,20 @@
                                 "CmdString": "hostname",
                                 "OutputFilename": "/cf/test_output.txt"
                             }
+                        }
+                    },
+                    "wait": 1
+                },
+                {
+                    "description": "Demonstrate the use of macros in command args",
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "SCH_CMD_MID",
+                        "cc": "SCH_ENABLE_CC",
+                        "args": {
+                            "SlotNumber": "#SCH_TOTAL_SLOTS",
+                            "EntryNumber": "#SCH_ENTRIES_PER_SLOT"
                         }
                     },
                     "wait": 1
