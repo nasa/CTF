@@ -17,6 +17,7 @@
 import { Input, Select } from "antd";
 import { CascaderOptionType, CascaderExpandTrigger } from "antd/lib/cascader";
 import * as React from "react";
+import {useRef, useEffect, useState} from "react";
 import { CtfComparisonType } from "../../../../model/ctf-file";
 import { EditingContext } from "../../../../model/editing-context";
 import { VehicleData } from "../../../../model/vehicle-data";
@@ -73,7 +74,7 @@ const mapObjectsToCascaderOptions = (obj) => {
                 // console.log(obj[key])
                 var option: CascaderOptionType = {label: key, value: prefix + key}
                 // console.log(option)
-                new_options.push(option)       
+                new_options.push(option)
             }
         })
             return new_options
@@ -88,7 +89,7 @@ const mapObjectsToCascaderOptions = (obj) => {
         else{
             options.push({label: key, value: key});
         }
-    }) 
+    })
 
     return options
 }
@@ -109,7 +110,7 @@ const mapObjectsToCascaderOptions = (obj) => {
 //     }
 //     console.log(options)
 //   }
-  
+
 const mapDotNotationToCascaderOptions = (
     values: string[]
 ): CascaderOptionType[] => {
@@ -171,6 +172,7 @@ export const Comparison = ({
         }
     ];
     if (tlmMid && tlmMid.length === 0) tlmMid = undefined;
+
     return (
         <div className={className} style={style}>
             <Input.Group compact>
@@ -184,7 +186,63 @@ export const Comparison = ({
                     size="small"
                     defaultValue={[comparison.compare]}
                     onChange={value => changeHandler({ compare: value })}
-                    style={{ width: 60 }}
+                    style={{ width: 100 }}
+                >
+                    <Option key="==">==</Option>
+                    <Option key="!=">!=</Option>
+                    <Option key=">">&gt;</Option>
+                    <Option key="<">&lt;</Option>
+                    <Option key=">=">&gt;=</Option>
+                    <Option key="<=">&lt;=</Option>
+                    <Option key="streq">streq</Option>
+                    <Option key="strneq">strneq</Option>
+                    <Option key="regex">regex</Option>
+                </Select>
+                <AutoCompleteField
+                    dataSource={[]}
+                    placeholder=""
+                    defaultValue={comparison.value !== undefined ? comparison.value[0]: ""}
+                    onChange={value => changeHandler({ value: [(+value? +value: value)] })}
+                />
+
+            </Input.Group>
+        </div>
+    );
+};
+
+export const Condition = ({
+    className,
+    style,
+    comparison,
+    context,
+    tlmMid,
+    onChange
+}: {
+    className?: string;
+    style?: object;
+    comparison: CtfComparisonType;
+    context: EditingContext;
+    onChange?: (next: CtfComparisonType) => void;
+}) => {
+    const changeHandler = (update: object ) => {
+        const newCompare = Object.assign({}, comparison, update);
+        if (onChange) onChange(newCompare);
+    };
+
+    return (
+        <div style={style}>
+            <Input.Group compact>
+                <Input
+                    style={{ width: 80, height: 24 }}
+                    defaultValue={comparison.variable}
+                    autoFocus={false}
+                    onBlur={ e => changeHandler({ variable: e.target.value }) }
+                />
+                  <Select
+                    size="small"
+                    defaultValue={[comparison.compare]}
+                    onChange={value => changeHandler( { compare: value }, 1)}
+                    style={{ width: 100 }}
                 >
                     <Option key="==">==</Option>
                     <Option key="!=">!=</Option>
@@ -193,12 +251,14 @@ export const Comparison = ({
                     <Option key=">=">&gt;=</Option>
                     <Option key="<=">&lt;=</Option>
                 </Select>
-                <AutoCompleteField
-                    dataSource={[]}
-                    placeholder=""
-                    defaultValue={comparison.value !== undefined ? comparison.value[0]: ""}
-                    onChange={value => changeHandler({ value: [(+value? +value: value)] })}
+
+                 <Input
+                    style={{ width: 80, height: 24 }}
+                    defaultValue={comparison.value}
+                    autoFocus={false}
+                    onBlur={ e => changeHandler({ value: (+e.target.value? +e.target.value: e.target.value) } )}
                 />
+
             </Input.Group>
         </div>
     );

@@ -18,15 +18,16 @@ Event Type definitions for CTF
 # either expressed or implied.
 
 
-class Command:
+class Instruction:
     """
     Represents a single CTF Test Instruction.
 
-    @param delay: The amount of time to wait before executing this instruction
-    @param command: The instruction dict object
-    @param test: Test case index where instruction exists
-    @param command_index: Instruction index within the test case
+    @param delay: The time in seconds to wait before executing this instruction
+    @param command: The dict containing instruction parameters
+    @param test: Integer index of the test case that includes this instruction
+    @param command_index: Integer index of this instruction within the test case
     @param disabled: Whether or not the instruction is disabled
+
     """
     def __init__(self, delay, command, test, command_index, disabled):
         self.delay = delay

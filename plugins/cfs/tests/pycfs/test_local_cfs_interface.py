@@ -19,13 +19,11 @@ import pytest
 
 from lib.ctf_global import Global
 from lib.exceptions import CtfTestError
-from lib.logger import set_logger_options_from_config
 
 
 @pytest.fixture(scope='session', autouse=True)
 def init_global():
     Global.load_config('./configs/default_config.ini')
-    set_logger_options_from_config(Global.config)
     time_mgr = MagicMock()
     time_mgr.exec_time = 1.0
     Global.time_manager = time_mgr
@@ -54,8 +52,8 @@ def local_cfs_interface_build_error(cfs_config, mid_map, ccsdsv2):
     mock_tlm = MagicMock(spec=TlmListener)
     mock_cmd = MagicMock(spec=CommandInterface)
     with patch('plugins.cfs.pycfs.output_app_interface.ToApi', name='mock'), \
-        patch('builtins.open', new_callable=mock_open()), \
-            patch('plugins.cfs.pycfs.local_cfs_interface.Popen', side_effect=Exception('mock exception')):
+         patch('builtins.open', new_callable=mock_open()), \
+         patch('plugins.cfs.pycfs.local_cfs_interface.Popen', side_effect=Exception('mock exception')):
         return LocalCfsInterface(cfs_config, mock_tlm, mock_cmd, mid_map, ccsdsv2)
 
 
@@ -74,12 +72,13 @@ def test_local_cfs_interface_get_start_string(localcfs, utils):
         assert utils.has_log_level('ERROR')
         mock_find.return_value = True
         assert localcfs.get_start_string('') == \
-            'xterm -l -geometry 130X24+800+0 -e \"script -c \' ./core-lx1; wait &\' -q -f -e /logs/cfs_cfs_stdout.txt\"'
+            'xterm -T core-lx1 -l -geometry 130X24+800+0 -e ' \
+            '\"script -c \' ./core-lx1\' -q -f /logs/cfs_cfs_stdout.txt\"'
         localcfs.config.cfs_debug = True
         localcfs.config.cfs_port_arg = True
         assert localcfs.get_start_string('run_args') == \
-            'xterm -l -geometry 130X24+800+0 -e \"script -c \'gdb -tui ./core-lx1 run_args -p 5010;' \
-            ' wait &\' -q -f -e /logs/cfs_cfs_stdout.txt\"'
+            'xterm -T core-lx1 -l -geometry 130X24+800+0 -e ' \
+            '\"script -c \'gdb -tui ./core-lx1 run_args -p 5010\' -q -f /logs/cfs_cfs_stdout.txt\"'
 
 
 def test_local_cfs_interface_build_cfs_pass(localcfs):
@@ -108,7 +107,7 @@ def test_local_cfs_interface_build_cfs_fail(localcfs, utils):
 
 def test_local_cfs_interface_build_cfs_error(localcfs, utils):
     with patch('builtins.open', new_callable=mock_open()), \
-            patch('plugins.cfs.pycfs.local_cfs_interface.Popen') as mock_popen:
+         patch('plugins.cfs.pycfs.local_cfs_interface.Popen') as mock_popen:
         mock_process = Mock(returncode=0, stdout=['mock build stdout'])
         mock_process.communicate.side_effect = Exception('mock exception')
         mock_popen.return_value.__enter__.return_value = mock_process
@@ -120,20 +119,24 @@ def test_local_cfs_interface_build_cfs_error(localcfs, utils):
 def test_local_cfs_interface_start_cfs_pass(localcfs):
     with patch('plugins.cfs.pycfs.local_cfs_interface.time'), \
          patch('os.path.exists', return_value=True), \
+         patch('plugins.cfs.pycfs.local_cfs_interface.run') as mock_run, \
          patch('plugins.cfs.pycfs.local_cfs_interface.Popen') as mock_popen:
         mock_popen.return_value.pid = 42
         mock_popen.return_value.returncode = 0
         mock_popen.return_value.poll.return_value = None
+        mock_stdout = MagicMock(name='mock_stdout')
+        mock_run.return_value.stdout = mock_stdout
+        mock_stdout.decode.return_value = ''
         start = localcfs.start_cfs('args')
         mock_popen.assert_called_once_with(
-            'xterm -l -geometry 130X24+800+0 -e \"script -c \' ./core-lx1 args;'
-            ' wait &\' -q -f -e /logs/cfs_cfs_stdout.txt\"',
+            'xterm -T core-lx1 -l -geometry 130X24+800+0 -e '
+            '\"script -c \' ./core-lx1 args\' -q -f /logs/cfs_cfs_stdout.txt\"',
             cwd='/cfs/run/dir', shell=True, universal_newlines=True)
         assert start['result'] is True
         assert start['pid'] == 42
 
 
-def test_local_cfs_interface_start_cfs_invalid_path(localcfs, utils):
+def test_local_cfs_interface_start_cfs_exist_cfs(localcfs, utils):
     with patch('plugins.cfs.pycfs.local_cfs_interface.time'), \
          patch('os.path.exists', return_value=False), \
          patch('plugins.cfs.pycfs.local_cfs_interface.Popen') as mock_popen:
@@ -147,10 +150,32 @@ def test_local_cfs_interface_start_cfs_invalid_path(localcfs, utils):
         assert utils.has_log_level('ERROR')
 
 
+def test_local_cfs_interface_start_cfs_invalid_path(localcfs, utils):
+    with patch('plugins.cfs.pycfs.local_cfs_interface.time'), \
+         patch('os.path.exists', return_value=False), \
+         patch('plugins.cfs.pycfs.local_cfs_interface.run') as mock_run, \
+         patch('plugins.cfs.pycfs.local_cfs_interface.Popen') as mock_popen:
+        mock_stdout = MagicMock(name='mock_stdout')
+        mock_run.return_value.stdout = mock_stdout
+        mock_stdout.decode.return_value = ''
+        mock_popen.return_value.pid = 42
+        mock_popen.return_value.returncode = 0
+        mock_popen.return_value.poll.return_value = False
+        start = localcfs.start_cfs('args')
+        mock_popen.assert_not_called()
+        assert start['result'] is False
+        assert start['pid'] is None
+        assert utils.has_log_level('ERROR')
+
+
 def test_local_cfs_interface_start_cfs_fail(localcfs, utils):
     with patch('plugins.cfs.pycfs.local_cfs_interface.time'), \
          patch('os.path.exists', return_value=True), \
+         patch('plugins.cfs.pycfs.local_cfs_interface.run') as mock_run, \
          patch('plugins.cfs.pycfs.local_cfs_interface.Popen') as mock_popen:
+        mock_stdout = MagicMock(name='mock_stdout')
+        mock_run.return_value.stdout = mock_stdout
+        mock_stdout.decode.return_value = ''
         mock_popen.return_value.pid = 42
         mock_popen.return_value.returncode = 0
         mock_popen.return_value.poll.return_value = False
@@ -164,7 +189,11 @@ def test_local_cfs_interface_start_cfs_fail(localcfs, utils):
 def test_local_cfs_interface_start_cfs_errors(localcfs, utils):
     with patch('plugins.cfs.pycfs.local_cfs_interface.time'), \
          patch('os.path.exists'), \
+         patch('plugins.cfs.pycfs.local_cfs_interface.run') as mock_run, \
          patch('plugins.cfs.pycfs.local_cfs_interface.Popen') as mock_popen:
+        mock_stdout = MagicMock(name='mock_stdout')
+        mock_run.return_value.stdout = mock_stdout
+        mock_stdout.decode.return_value = ''
         mock_popen.side_effect = Exception('mock exception')
         with pytest.raises(Exception):
             localcfs.start_cfs('args')

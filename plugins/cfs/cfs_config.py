@@ -27,6 +27,7 @@ from lib.ctf_global import Global
 from lib.args_validation import ArgsValidation
 from lib.logger import logger as log
 from lib.exceptions import CtfTestError
+from lib.ctf_utility import expand_path
 
 CONFIG = Global.config
 
@@ -62,7 +63,6 @@ class CfsConfig:
         self.cfs_run_args = None
         self.cfs_run_cmd = None
         self.cfs_output_file = None
-        self.start_cfs_on_init = None
         self.remove_continuous_on_fail = None
         self.cfs_target_ip = None
         self.ctf_ip = None
@@ -156,7 +156,7 @@ class CfsConfig:
             self.cfs_build_cmd = self.load_field(section_name, "cfs_build_cmd", Global.config.get)
 
             self.cfs_run_dir = self.load_field(section_name, "cfs_run_dir", Global.config.get,
-                                               self.validation.expand_directory)
+                                               expand_path)
 
             self.cfs_port_arg = self.load_field(section_name, "cfs_port_arg", Global.config.getboolean,
                                                 self.validation.validate_boolean)
@@ -167,9 +167,6 @@ class CfsConfig:
             self.cfs_run_args = self.load_field(section_name, "cfs_run_args", Global.config.get)
 
             self.cfs_output_file = self.load_field(section_name, "cfs_output_file", Global.config.get)
-
-            self.start_cfs_on_init = self.load_field(section_name, "start_cfs_on_init", Global.config.getboolean,
-                                                     self.validation.validate_boolean)
 
             self.remove_continuous_on_fail = self.load_field(section_name, "remove_continuous_on_fail",
                                                              Global.config.getboolean, self.validation.validate_boolean)
@@ -287,7 +284,6 @@ class SP0CfsConfig(CfsConfig):
         """
         Constructor for RemoteCfsConfig Class. Override cfs_protocol attribute to sp0, add a few additional attributes.
         """
-        self.auto_run = None
         self.reboot = None
         self.cfs_exe_path = None
         self.cfs_entry_point = None
@@ -309,8 +305,6 @@ class SP0CfsConfig(CfsConfig):
         super().load_config_data(section_name)
 
         if section_name in self.sections:
-            self.auto_run = self.load_field(self.name, "auto_run", Global.config.getboolean,
-                                            self.validation.validate_boolean)
             self.reboot = self.load_field(self.name, "reboot", Global.config.getboolean,
                                           self.validation.validate_boolean)
             self.cfs_exe_path = self.load_field(self.name, "cfs_exe_path", Global.config.get)

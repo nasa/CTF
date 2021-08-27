@@ -123,6 +123,16 @@ class CfsPlugin(Plugin):
             # - target: (Optional) A previously registered target name, or empty for all registered targets
             "CheckTlmValue":
                 (self.check_tlm_value, [ArgTypes.tlm_mid, ArgTypes.comparison, ArgTypes.string]),
+            # CheckTlmPacket: Checks that a telemetry message has been received
+            # - mid: The telemetry message ID to check
+            # - target: (Optional) A previously registered target name, or empty for all registered targets
+            "CheckTlmPacket":
+                (self.check_tlm_packet, [ArgTypes.tlm_mid, ArgTypes.string]),
+            # CheckTlmValue: Checks that a telemetry message has not been received
+            # - mid: The telemetry message ID to check
+            # - target: (Optional) A previously registered target name, or empty for all registered targets
+            "CheckNoTlmPacket":
+                (self.check_no_tlm_packet, [ArgTypes.tlm_mid, ArgTypes.string]),
             # CheckTlmContinuous: Similar to CheckTlmValue except the check is performed
             # each time telemetry is received, until the test ends or the check is removed by 'RemoveCheckTlmContinuous'
             # - verification_id: A unique string to identify this check within the test
@@ -172,7 +182,11 @@ class CfsPlugin(Plugin):
                 (self.shutdown_cfs, [ArgTypes.string]),
         }
 
-        self.verify_required_commands = ["CheckTlmValue", "CheckEvent", "CheckNoEvent"]
+        self.verify_required_commands = ["CheckTlmValue",
+                                         "CheckTlmPacket",
+                                         "CheckNoTlmPacket",
+                                         "CheckEvent",
+                                         "CheckNoEvent"]
         # ENHANCE - Utilize the commands below in the time manager, so that continuous instructions can be
         #              implemented here, and utilized by the time manager.
         self.continuous_commands = ["CheckTlmContinuous"]
@@ -313,7 +327,7 @@ class CfsPlugin(Plugin):
         status = [t.enable_cfs_output() for t in self.get_cfs_targets(target)]
         return all(status) if status else False
 
-    def send_cfs_command(self, mid: str, cc: int, args: dict, target: str = None,
+    def send_cfs_command(self, mid: str, cc: int, args: dict, header: dict = None, target: str = None,
                          payload_length: int = None, ctype_args: bool = False) -> bool:
         """Implements the instruction SendCfsCommand
         ctype_args is a flag to zero out the message structure for internal validation,
@@ -325,7 +339,7 @@ class CfsPlugin(Plugin):
 
         # Collect the results of send_cfs_command on each specified target, and check that all passed
         # Make a copy of arguments since send_cfs_command may change arguments structure
-        status = [t.send_cfs_command(mid, cc, deepcopy(args), payload_length, ctype_args)
+        status = [t.send_cfs_command(mid, cc, deepcopy(args), header, payload_length, ctype_args)
                   for t in self.get_cfs_targets(target)]
 
         return all(status) if status else False
@@ -338,6 +352,44 @@ class CfsPlugin(Plugin):
         # Collect the results of check_tlm_value on each specified target, and check that all passed
         status = [t.check_tlm_value(mid, args) for t in self.get_cfs_targets(target)]
         return all(status) if status else False
+
+    def check_tlm_packet(self, mid: str, target: str = None) -> bool:
+        """Implements the instruction CheckTlmPacket."""
+        if Global.current_verification_stage == CtfVerificationStage.first_ver:
+            log.info("CheckTlmPacket: CFS Target: {}, MID {}".format(target, mid))
+
+        # Collect the results of check_tlm_value on each specified target, and check that all passed
+        status = [t.check_tlm_value(mid) for t in self.get_cfs_targets(target)]
+        return all(status) if status else False
+
+    def check_no_tlm_packet(self, mid: str, target: str = None) -> bool:
+        """Implements the instruction CheckNoTlmPacket."""
+        if Global.current_verification_stage == CtfVerificationStage.first_ver:
+            log.info("CheckNoTlmPacket: CFS Target: {}, MID {}".format(target, mid))
+
+        # Collect the results of check_tlm_value on each specified target, and check that all did not pass
+        status = [t.check_tlm_value(mid) for t in self.get_cfs_targets(target)]
+        result = False
+        if any(status):
+            log.info("CheckNoTlmPacket found a packet with MID {}".format(mid))
+            result = False
+        else:
+            # Check_noevent is to verify No event happens during the CtfVerificationStage.
+            # This function will be called a few times by test.py, it only returns True at the end of verification stage
+            if Global.current_verification_stage == CtfVerificationStage.last_ver:
+                log.info("CheckNoTlmPacket found no packet")
+                result = True
+
+        return result
+
+    def get_tlm_value(self, mid: str, tlm_variable: str, target: str = None):
+        """Get the latest telemetry value with matching mid and named parameter"""
+        tlm_value = None
+        # Get the latest telemetry value from cfs target
+        cfs_target = self.get_cfs_targets(target)
+        if cfs_target:
+            tlm_value = cfs_target[0].get_tlm_value(mid, tlm_variable)
+        return tlm_value
 
     def check_tlm_continuous(self, verification_id: str, mid: str, args: dict, target: str = None) -> bool:
         """Implements the instruction CheckTlmContinuous."""

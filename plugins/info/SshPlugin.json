@@ -1,5 +1,5 @@
 {
-  "group_name": "SSH Plugin",
+  "group_name": "SshPlugin",
   "instructions": [
     {
       "name": "SSH_RegisterTarget",
@@ -85,7 +85,7 @@
       "description": "",
       "parameters": [
         {
-          "name": "instruction",
+          "name": "command",
           "description": "",
           "type": "string"
         },

@@ -9,19 +9,7 @@
     "test_setup": "",
     "ctf_options": {
     },
-    "telemetry_watch_list": {
-        "TO_HK_TLM_MID": [
-            "usCmdErrCnt",
-            "usCmdCnt"
-        ]
-    },
-    "command_watch_list": {
-        "TO_CMD_MID": [
-            "TO_NOOP_CC",
-            "TO_RESET_CC"
-        ]
-    },
-    "import": {},
+   "import": {},
     "tests": [
         {
             "case_number": "TO Continuous Verification Error Count == 0",

@@ -65,16 +65,19 @@ export class CtfScriptRunner {
             } 
             
             const cliStr = `bash -c "${pythonExecutable} --port ${this.port} ${additional_args} ${this.scripts.join(' ')}"`;
-            console.log(wd);
-            console.log(cliStr)
-            this._process = exec(cliStr, { cwd: wd }, err => {
+            console.log('wd= ',wd);
+            console.log('cliStr=',cliStr)
+            this._process = exec(cliStr, { cwd: wd , maxBuffer: 10*1024*1024}, (err, stdout, stderr) => {
                 if (err) {
                     this._process = null;
+                    console.log(err.toString());
                     rej(new CtfScriptRunnerError(err.toString()));
                 } else {
                     this._process = null;
                     res(true);
                 }
+                // stdout shows the cFS build messages
+                // stderr shows the CTF log messages
             });
             this._process.stdout.on('data', this.onOutput);
             //TODO alternatively direct logging streamhandler to sys.stdout

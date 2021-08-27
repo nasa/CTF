@@ -10,37 +10,6 @@
     "ctf_options": {
         "verify_timeout": 4
     },
-    "telemetry_watch_list": {
-        "CFE_EVS_HK_TLM_MID": [
-            "Payload.CommandCounter",
-            "Payload.CommandErrorCounter"
-        ]
-    },
-    "command_watch_list": {
-        "CFE_EVS_CMD_MID": [
-            "CFE_EVS_NOOP_CC",
-            "CFE_EVS_RESET_COUNTERS_CC",
-            "CFE_EVS_ENABLE_APP_EVENT_TYPE_CC",
-            "CFE_EVS_SET_LOG_MODE_CC",
-            "CFE_EVS_WRITE_LOG_DATA_FILE_CC",
-            "CFE_EVS_ENABLE_EVENT_TYPE_CC",
-            "CFE_EVS_DISABLE_EVENT_TYPE_CC",
-            "CFE_EVS_SET_EVENT_FORMAT_MODE_CC",
-            "CFE_EVS_ENABLE_APP_EVENTS_CC",
-            "CFE_EVS_DISABLE_APP_EVENT_TYPE_CC",
-            "CFE_EVS_DISABLE_APP_EVENTS_CC",
-            "CFE_EVS_RESET_APP_COUNTER_CC",
-            "CFE_EVS_SET_FILTER_CC",
-            "CFE_EVS_ENABLE_PORTS_CC",
-            "CFE_EVS_RESET_FILTER_CC",
-            "CFE_EVS_DISABLE_PORTS_CC",
-            "CFE_EVS_ADD_EVENT_FILTER_CC",
-            "CFE_EVS_RESET_ALL_FILTERS_CC",
-            "CFE_EVS_DELETE_EVENT_FILTER_CC",
-            "CFE_EVS_WRITE_APP_DATA_FILE_CC",
-            "CFE_EVS_CLEAR_LOG_CC"
-        ]
-    },
     "import": {
         "../libs/CfeEvsFunctions.json": [
             "SendCheckCfeEvsNoopCmd",

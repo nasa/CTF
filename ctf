@@ -21,22 +21,20 @@ and generate test reports.
 # either expressed or implied.
 
 import os
-import shutil
 import traceback
 import sys
 from pathlib import Path
 
 from lib.plugin_manager import PluginManager
 from lib.script_manager import ScriptManager
-from lib.readers.json_script_reader import JSONScriptReader
 from lib.status_manager import StatusManager, StatusDefs
-from lib.time_manager import TimeManager
 from lib.ctf_global import Global
 from lib.ctf_utility import expand_path
-from lib.logger import logger as log, set_logger_options_from_config
+from lib.logger import logger as log, set_logger_options_from_config, change_log_file
 from lib.exceptions import CtfTestError
 
-CTF_VERSION = "v1.2"
+CTF_VERSION = "v1.3"
+CTF_RELEASE_DATE = "Aug 26 2021"
 
 
 def main():
@@ -49,11 +47,12 @@ def main():
         args = Global.create_arg_parser().parse_args()
         config_status = Global.load_config(args.config_file)
         set_logger_options_from_config(Global.config)
+        change_log_file(Global.CTF_log_dir_file)
         if config_status:
             log.info(config_status)
 
-        # Use default CTF Time manager unless a plugin overrides that
-        Global.time_manager = TimeManager()
+        # Global.time_manager will be set by CFS plugin
+        Global.time_manager = None
 
         # Instantiate the status manager passing in the port argument
         status_manager = StatusManager(port=args.port)
@@ -74,18 +73,8 @@ def main():
         # Instantiate the script manager
         script_manager = ScriptManager(plugins, status_manager)
 
-        # Batch read in JSON Scripts from script_dir argument.
+        # Do not support JSON Scripts from script_dir argument any more
         log.info("Reading Test Scripts...")
-        if args.script_dir:
-            if not os.path.isdir(args.script_dir):
-                log.error("Invalid Test Script Directory: {}. Skipping.".format(args.script_dir))
-            else:
-                for file in Path(args.script_dir).rglob("*.json"):
-                    script_reader = JSONScriptReader(file)
-                    if script_reader.valid_script:
-                        script_manager.add_script(script_reader.script)
-                    else:
-                        log.warning("Invalid Input Test JSON Script: {}. Skipping.".format(file))
 
         # Read individual scripts from scripts argument.
         for script_file in args.scripts:
@@ -93,19 +82,9 @@ def main():
                 log.info("Found directory at {}".format(script_file))
                 log.info("Processing Scripts")
                 for file in Path(script_file).rglob("*.json"):
-                    script_reader = JSONScriptReader(file)
-                    if script_reader.valid_script:
-                        script_manager.add_script(script_reader.script)
-                        log.info("Loaded Script: {}".format(script_reader.input_script_path))
-                    else:
-                        log.warning("Invalid Input Test JSON Script: {}. Skipping.".format(file))
+                    script_manager.add_script_file(file)
             else:
-                script_reader = JSONScriptReader(script_file)
-                if script_reader.valid_script:
-                    script_manager.add_script(script_reader.script)
-                    log.info("Loaded Script: {}".format(script_reader.input_script_path))
-                else:
-                    log.error("Error loading the following script: %s", script_file)
+                script_manager.add_script_file(script_file)
 
         if len(script_manager.script_list) == 0:
             log.error("No test scripts provided. Please add script path(s) to execute in the arguments.")
@@ -129,16 +108,6 @@ def main():
         log.info("Interrupt detected. Shutting down plugins...")
         plugins.shutdown_plugins()
         handle_exception(interrupt_exception)
-
-    try:
-        # Move the CTF_Log_File to the script results directory
-        if (os.path.exists(Global.CTF_log_dir_file) and os.path.exists(Global.test_log_dir)):
-            shutil.move(Global.CTF_log_dir_file, Global.test_log_dir)
-        shutil.rmtree(Global.CTF_log_dir, ignore_errors=True)  # remove the script log file
-
-    except Exception as exception:
-        log.error("Could Not Move CTF Log File :", exc_info=True)
-        raise CtfTestError('Raise Exception from main') from exception
 
     return 0 if status_manager.status["status"] == StatusDefs.passed else -1
 

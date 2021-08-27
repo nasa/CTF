@@ -18,12 +18,12 @@ Unit Test for JSONScriptReader class: Loads and validates input CTF test scripts
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import patch, Mock
 
 from lib.ctf_global import Global
 from lib.exceptions import CtfTestError
-from lib.logger import set_logger_options_from_config
 from lib.plugin_manager import PluginManager
 from lib.readers.json_script_reader import JSONScriptReader
 
@@ -31,7 +31,6 @@ from lib.readers.json_script_reader import JSONScriptReader
 @pytest.fixture(scope="session", autouse=True)
 def init_global():
     Global.load_config("./configs/default_config.ini")
-    set_logger_options_from_config(Global.config)
     Global.plugin_manager = PluginManager(['plugins'])
 
 
@@ -75,6 +74,19 @@ def test_json_script_reader_init_exception2(utils):
         assert utils.has_log_level('ERROR')
 
 
+def test_json_script_reader_init_exception3(utils):
+    """
+    test JSONScriptReader class constructor  -- raise exception when calling process_header
+    """
+    utils.clear_log()
+    input_script_path = 'scripts/example_tests/test_ctf_all_instructions.json'
+    with patch("lib.readers.json_script_reader.JSONScriptReader.process_header") as mock_process_header:
+        mock_process_header.side_effect = CtfTestError('mock_process_header')
+        reader = JSONScriptReader(input_script_path)
+        assert utils.has_log_level('ERROR')
+        assert reader.valid_script == False
+
+
 def test_json_script_reader_process_header(json_script_reader):
     """
     test JSONScriptReader class method : process_header
@@ -97,34 +109,17 @@ def test_json_script_reader_process_exception(json_script_reader, utils):
     assert utils.has_log_level('ERROR')
 
 
-def test_json_script_reader_process_watchlists(json_script_reader):
-    """
-    test JSONScriptReader class method : process_watchlists
-    Parse the 'telemetry_watch_list' and 'command_watch_list' field in the test script
-    """
-    assert json_script_reader.process_watchlists() is None
-
-
-def test_json_script_reader_process_watchlists_exception(json_script_reader, utils):
-    """
-    test JSONScriptReader class method : process_watchlists  -- trigger KeyError exception
-    Parse the 'telemetry_watch_list' and 'command_watch_list' field in the test script
-    """
-    utils.clear_log()
-    with patch("lib.test_script.TestScript.set_watch_lists") as mock_set_watch_lists:
-        mock_set_watch_lists.side_effect = KeyError
-        with pytest.raises(KeyError):
-            json_script_reader.process_watchlists()
-            assert utils.has_log_level('ERROR')
-            mock_set_watch_lists.assert_called_once()
-
-
 def test_json_script_reader_process_functions(json_script_reader):
     """
     test JSONScriptReader class method : process_functions
     Parse the function definitions and imports in the test script
     """
+    json_script_reader.raw_data['import'] = {
+        "./scripts/cfe_6_7_tests/libs/CiFunctions.json":
+        ["SendCheckCiEnableToCmd"]
+    }
     assert json_script_reader.process_functions() is None
+    assert 'SendCheckCiEnableToCmd' in json_script_reader.functions
 
 
 def test_json_script_reader_process_functions_exception(utils):
@@ -216,6 +211,17 @@ def test_json_script_reader_process_tests():
     input_script_path = 'scripts/cfe_6_7_tests/cfe_tests/CfeEsTest.json'
     reader = JSONScriptReader(input_script_path)
     with patch("lib.readers.json_script_reader.JSONScriptReader.resolve_function", return_value=None):
+        assert reader.process_tests() is None
+
+
+def test_json_script_reader_process_tests_no_commands_in_function():
+    """
+    test JSONScriptReader class method : process_tests - No commands in function
+    Iterates over test cases within the test script and parses each test case.
+    """
+    input_script_path = 'scripts/cfe_6_7_tests/cfe_tests/CfeEsTest.json'
+    reader = JSONScriptReader(input_script_path)
+    with patch("lib.readers.json_script_reader.JSONScriptReader.resolve_function", return_value=False):
         assert reader.process_tests() is None
 
 

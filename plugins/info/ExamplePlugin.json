@@ -1,5 +1,5 @@
 {
-  "group_name": "Example Plugin",
+  "group_name": "ExamplePlugin",
   "instructions": [
     {
       "name": "TestCommand",
@@ -19,6 +19,11 @@
     },
     {
       "name": "TestVerifyCommand",
+      "description": "",
+      "parameters": []
+    },
+    {
+      "name": "TestSharedLibraryCommand",
       "description": "",
       "parameters": []
     }

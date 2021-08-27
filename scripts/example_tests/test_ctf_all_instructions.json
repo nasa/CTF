@@ -7,18 +7,6 @@
     "ctf_options": {},
     "environment": {},
     "requirements": {},
-    "telemetry_watch_list": {
-        "TO_HK_TLM_MID": [
-            "usCmdErrCnt",
-            "usCmdCnt"
-        ]
-    },
-    "command_watch_list": {
-        "TO_CMD_MID": [
-            "TO_NOOP_CC",
-            "TO_RESET_CC"
-        ]
-    },
     "functions": {},
     "tests": [
         {

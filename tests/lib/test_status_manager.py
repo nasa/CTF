@@ -54,13 +54,13 @@ def test_status_manager_init(status_manager_instance):
     assert status_manager_instance.start_time is None
 
 
-def test_status_manager_set_start_time(status_manager_instance):
+def test_status_manager_start(status_manager_instance):
     """
-    Test StatusManager class method: set_start_time
+    Test StatusManager class method: start
     Set the start time of test suite execution in the status message.
     """
     assert status_manager_instance.start_time is None
-    assert status_manager_instance.set_start_time() is None
+    assert status_manager_instance.start() is None
     assert status_manager_instance.start_time is not None
 
 
@@ -70,12 +70,12 @@ def test_status_manager_set_scripts(status_manager_instance):
     Set the script status entry for each script with default values
     """
     init_status = {'elapsed_time': 0, 'status': 'waiting', 'scripts': []}
-    assert status_manager_instance.status == init_status
+    assert status_manager_instance.status is None
 
     script_reader = JSONScriptReader('scripts/cfe_6_7_tests/cfe_tests/CfeEsTest.json')
     script_list = [script_reader.script]
 
-    script_list[0].tests[0].event_list[1].command.pop('wait')
+    script_list[0].tests[0].instructions[1].command.pop('wait')
 
     status_manager_instance.set_scripts(script_list)
 
@@ -94,6 +94,7 @@ def test_status_manager_update_suite_status(status_manager_instance):
     details = 'Runing Script'
     status = 'Active'
     status_manager_instance.start_time = 0
+    status_manager_instance.set_scripts([])
     status_manager_instance.update_suite_status(status, details)
     assert status_manager_instance.status["status"] == status
     assert status_manager_instance.status["details"] == details
@@ -249,7 +250,7 @@ def test_status_manager_send_update(status_manager_instance_inited):
     Test StatusManager class method: send_update
     Send the latest status packet over the UDP socket.
     """
-    status_manager_instance_inited.set_start_time()
+    status_manager_instance_inited.start()
     status_manager_instance_inited.port = 5004
     status_manager_instance_inited.send_update()
 
@@ -259,7 +260,7 @@ def test_status_manager_send_update_exception_connect(status_manager_instance_in
     Test StatusManager class method: send_update - raise exception from connect
     Send the latest status packet over the UDP socket.
     """
-    status_manager_instance_inited.set_start_time()
+    status_manager_instance_inited.start()
     status_manager_instance_inited.port = 5004
     utils.clear_log()
 
@@ -274,7 +275,7 @@ def test_status_manager_send_update_exception_sendall(status_manager_instance_in
     Test StatusManager class method: send_update - raise exception from sendall
     Send the latest status packet over the UDP socket.
     """
-    status_manager_instance_inited.set_start_time()
+    status_manager_instance_inited.start()
     status_manager_instance_inited.port = 5004
     utils.clear_log()
 

@@ -10,8 +10,6 @@
     "ctf_options": {
         "verify_timeout": 4
     },
-    "telemetry_watch_list": {},
-    "command_watch_list": {},
     "import": {},
     "tests": [
         {

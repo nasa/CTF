@@ -13,7 +13,7 @@ Any other input will abort the test.
 Example:
 ```javascript
 {
-    "command":"WaitForUserInput",
+    "instruction":"WaitForUserInput",
     "data":{
      "prompt": "  " 
     }      

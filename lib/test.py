@@ -18,7 +18,6 @@ Represents a single CTF test case
 # either expressed or implied.
 
 
-import sched
 import time
 
 from lib.ctf_global import Global, CtfVerificationStage
@@ -32,18 +31,18 @@ class Test:
     The TestCase class represents a CTF Test Case.
     @note - A test script may have multiple test cases.
     """
+
     def __init__(self):
-        # Test properties
+        """
+        Constructor of Test Class: Initiate test properties
+        """
         self.test_info = None
-        self.event_list = []
+        self.instructions = []
         self.test_result = True
         self.test_aborted = False
         self.test_run = False
         self.num_skipped = 0
         self.num_ran = 0
-
-        # Scheduler for test events
-        self.event_schedule = sched.scheduler(time.time, time.sleep)
 
         # Test start time set when scheduler executes
         self.test_start_time = 0
@@ -75,39 +74,37 @@ class Test:
 
         self.status_manager = None
 
-    def execute_event(self, test_instruction, command_index):
+        self.current_instruction_index = 0
+
+    def execute_instruction(self, test_instruction, command_index):
         """
         Execute a CTF Test Instruction
         """
         # for command in commands:
         instruction = test_instruction["instruction"]
         data = test_instruction.get("data") or {}
-        # skip verification commands - handled by execute_verification
+
         if instruction in self.verify_required_commands:
-            return
+            log.error("Instruction {} must be handles by execute_verification")
+            return False
 
         # execute command if not verification
         plugin_to_use = Global.plugin_manager.find_plugin_for_command(instruction)
         data_str = str(data).replace("\n", "\n" + " " * 20)
         if plugin_to_use is not None:
             try:
-                ret = plugin_to_use.process_command(instruction=instruction, data=data)
+                instruction_passed = plugin_to_use.process_command(instruction=instruction, data=data)
             except CtfTestError:
-                ret = False
+                instruction_passed = False
 
-            status = None
-            if ret:
-                status = StatusDefs.passed
-            else:
-                status = StatusDefs.failed
+            status = StatusDefs.passed if instruction_passed else StatusDefs.failed
 
             self.status_manager.update_command_status(status, "", index=command_index)
             self.status_manager.end_command()
-            log.test(ret, False,
-                     "Instruction {}: {}".format(instruction, data_str))
-            if ret is None:
-                ret = False
-            self.test_result &= ret
+            log.test(instruction_passed, False, "Instruction {}: {}".format(instruction, data_str))
+            if instruction_passed is None:
+                instruction_passed = False
+            self.test_result &= instruction_passed
 
         else:
             status = StatusDefs.error
@@ -116,6 +113,9 @@ class Test:
             self.test_result = False
             self.status_manager.end_command()
             log.test(False, False, details)
+            instruction_passed = False
+
+        return instruction_passed
 
     def execute_verification(self, command, command_index, timeout, new_verification=False):
         """
@@ -197,28 +197,41 @@ class Test:
         """
         Run all CTF Instructions in the current test case
         """
-        if len(self.event_list) == 0:
+        if len(self.instructions) == 0:
             log.error("Invalid Test Case: {}. Check that the script has been parsed correctly.."
                       .format(self.test_info.get("test_case", "")))
             self.test_result = False
-        for i in self.event_list:
+
+        self.current_instruction_index = 0
+
+        if self.current_instruction_index > len(self.instructions) - 1:
+            log.error("No test instructions to execute.")
+            return
+
+        while True:
+            i = self.instructions[self.current_instruction_index]
             # get command information
             delay = i.delay
-            instruction_index = i.command_index
             instruction = i.command["instruction"]
+            instruction_result = False
+
+            # Update current instruction index globally
+            Global.current_instruction_index = self.current_instruction_index
 
             if i.is_disabled:
                 status = StatusDefs.disabled
                 details = "Instruction is disabled. Skipping..."
-                self.status_manager.update_command_status(status, details, index=instruction_index)
+                self.status_manager.update_command_status(status, details, index=self.current_instruction_index)
                 self.status_manager.end_command()
                 log.info("Skipping disabled test instruction {} ".format(instruction))
                 self.num_skipped += 1
+                self.current_instruction_index += 1
                 continue
 
             if instruction in self.ignored_instructions:
                 log.info("Ignoring test instruction {} ".format(instruction))
                 self.num_skipped += 1
+                self.current_instruction_index += 1
                 continue
 
             self.test_run = True
@@ -229,11 +242,9 @@ class Test:
             try:
                 self.process_command_delay(delay)
                 Global.time_manager.pre_command()
-
             except CtfConditionError as exception:
                 self.test_result = False
                 log.test(False, False, "CtfConditionError: Condition not satisfied: {}".format(exception))
-
             except CtfTestError as exception:
                 log.error("Unknown Error Processing Command Delay & Pre-Command")
                 log.debug(exception)
@@ -245,28 +256,107 @@ class Test:
 
             if instruction in self.verify_required_commands:
                 timeout = i.command["timeout"] if "timeout" in i.command else self.ctf_verification_timeout
-                self.execute_verification(i.command, i.command_index, timeout, reset_ver_start_time)
-            elif instruction in self.continuous_verification_commands:
-                # ENHANCE - In the future, may implement special logic for continuously verified commands.
-                self.execute_event(i.command, instruction_index)
+                instruction_result = self.execute_verification(i.command,
+                                                               i.command_index,
+                                                               timeout,
+                                                               reset_ver_start_time)
+            # this handles continuously verified commands.
             else:
-                self.execute_event(i.command, instruction_index)
+                instruction_result = self.execute_instruction(i.command, self.current_instruction_index)
 
             try:
                 Global.time_manager.post_command()
             except CtfTestError as exception:
                 self.test_result = False
-                log.test(False, False, "CtfConditionError: Condition not satisfied: {}".format(exception))
+                log.test(False, False, "CtfTestError: Condition not satisfied: {}".format(exception))
 
-            if (instruction in self.end_test_on_fail_commands or self.end_test_on_fail) and not self.test_result:
-                # instruction is already executed in execute_event above
-                # the test result is updated in self.test_result
+            if not instruction_result and (instruction in self.end_test_on_fail_commands or self.end_test_on_fail):
                 log.error("Instruction: {} Failed. Aborting test...".format(instruction))
                 if self.end_test_on_fail:
                     log.warning("Configuration field \"end_test_on_fail\" enabled. Ending testing.")
                 log.error("Test Case: {} Failed.".format(self.test_info.get("test_case", "")))
                 self.test_aborted = True
                 break
+
+            goto_instruction_index = Global.goto_instruction_index
+
+            if goto_instruction_index:
+                if goto_instruction_index < 0 or goto_instruction_index > len(self.instructions) - 1:
+                    log.error("Invalid goto instruction index {}. Valid test case instructions: [0, {}]".format(
+                        goto_instruction_index, len(self.instructions) - 1
+                    ))
+                    log.error("Test Case: {} Failed.".format(self.test_info.get("test_case", "")))
+                    self.test_aborted = True
+                    break
+
+                self.current_instruction_index = goto_instruction_index
+                Global.goto_instruction_index = None
+            else:
+                self.current_instruction_index += 1
+
+            if self.current_instruction_index > len(self.instructions) - 1:
+                break
+
+    def process_control_flow_label(self):
+        """
+        Process control flow labels defined in test instructions 'BeginLoop' and 'EndLoop'
+        """
+        Global.label_map.clear()
+        Global.goto_label_map.clear()
+        label_stack = []
+        log.info("Process control flow labels defined in test instructions 'BeginLoop' and 'EndLoop'")
+        for event in self.instructions:
+            log.info("Instruction defined in test scripts: {}".format(event.command))
+
+            if event.command['instruction'] == 'SetLabel':
+                if 'label' not in event.command['data'] or event.command['data']['label'] == '':
+                    log.error("SetLabel instruction does not include 'label' {}".format(event.command))
+                    raise CtfTestError("SetLabel instruction does not include 'label'")
+                label = event.command['data']['label']
+                if label in Global.goto_label_map:
+                    log.error("The label '{}' has been already defined in current test script".format(label))
+                    raise CtfTestError("The label in instruction has been already defined in current test script")
+                Global.goto_label_map[label] = event.command_index
+
+            if event.command['instruction'] == 'BeginLoop':
+                if 'label' not in event.command['data'] or event.command['data']['label'] == '':
+                    log.error("BeginLoop instruction does not include 'label' {}".format(event.command))
+                    raise CtfTestError("BeginLoop instruction does not include 'label'")
+                label = event.command['data']['label']
+                if label in Global.label_map:
+                    log.error("The label '{}' has been already defined in current test script".format(label))
+                    raise CtfTestError("The label in instruction has been already defined in current test script")
+                Global.label_map[label] = [event.command_index, -1, False]
+                label_stack.append(label)
+
+            if event.command['instruction'] == 'EndLoop':
+                if 'label' not in event.command['data'] or event.command['data']['label'] == '':
+                    log.error("EndLoop instruction does not include 'label' {}".format(event.command))
+                    raise CtfTestError("EndLoop instruction does not include 'label'")
+                label = event.command['data']['label']
+                if label not in Global.label_map:
+                    log.error("The label '{}' in instruction is not defined by previous "
+                              "BeginLoop instructions".format(label))
+                    raise CtfTestError("The label in instruction is not defined")
+                Global.label_map[label][1] = event.command_index
+                if len(label_stack) > 0 and label_stack[-1] == label:
+                    label_stack.pop()
+                else:
+                    expected_label = label_stack[-1] if len(label_stack) > 0 else ""
+                    log.error("The label matching fails, the actual label: {}  "
+                              "the expected label: {} ".format(label,expected_label))
+                    raise CtfTestError("The label matching fails")
+
+        if len(label_stack) != 0:
+            log.error("BeginLoop & EndLoop not in pairs")
+            raise CtfTestError("BeginLoop & EndLoop not in pairs")
+
+        for label in Global.goto_label_map:
+            log.info("Found goto labels in current test script '{}' : {}".format(label, Global.goto_label_map[label]))
+
+        for label in Global.label_map:
+            log.info("Found control-flow labels in current "
+                     "test script '{}' : {}".format(label, Global.label_map[label]))
 
     def run_test(self, status_manager):
         """
@@ -275,12 +365,13 @@ class Test:
         self.status_manager = status_manager
         test_status = StatusDefs.active
         self.status_manager.update_test_status(test_status, "")
-        # self.create_schedule()
+
         log.info("Test {}: Starting".format(self.test_info.get("test_case", "")))
         log.info(self.test_info.get("description", ""))
         self.test_start_time = time.time()
+
         try:
-            # self.event_schedule.run(blocking=True)
+            self.process_control_flow_label()
             self.run_commands()
             if self.test_result:
                 test_status = StatusDefs.passed
@@ -290,6 +381,7 @@ class Test:
                 self.status_manager.update_test_status(test_status, "")
             if self.test_aborted:
                 test_status = StatusDefs.aborted
+                self.status_manager.update_test_status(test_status, "")
 
         except Exception as exception:
             self.test_result = False
@@ -298,7 +390,7 @@ class Test:
             raise CtfTestError("Error in run_test") from exception
 
         log.info("Test {}: {}".format(self.test_info.get("test_case"), test_status))
-        log.info("Number instructions To Run:         {}".format(len(self.event_list)))
+        log.info("Number instructions To Run:         {}".format(len(self.instructions)))
         log.info("Number instructions Ran:            {}".format(self.num_ran))
         log.info("Number instructions Skipped:        {}".format(self.num_skipped))
         self.status_manager.end_test()

@@ -83,18 +83,25 @@ def test_ftp_interface_disconnect_ftp(iftp_conn, iftp, utils):
     assert utils.has_log_level('WARNING')
 
 
+def test_ftp_interface_store_file_ftp_fail(iftp_conn, utils):
+    with patch('builtins.open', new_callable=mock_open()) as mock_file:
+        # ftp does not exist
+        iftp_conn.ftp = None
+        assert not iftp_conn.store_file_ftp('./configs', 'template_config.ini')
+
+
 def test_ftp_interface_store_file_ftp(iftp_conn, utils):
     with patch('builtins.open', new_callable=mock_open()) as mock_file:
         # nominal case
-        assert iftp_conn.store_file_ftp('./configs', 'default_config.ini')
+        assert iftp_conn.store_file_ftp('./configs', 'template_config.ini')
         iftp_conn.ftp.storbinary.assert_called_once()
         assert not utils.has_log_level('WARNING')
-        mock_file.assert_called_once_with(os.path.abspath('./configs/default_config.ini'), 'rb')
+        mock_file.assert_called_once_with(os.path.abspath('./configs/template_config.ini'), 'rb')
         mock_file.return_value.close.assert_called_once()
 
         # FTP error
         iftp_conn.ftp.storbinary.side_effect = EOFError('mock error')
-        assert not iftp_conn.store_file_ftp('./configs', 'default_config.ini')
+        assert not iftp_conn.store_file_ftp('./configs', 'template_config.ini')
         assert utils.has_log_level('WARNING')
         utils.clear_log()
 
@@ -109,8 +116,16 @@ def test_ftp_interface_store_file_ftp(iftp_conn, utils):
 
         # FTP is disconnected
         iftp_conn.disconnect_ftp()
-        assert not iftp_conn.store_file_ftp('./configs', 'default_config.ini')
+        assert not iftp_conn.store_file_ftp('./configs', 'template_config.ini')
         assert utils.has_log_level('WARNING')
+
+
+def test_ftp_interface_get_file_ftp_fail(iftp_conn, utils):
+    with patch('builtins.open', new_callable=mock_open()) as mock_file, \
+            patch('lib.ftp_interface.os.remove') as mock_remove:
+        # ftp does not exist
+        iftp_conn.ftp = None
+        assert not iftp_conn.get_file_ftp('/file/to/get', 'local/file/path')
 
 
 def test_ftp_interface_get_file_ftp(iftp_conn, utils):
@@ -144,25 +159,53 @@ def test_ftp_interface_get_file_ftp(iftp_conn, utils):
         mock_file.assert_not_called()
 
 
+def test_ftp_interface_upload_ftp_exception(iftp):
+    with patch('lib.ftp_interface.ftplib.FTP', spec=ftplib.FTP) as mock_ftp:
+        # cwd triggers exception
+        mock_ftp.return_value.cwd.side_effect = [None, OSError('mock error'), OSError('mock error'), None, None, None]
+        assert not iftp.upload_ftp('./configs', 'localhost', '/remote/path')
+
+
 def test_ftp_interface_upload_ftp(iftp):
     with patch('lib.ftp_interface.ftplib.FTP', spec=ftplib.FTP) as mock_ftp:
         # nominal case, single file
-        assert iftp.upload_ftp('./configs', 'localhost', '/remote/path', 'default_config.ini')
+        assert iftp.upload_ftp('./configs', 'localhost', '/remote/path', 'template_config.ini')
         # directory
         assert iftp.upload_ftp('./configs', 'localhost', '/remote/path')
         # invalid file
         assert not iftp.upload_ftp('./configs', 'localhost', '/remote/path', 'filename.ext')
         # mkdir error
         mock_ftp.return_value.mkd.side_effect = OSError('mock error')
-        assert not iftp.upload_ftp('./configs', 'localhost', '/remote/path')
+        assert iftp.upload_ftp('./configs', 'localhost', '/remote/path')
         # chdir error
-        assert not iftp.upload_ftp('./invalid', 'localhost', '/remote/path', 'default_config.ini')
+        assert not iftp.upload_ftp('./invalid', 'localhost', '/remote/path', 'template_config.ini')
         # cwd error
         mock_ftp.return_value.cwd.side_effect = [OSError('mock error'), None]
-        assert not iftp.upload_ftp('./configs', 'localhost', '/remote/path', 'default_config.ini')
+        assert not iftp.upload_ftp('./configs', 'localhost', '/remote/path', 'template_config.ini')
         # connection fail
         mock_ftp.side_effect = OSError('mock error')
-        assert not iftp.upload_ftp('./configs', 'localhost', '/remote/path', 'default_config.ini')
+        assert not iftp.upload_ftp('./configs', 'localhost', '/remote/path', 'template_config.ini')
+
+
+def test_ftp_interface_download_ftp_exception(iftp):
+    with patch('lib.ftp_interface.ftplib.FTP', spec=ftplib.FTP) as mock_ftp, \
+            patch('lib.ftp_interface.os.chdir') as mock_chdir:
+        # os.chdir causes exception
+        mock_chdir.side_effect = [OSError('mock error'), None]
+        assert not iftp.download_ftp('/remote/path', 'localhost', './local/path', 'filename.ext')
+
+
+def test_ftp_interface_download_ftp_folder(iftp):
+    with patch('lib.ftp_interface.ftplib.FTP', spec=ftplib.FTP) as mock_ftp:
+        assert iftp.download_ftp('/remote/path', 'localhost', './local/path', 'filename.ext')
+
+        # directory (mock FTP operation to call its callback directly)
+        def mock_retrlines(cmd, callback=None):
+            line = 'drwxrwxr-x  ... /remote/path'
+            callback(line)
+
+        mock_ftp.return_value.retrlines.side_effect = mock_retrlines
+        assert not iftp.download_ftp('/remote/path', 'localhost', './local/path')
 
 
 def test_ftp_interface_download_ftp(iftp):

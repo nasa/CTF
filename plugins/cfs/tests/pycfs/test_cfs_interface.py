@@ -19,14 +19,12 @@ import pytest
 
 from lib.ctf_global import Global, CtfVerificationStage
 from lib.exceptions import CtfConditionError
-from lib.logger import set_logger_options_from_config
 from plugins.cfs.pycfs.cfs_interface import Packet
 
 
 @pytest.fixture(scope='session', autouse=True)
 def init_global():
     Global.load_config('./configs/default_config.ini')
-    set_logger_options_from_config(Global.config)
     time_mgr = MagicMock()
     time_mgr.exec_time = 1.0
     Global.time_manager = time_mgr
@@ -372,7 +370,7 @@ def test_cfs_check_tlm_conditions(cfs, mid_map):
 def test_cfs_send_command(cfs):
     cfs.command.send_command.return_value = 1
     assert cfs.send_command('mid', 'cc', bytearray(0x1)) == 1
-    cfs.command.send_command.assert_called_once_with('mid', 'cc', bytearray(0x1))
+    cfs.command.send_command.assert_called_once_with('mid', 'cc', bytearray(0x1), None)
 
 
 def test_cfs_check_strings(cfs):
@@ -589,6 +587,7 @@ def test_cfs_check_tlm_packet(cfs, utils):
     Global.current_verification_stage = CtfVerificationStage.first_ver
     payload = MagicMock()
     payload.nested.bool = True
+    payload.nested.array = [0, 1, 2, 3]
     payload.myint = 42
     payload.myfloat = 3.14
     payload.mynone = None
@@ -602,6 +601,10 @@ def test_cfs_check_tlm_packet(cfs, utils):
     # valid bool, pass and fail
     assert cfs.check_tlm_packet(payload, [{'compare': '==', 'variable': 'nested.bool', 'value': True}])
     assert not cfs.check_tlm_packet(payload, [{'compare': '==', 'variable': 'nested.bool', 'value': 'true'}])
+
+    # valid array, pass and fail
+    assert cfs.check_tlm_packet(payload, [{'compare': '==', 'variable': 'nested.array[0]', 'value': 0}])
+    assert not cfs.check_tlm_packet(payload, [{'compare': '==', 'variable': 'nested.array[1]', 'value': 2}])
 
     # valid int, pass and fail
     assert cfs.check_tlm_packet(payload, [{'compare': '==', 'variable': 'myint', 'value': 42}])
@@ -624,16 +627,24 @@ def test_cfs_check_tlm_packet(cfs, utils):
     assert not cfs.check_tlm_packet(payload, [{'compare': '==', 'variable': 'myfloat', 'value': 4, 'tolerance': .14}])
 
     # with tol_plus, pass and fail
-    # TODO false negative?
-    # assert cfs.check_tlm_packet(payload, [{'compare': '==', 'variable': 'myfloat', 'value': 3, 'tolerance_plus': .14}])
+    assert cfs.check_tlm_packet(payload, [{'compare': '==', 'variable': 'myfloat', 'value': 3, 'tolerance_plus': .14}])
     assert not cfs.check_tlm_packet(payload,
                                     [{'compare': '==', 'variable': 'myfloat', 'value': 2, 'tolerance_plus': .14}])
 
     # with tol_minus, pass and fail
-    # TODO false negative?
-    # assert cfs.check_tlm_packet(payload, [{'compare': '==', 'variable': 'myfloat', 'value': 3.2, 'tolerance_minus': .1}])
+    assert cfs.check_tlm_packet(payload, [{'compare': '==', 'variable': 'myfloat', 'value': 3.2, 'tolerance_minus': .1}])
     assert not cfs.check_tlm_packet(payload,
                                     [{'compare': '==', 'variable': 'myfloat', 'value': 3.1, 'tolerance_minus': .1}])
+
+    # with both, pass and fail
+    assert cfs.check_tlm_packet(payload, [{'compare': '==', 'variable': 'myfloat', 'value': 3.1,
+                                           'tolerance_minus': .1, 'tolerance_plus': .04}])
+    assert cfs.check_tlm_packet(payload, [{'compare': '==', 'variable': 'myfloat', 'value': 3.2,
+                                           'tolerance_minus': .1, 'tolerance_plus': .04}])
+    assert not cfs.check_tlm_packet(payload, [{'compare': '==', 'variable': 'myfloat', 'value': 3,
+                                               'tolerance_minus': 1,  'tolerance_plus': .1}])
+    assert not cfs.check_tlm_packet(payload, [{'compare': '==', 'variable': 'myfloat', 'value': 3.3,
+                                               'tolerance_minus': .1,  'tolerance_plus': 1}])
 
     # with mask, pass and fail
     assert cfs.check_tlm_packet(payload,

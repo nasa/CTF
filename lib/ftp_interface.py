@@ -26,16 +26,11 @@ from lib.ctf_utility import expand_path
 from lib.logger import logger as log
 
 
-# ENHANCE - Identify if file is needed, move to a more appropriate location, and clean up if possible.
-
-# ftputil does not work for the SP0 so the ftplib components FTP is also made available
-
-
 class FtpInterface:
     """
     The FtpInterface class provides functionality to connect/disconnect to remote FTP server,
     upload/download files, create folder on server.
-    @note - FtpInterface is used in SshController and SP0Plug
+    @note - Two parallel FTP implementations are provided: ftputil for use via SSH, and ftplib for SP0
     """
 
     def __init__(self):
@@ -61,6 +56,7 @@ class FtpInterface:
         status = True
 
         if self.ftpconnect:
+            path = expand_path(path)
             filetoupload = os.path.abspath(os.path.join(path, file))
             log.debug("Uploading {}...".format(filetoupload))
             if os.path.isfile(filetoupload):
@@ -95,7 +91,7 @@ class FtpInterface:
         remote_path, file = os.path.split(remote_file)
         log.debug("fileToDownload {}...".format(file))
         if local_path:
-            local_file = os.path.join(local_path, file)
+            local_file = os.path.join(expand_path(local_path), file)
         else:
             local_file = file
         if self.ftpconnect:
@@ -149,6 +145,7 @@ class FtpInterface:
                 log.warning("FTP cwd Failed for {}@{}".format(remotepath, self.ipaddr))
                 status = False
         try:
+            localpath = expand_path(localpath)
             os.chdir(localpath)
         except OSError:
             log.warning("Cwd Failed for {}".format(localpath))
@@ -169,15 +166,16 @@ class FtpInterface:
                         break
                 elif os.path.isdir(localfile):
                     try:
-                        log.debug("Creating remote directory {}...".format(localfile))
-                        # The mkdir will fail if the directory already exist
-                        self.ftp.mkd(localfile)
+                        self.ftp.cwd(localfile)
                     except ftplib.all_errors:
-                        log.error("Creating remote directory failed {}...".format(localfile))
-                        status = False
-                        break
-
-                    self.ftp.cwd(localfile)
+                        try:
+                            log.debug("Creating remote directory {}...".format(localfile))
+                            self.ftp.mkd(localfile)
+                            self.ftp.cwd(localfile)
+                        except ftplib.all_errors:
+                            log.error("Creating remote directory failed {}...".format(localfile))
+                            status = False
+                            break
                     status = self.upload_ftp(localfile)
                 else:
                     status = False
@@ -212,6 +210,7 @@ class FtpInterface:
                 log.warning("FTP not connected.")
                 return status
         if localpath:
+            localpath = expand_path(localpath)
             if not os.path.isdir(localpath):
                 log.debug("Creating local directory {}...".format(localpath))
                 os.makedirs(localpath)
@@ -247,14 +246,17 @@ class FtpInterface:
                             break
                     else:
                         try:
-                            log.debug("Creating local directory {}...".format(remotefile))
-                            os.mkdir(remotefile)
+                            os.chdir(remotefile)
                         except OSError:
-                            log.error("Creating directory failed {}...".format(remotefile))
-                            status = False
-                            break
+                            try:
+                                log.debug("Creating local directory {}...".format(remotefile))
+                                os.mkdir(remotefile)
+                                os.chdir(remotefile)
+                            except OSError:
+                                log.error("Creating local directory failed {}...".format(remotefile))
+                                status = False
+                                break
 
-                        os.chdir(remotefile)
                         status = self.download_ftp(remotefile)
 
             if self.uploadlevel != 1:
@@ -319,10 +321,10 @@ class FtpInterface:
         """
         self.ipaddr = host
         try:
-            os.chdir(expand_path(local_path))
+            local_path = expand_path(local_path)
+            os.chdir(local_path)
             # noinspection PyDeprecation
             with ftputil.FTPHost(host, usrid, '') as ftp:
-                # ftp.login()
                 for path, dirs, files in os.walk('.'):
                     remote_dir = ftp.path.join(remote_path, path)
                     if not ftp.path.exists(remote_dir):

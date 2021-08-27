@@ -380,9 +380,10 @@ class CCDDExportReader(CCSDSInterface):
                     if constant_name not in self.type_dict:
                         try:
                             constant_value = ast.literal_eval(constant_value)
-                        except ValueError:
+                        except (ValueError, SyntaxError):
                             if self.config.log_ccsds_imports:
-                                log.debug("Could not evaluate constant {}: {}".format(constant_name, constant_value))
+                                log.debug("Constant {}: {} is not a literal value, preserving as string"
+                                          .format(constant_name, constant_value))
                         self.type_dict[constant_name] = constant_value
                     elif self.config.log_ccsds_imports:
                         log.debug("Constant {} already defined, skipping...".format(constant_name))
@@ -477,6 +478,7 @@ class CCDDExportReader(CCSDSInterface):
                     files.append(filename)
 
         # Process only types & macros first, then custom types, then macros again for custom type aliases
+        files = sorted(files)
         for file in files:
             self.current_file_name = os.path.basename(file)
             self.process_ccsds_json_file(file, self.is_types_macros)

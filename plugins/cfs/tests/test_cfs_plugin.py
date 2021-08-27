@@ -18,14 +18,12 @@ import pytest
 
 from lib.ctf_global import Global, CtfVerificationStage
 from lib.exceptions import CtfTestError
-from lib.logger import set_logger_options_from_config
 from plugins.cfs.cfs_time_manager import CfsTimeManager
 
 
 @pytest.fixture(scope="session", autouse=True)
 def init_global():
     Global.load_config("./configs/default_config.ini")
-    set_logger_options_from_config(Global.config)
 
 
 def test_cfs_plugin_init(cfs_plugin):
@@ -39,7 +37,7 @@ def test_cfs_plugin_init(cfs_plugin):
 
 
 def test_cfs_plugin_instruction_sets(cfs_plugin):
-    assert len(cfs_plugin.command_map) == 13
+    assert len(cfs_plugin.command_map) == 15
     assert "RegisterCfs" in cfs_plugin.command_map
     assert "BuildCfs" in cfs_plugin.command_map
     assert "StartCfs" in cfs_plugin.command_map
@@ -47,6 +45,8 @@ def test_cfs_plugin_instruction_sets(cfs_plugin):
     assert "SendCfsCommand" in cfs_plugin.command_map
     assert "SendInvalidLengthCfsCommand" in cfs_plugin.command_map
     assert "CheckTlmValue" in cfs_plugin.command_map
+    assert "CheckTlmPacket" in cfs_plugin.command_map
+    assert "CheckNoTlmPacket" in cfs_plugin.command_map
     assert "CheckTlmContinuous" in cfs_plugin.command_map
     assert "RemoveCheckTlmContinuous" in cfs_plugin.command_map
     assert "CheckEvent" in cfs_plugin.command_map
@@ -54,8 +54,10 @@ def test_cfs_plugin_instruction_sets(cfs_plugin):
     assert "ArchiveCfsFiles" in cfs_plugin.command_map
     assert "ShutdownCfs" in cfs_plugin.command_map
 
-    assert len(cfs_plugin.verify_required_commands) == 3
+    assert len(cfs_plugin.verify_required_commands) == 5
     assert "CheckTlmValue" in cfs_plugin.verify_required_commands
+    assert "CheckTlmPacket" in cfs_plugin.verify_required_commands
+    assert "CheckNoTlmPacket" in cfs_plugin.verify_required_commands
     assert "CheckEvent" in cfs_plugin.verify_required_commands
     assert "CheckNoEvent" in cfs_plugin.verify_required_commands
 
@@ -324,7 +326,7 @@ def test_cfs_plugin_send_cfs_command_pass(cfs_plugin):
     cfs_plugin.has_attempted_register = True
     assert cfs_plugin.send_cfs_command("mid", 1, {'args': True}, None, 0, False)
     assert mock_controller.send_cfs_command.call_count == num_controllers
-    mock_controller.send_cfs_command.assert_called_with("mid", 1, {'args': True}, 0, False)
+    mock_controller.send_cfs_command.assert_called_with("mid", 1, {'args': True}, None, 0, False)
 
 
 def test_cfs_plugin_send_cfs_command_fail(cfs_plugin):
@@ -354,6 +356,15 @@ def test_cfs_plugin_check_tlm_value_no_target(cfs_plugin):
     assert not cfs_plugin.targets
     assert not cfs_plugin.check_tlm_value("", {})
     assert not cfs_plugin.targets
+
+
+def test_cfs_plugin_get_tlm_value(cfs_plugin):
+    assert not cfs_plugin.targets
+    mock_controller = MagicMock()
+    cfs_plugin.targets = {i: mock_controller for i in range(1)}
+    assert cfs_plugin.get_tlm_value("mid", {'args': True}, None)
+    assert mock_controller.get_tlm_value.call_count == 1
+    mock_controller.get_tlm_value.assert_called_with("mid", {'args': True})
 
 
 def test_cfs_plugin_check_tlm_value_pass(cfs_plugin):
@@ -389,6 +400,56 @@ def test_cfs_plugin_check_tlm_value_single_target(cfs_plugin):
     cfs_plugin.targets['0'].check_tlm_value.assert_not_called()
     cfs_plugin.targets['1'].check_tlm_value.assert_called_once()
     cfs_plugin.targets['2'].check_tlm_value.assert_not_called()
+
+
+def test_cfs_plugin_check_tlm_packet_pass(cfs_plugin):
+    Global.current_verification_stage = CtfVerificationStage.first_ver
+    num_controllers = 3
+    mock_controller = MagicMock()
+    mock_controller.check_tlm_value.return_value = True
+    cfs_plugin.targets = {i: mock_controller for i in range(num_controllers)}
+    cfs_plugin.has_attempted_register = True
+    assert cfs_plugin.check_tlm_packet("mid", None)
+    assert mock_controller.check_tlm_value.call_count == num_controllers
+    mock_controller.check_tlm_value.assert_called_with("mid")
+
+
+def test_cfs_plugin_check_tlm_packet_fail(cfs_plugin):
+    num_controllers = 3
+    mock_controller = MagicMock()
+    mock_controller.check_tlm_value.side_effect = [True, False, True]
+    cfs_plugin.targets = {i: mock_controller for i in range(num_controllers)}
+    cfs_plugin.has_attempted_register = True
+    assert not cfs_plugin.check_tlm_packet("mid", None)
+    assert mock_controller.check_tlm_value.call_count == num_controllers
+
+
+def test_cfs_plugin_check_no_tlm_packet_pass(cfs_plugin):
+    num_controllers = 3
+    mock_controller = MagicMock()
+    mock_controller.check_tlm_value.return_value = False
+    cfs_plugin.targets = {i: mock_controller for i in range(num_controllers)}
+    cfs_plugin.has_attempted_register = True
+    assert not cfs_plugin.check_no_tlm_packet("mid")
+    assert mock_controller.check_tlm_value.call_count == num_controllers
+    with patch.object(Global, 'current_verification_stage', CtfVerificationStage.last_ver):
+        assert cfs_plugin.check_no_tlm_packet("mid")
+    assert mock_controller.check_tlm_value.call_count == num_controllers * 2
+    mock_controller.check_tlm_value.assert_called_with("mid")
+
+
+def test_cfs_plugin_check_no_tlm_packet_fail(cfs_plugin):
+    num_controllers = 3
+    mock_controller = MagicMock()
+    mock_controller.check_tlm_value.side_effect = [False, False, False, False, True, False]
+    cfs_plugin.targets = {i: mock_controller for i in range(num_controllers)}
+    cfs_plugin.has_attempted_register = True
+    assert not cfs_plugin.check_no_tlm_packet("mid")
+    assert mock_controller.check_tlm_value.call_count == num_controllers
+    with patch.object(Global, 'current_verification_stage', CtfVerificationStage.last_ver):
+        assert not cfs_plugin.check_no_tlm_packet("mid")
+    assert mock_controller.check_tlm_value.call_count == num_controllers * 2
+    mock_controller.check_tlm_value.assert_called_with("mid")
 
 
 def test_cfs_plugin_check_tlm_continuous_no_target(cfs_plugin):

@@ -75,7 +75,7 @@ class CcsdsV1CmdPacket(CcsdsV1Packet):
         ("sheader", CcsdsSecondaryCmdHeader)
     ]
 
-    def __init__(self, mid, command_code, payload_length, sequence_count=0):
+    def __init__(self, mid, command_code, payload_length, sequence_count=0, **_: dict):
         super().__init__()
         # Packet Length = Complete Packet Length - 7 (Per CCSDS Definition)
         packet_length = payload_length + ctypes.sizeof(self) - 7

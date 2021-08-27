@@ -10,7 +10,7 @@ Declares a target host by name. This command must be run before any other comman
 Example:
 ```javascript
     {
-        "command": "SSH_RegisterTarget",
+        "instruction": "SSH_RegisterTarget",
         "wait": 1,
         "data": {
             "name": "workstation"
@@ -33,7 +33,7 @@ Note - CTF does not currently handle password entry/storage. Follow the tutorial
 Example:
 ```javascript
     {
-        "command": "SSH_InitSSH",
+        "instruction": "SSH_InitSSH",
         "wait": 1,
         "data": {
             "name": "workstation",
@@ -55,7 +55,7 @@ Executes a command on the remote host. **ExecutionInitSSH** must be called first
 Example:
 ```javascript
     {
-        "command": "SSH_RunRemoteCommand",
+        "instruction": "SSH_RunRemoteCommand",
         "wait": 1,
         "data": {
             "name": "workstation",
@@ -74,7 +74,7 @@ Executes a command on the local host (the machine running CTF), regardless of th
 Example:
 ```javascript
     {
-        "command": "SSH_RunLocalCommand",
+        "instruction": "SSH_RunLocalCommand",
         "wait": 1,
         "data": {
             "name": "workstation",
@@ -94,7 +94,7 @@ Compares the output of the most recently executed command. **ExecutionRunRemoteC
 Example:
 ```javascript
     {
-        "command": "SSH_CheckOutput",
+        "instruction": "SSH_CheckOutput",
         "wait": 0,
         "data": {
             "name": "workstation",
@@ -119,7 +119,7 @@ Copies a path (file or directory) from the local filesystem to the remote host v
 Example:
 ```javascript
     {
-        "command": "SSH_PutFile",
+        "instruction": "SSH_PutFile",
         "wait": 0,
         "data": {
             "name": "workstation",
@@ -147,7 +147,7 @@ Copies a path (file or directory) from the remote host to the local filesystem v
 Example:
 ```javascript
     {
-        "command": "SSH_GetFile",
+        "instruction": "SSH_GetFile",
         "wait": 0,
         "data": {
             "name": "workstation",
@@ -168,7 +168,7 @@ Downloads a path (file or directory) from the FTP server to the local filesystem
 Example:
 ```javascript
     {
-        "command": "SSH_GetFTP",
+        "instruction": "SSH_GetFTP",
         "wait": 0,
         "data": {
             "name": "workstation",
@@ -190,7 +190,7 @@ Uploads a path (file or directory) from the local filesystem to the FTP server.
 Example:
 ```javascript
     {
-        "command": "SSH_PutFTP",
+        "instruction": "SSH_PutFTP",
         "wait": 0,
         "data": {
             "name": "workstation",

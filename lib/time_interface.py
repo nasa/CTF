@@ -28,6 +28,9 @@ class TimeInterface:
     @note A custom plugin must set the global time manager used by CTF using Global.set_time_manager(time_manager)
     """
     def __init__(self):
+        """
+        Constructor of TimeInterface Class: Initiate instance properties
+        """
         ## Execution time since the time manager was initialized
         self.exec_time = 0
 

@@ -31,6 +31,9 @@ class TestScript:
     The TestScript class represents a CTF test script, storing script data and status.
     """
     def __init__(self):
+        """
+        Constructor of TestScript Class: Initiate instance properties
+        """
         self.test_number = None
         self.test_name = None
         self.requirements = None
@@ -47,7 +50,7 @@ class TestScript:
         self.params = ""
         self.status = ""
         self.start_time = 0
-        self.time_taken = 0
+        self.exec_time = 0
         self.num_tests = 0
         self.num_passed = 0
         self.num_failed = 0
@@ -119,7 +122,7 @@ class TestScript:
                     log.error("Aborted Test Script: {}".format(self.input_file))
                     break
 
-            self.time_taken = time.time() - self.start_time
+            self.exec_time = time.time() - self.start_time
             self.generate_test_results()
 
         except Exception as exception:
@@ -162,8 +165,3 @@ class TestScript:
         log.info("Number tests Ran:                   {}".format(self.num_passed + self.num_failed))
         log.info("Number tests Passed:                {}".format(self.num_passed))
         log.info("Number tests Failed:                {}".format(self.num_failed))
-        # if self.SkippedCommands > 0:
-        #     log.info("Number TrickCFS Commands Skipped:   %s" % self.SkippedCommands)
-        # log.runCountTest = self.num_tests
-        log.passedTest = self.num_passed
-        log.failedTest = self.num_failed

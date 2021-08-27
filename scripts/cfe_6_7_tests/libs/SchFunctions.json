@@ -10,22 +10,6 @@
   "ctf_options": {
     "verify_timeout": 4
   },
-  "telemetry_watch_list": {
-    "SCH_HK_TLM_MID": [
-      "ErrCounter",
-      "CmdCounter"
-    ]
-  },
-  "command_watch_list": {
-    "SCH_CMD_MID": [
-      "SCH_NOOP_CC",
-      "SCH_RESET_CC",
-      "SCH_ENABLE_CC",
-      "SCH_DISABLE_CC",
-      "SCH_ENABLE_GROUP_CC",
-      "SCH_DISABLE_GROUP_CC"
-    ]
-  },
   "import": {},
   "functions": {
     "SendCheckSchNoopCmd": {

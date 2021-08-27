@@ -56,7 +56,7 @@ class CommandInterface:
         """
         self.command_socket.close()
 
-    def send_command(self, msg_id, function_code, data):
+    def send_command(self, msg_id, function_code, data, header_args=None):
         """
         This method constructs a CCSDS command packet and sends it
          to the ip:port defined when creating the class via UDP
@@ -64,16 +64,14 @@ class CommandInterface:
         @param msg_id: The message ID of the command to send
         @param function_code: The app specific function/command code (CC)
         @param data: A bytearray representing the packed message payload. This is specific to the message, so for now
-        the bytearray needs to be contructed by hand using struct.pack or the included BytePacker class
-        :param subsysId: If using CCSDS V2 you can use this parameter to specify which subsystem to target
-        :param endian: If using CCSDS V2 you can use this parameter to specify what endianess to use
-        :param systemId: If using CCSDS V2 you can use this paramater to specify which system to target
+        the bytearray needs to be constructed by hand using struct.pack or the included BytePacker class
+        @param header_args: An optional dictionary of additional kwargs for the header constructor
          @return  The number of bytes that were sent over the socket. UDP is connectionless, so there is no way for the
         socket to know that a packet was received by the destination
         """
         sequence_counter = 0
         command = self.ccsds.CcsdsCommand(msg_id, function_code, len(data), sequence_count=sequence_counter,
-                                          endian=self.endianness)
+                                          endian=self.endianness, **(header_args or {}))
         to_send = bytearray(command) + data
         # Check if socket is closed, and if so, reinitialize command socket.
         if self.command_socket.fileno() == -1:

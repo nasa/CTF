@@ -24,7 +24,6 @@ from plugins.cfs.pycfs.output_app_interface import OutputManager, ToApi
 @pytest.fixture(scope="session", autouse=True)
 def init_global():
     Global.load_config("./configs/default_config.ini")
-    set_logger_options_from_config(Global.config)
 
 
 @pytest.fixture(name='outmgr')

@@ -47,7 +47,7 @@ class CCSDSInterface:
         Adds a telemetry message to the internal types
 
         @param mid_name: Name of the MID associated with the command
-        @param mid: Value of the MID associated witht the command
+        @param mid: Value of the MID associated with the command
         @param name: Name of the telemetry message
         @param parameters: Type of the telemetry message parameters
         @param parameter_enums: Dictionary of enumerations associated with this telemetry message
@@ -64,14 +64,14 @@ class CCSDSInterface:
         if parameter_enums:
             self.enum_map.update(parameter_enums)
         if self.log_ccsds_imports:
-            log.info("Added Telemetry Message {}:{} with MID {}".format(name, mid_name, mid))
+            log.info("Added Telemetry Message {}:{} with MID {}".format(name, mid_name, hex(mid)))
 
     def add_cmd_msg(self, mid_name, mid, command_code_map, command_enums=None):
         """
         Adds a command message to the internal types
 
         @param mid_name: Name of the MID associated with the command
-        @param mid: Value of the MID associated witht the command
+        @param mid: Value of the MID associated with the command
         @param command_code_map: Dictionary mapping command code values to their corresponding types
         @param command_enums: Dictionary of enumerations associated with this command
         """
@@ -86,7 +86,7 @@ class CCSDSInterface:
             self.enum_map.update(command_enums)
         self.mid_map.update(msg)
         if self.log_ccsds_imports:
-            log.info("Added Command Message {}:{} with MID {}".format(mid_name, mid, command_code_map))
+            log.info("Added Command Message {} with MID {}".format(mid_name, hex(mid)))
 
     def add_enumeration(self, key, value):
         """

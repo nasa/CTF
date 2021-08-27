@@ -10,26 +10,6 @@
     "ctf_options": {
         "verify_timeout": 4
     },
-    "telemetry_watch_list": {
-        "CFE_ES_HK_TLM_MID": [
-            "Payload.CommandCounter",
-            "Payload.CommandErrorCounter"
-        ],
-        "CI_HK_TLM_MID": [
-            "usCmdCnt",
-            "usCmdErrCnt"
-        ]
-    },
-    "command_watch_list": {
-        "CFE_ES_CMD_MID": [
-            "CFE_ES_SHELL_CC"
-        ],
-        "CI_CMD_MID": [
-            "CI_RESET_CC",
-            "CI_ENABLE_TO_CC",
-            "CI_NOOP_CC"
-        ]
-    },
     "import": {
         "../libs/CiFunctions.json": [
             "SendCheckCiResetCmd",

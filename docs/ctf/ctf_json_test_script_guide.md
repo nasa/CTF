@@ -22,8 +22,6 @@ Example test scripts can be found at `examples/aspect_project/scripts` in the re
 - **test_name**: A short descriptive name for the tests in the file.
 - **requirements**: A dictionary where the _key_ is the SRS and the _value_ is a string that states if the test script fully or partially verifies the SRS.
 - **description**: Detailed description of the script.  Start with the RTM test for the requirements you are testing.  Then  include the information that would capture what environments the tests can execute within.  The procedures for executing the script, if special steps are needed.  The init point to be used for the tests.  
-- **telemetry_watch_list**: A dictionary where the _key_ is a telemetry MID that is expected to be received and the _value_ is a list of packet fields that will be addressed by the script and tagged in CCDD.  Tagging in the CCDD will support tracking what tests can be used to demonstrate data validation of these measurements.
-- **command_watch_list**: A dictionary where the _key_ is a command MID that will be sent and the _value_ is a list of Command Codes that will be addressed by the script and tagged in CCDD.  Tagging in the CCDD will support tracking what tests can be used to demonstrate data validation of these commands.
 - **import**: Specify _functions_ (described below) that can be imported from other JSON files.
 - **functions**: User-defined functions that can be used by the test script, described below.
 - **tests**: an array of objects, where each object describes a single **Test.** The **Test** objects are described below.
@@ -41,18 +39,6 @@ Example:
     "test_setup": "Script will start ASPECT, execute a verification command test and close ASPECT",
     "ctf_options": {
         "verify_timeout": 4
-    },
-    "telemetry_watch_list": {
-        "TO_HK_TLM_MID": [
-            "usCmdErrCnt",
-            "usCmdCnt"
-        ]
-    },
-    "command_watch_list": {
-        "TO_CMD_MID": [
-            "TO_NOOP_CC",
-            "TO_RESET_CC"
-        ]
     },
     "import": {},
     "tests": [
@@ -183,18 +169,6 @@ The following example shows the basic CTF test script found in the repo.
     "test_setup": "Script will start CFE-6-7, execute a verification command test and close CFE-6-7",
     "ctf_options": {
         "verify_timeout": 4
-    },
-    "telemetry_watch_list": {
-        "TO_HK_TLM_MID": [
-            "usCmdErrCnt",
-            "usCmdCnt"
-        ]
-    },
-    "command_watch_list": {
-        "TO_CMD_MID": [
-            "TO_NOOP_CC",
-            "TO_RESET_CC"
-        ]
     },
     "import": {},
     "tests": [

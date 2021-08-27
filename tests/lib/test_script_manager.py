@@ -17,13 +17,12 @@ Unit Test for ScriptManager: Loads and manages test scripts during a test run
 # either expressed or implied.
 
 import time
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, mock_open
 
 import pytest
 
 from lib.ctf_global import Global
 from lib.exceptions import CtfTestError
-from lib.logger import set_logger_options_from_config
 from lib.plugin_manager import PluginManager
 from lib.readers.json_script_reader import JSONScriptReader
 from lib.script_manager import ScriptManagerConfig, ScriptManager
@@ -33,7 +32,6 @@ from lib.status_manager import StatusManager
 @pytest.fixture(scope="session", autouse=True)
 def init_global():
     Global.load_config("./configs/default_config.ini")
-    set_logger_options_from_config(Global.config)
     Global.set_time_manager(Mock())
 
 
@@ -59,8 +57,6 @@ def test_script_manager_config_init(script_manager_config):
     """
     Test ScriptManagerConfig class constructor
     """
-    assert script_manager_config.regression_dir == './CTF_Results'
-    assert script_manager_config.script_output_dir == './script_outputs'
     assert script_manager_config.reset_plugins_between_scripts
     assert script_manager_config.json_results
 
@@ -70,9 +66,9 @@ def test_script_manager_init(script_manager):
     Test ScriptManager class constructor
     """
     assert len(script_manager.script_list) == 0
-    assert script_manager.regression_summary_file == ''
-    assert script_manager.regression_summary_json_file == ''
-    assert script_manager.curr_script_log_dir == ''
+    assert script_manager.regression_summary_file_path == ''
+    assert script_manager.regression_summary_json_file_path == ''
+    assert script_manager.curr_script_log_dir_path == ''
     assert script_manager.summary_file is None
 
 
@@ -87,6 +83,20 @@ def test_script_manager_add_script(script_manager):
     assert len(script_manager.script_list) == 1
 
 
+def test_script_manager_add_script_file(script_manager, utils):
+    """
+    Test ScriptManager class method: add_script_file
+    Adds a script file to the list of scripts. If the file is not valid, skip it.
+    """
+    # valid json file
+    assert script_manager.add_script_file('scripts/cfe_6_7_tests/cfe_tests/CfeEsTest.json') is None
+
+    # invalid json file
+    utils.clear_log()
+    assert script_manager.add_script_file('scripts/cfe_6_7_tests/cfe_tests/NOFILE.json') is None
+    assert utils.has_log_level('WARNING')
+
+
 def test_script_manager_run_all_scripts(script_manager, example_script):
     """
     Test ScriptManager class method: run_all_scripts
@@ -96,7 +106,11 @@ def test_script_manager_run_all_scripts(script_manager, example_script):
     # add the second script to script_list
     script_manager.add_script(example_script)
 
-    with patch("lib.test_script.TestScript.run_script", return_value=None):
+    with patch("lib.test_script.TestScript.run_script", return_value=None),\
+         patch('builtins.open', new_callable=mock_open()), \
+         patch('os.makedirs'), \
+         patch("lib.script_manager.change_log_file"),\
+         patch.object(script_manager, 'plugin_manager', Mock(spec=PluginManager)):
         script_manager.config.reset_plugins_between_scripts = False
         assert script_manager.run_all_scripts() is None
 
@@ -110,7 +124,11 @@ def test_script_manager_run_all_scripts_reset_plugins(script_manager, example_sc
     # add the second script to script_list
     script_manager.add_script(example_script)
 
-    with patch("lib.test_script.TestScript.run_script", return_value=None):
+    with patch("lib.test_script.TestScript.run_script", return_value=None),\
+         patch('builtins.open', new_callable=mock_open()), \
+         patch('os.makedirs'), \
+         patch("lib.script_manager.change_log_file"),\
+         patch.object(script_manager, 'plugin_manager', Mock(spec=PluginManager)):
         script_manager.config.reset_plugins_between_scripts = True
         assert script_manager.run_all_scripts() is None
 
@@ -123,7 +141,11 @@ def test_script_manager_run_all_scripts_exception(script_manager, example_script
     script_manager.add_script(example_script)
     utils.clear_log()
 
-    with patch("lib.test_script.TestScript.run_script") as mock_run_script:
+    with patch("lib.test_script.TestScript.run_script") as mock_run_script,\
+         patch('builtins.open', new_callable=mock_open()), \
+         patch('os.makedirs'), \
+         patch("lib.script_manager.change_log_file"),\
+         patch.object(script_manager, 'plugin_manager', Mock(spec=PluginManager)):
         mock_run_script.side_effect = CtfTestError("Raise Exception for testing")
         assert script_manager.run_all_scripts() is None
         assert utils.has_log_level('ERROR')
@@ -141,7 +163,8 @@ def test_script_manager_run_all_scripts_exception2(script_manager, example_scrip
     script_manager.add_script(example_script)
     utils.clear_log()
 
-    with patch("lib.script_manager.change_log_file") as mock_change_log_file:
+    with patch("lib.script_manager.change_log_file") as mock_change_log_file,\
+         patch.object(script_manager, 'plugin_manager', Mock(spec=PluginManager)):
         mock_change_log_file.side_effect = CtfTestError("Raise Exception for testing")
         with pytest.raises(CtfTestError):
             script_manager.run_all_scripts()
@@ -161,7 +184,8 @@ def test_script_manager_run_all_scripts_exception3(script_manager, example_scrip
     utils.clear_log()
 
     with patch("lib.script_manager.change_log_file") as mock_change_log_file,\
-            patch("lib.test_script.TestScript.run_script", return_value=None):
+         patch("lib.test_script.TestScript.run_script", return_value=None),\
+         patch.object(script_manager, 'plugin_manager', Mock(spec=PluginManager)):
         mock_change_log_file.side_effect = [None, CtfTestError("Raise Exception for testing")]
         with pytest.raises(CtfTestError):
             script_manager.run_all_scripts()
@@ -171,7 +195,7 @@ def test_script_manager_run_all_scripts_exception3(script_manager, example_scrip
     time.sleep(1)
 
 
-def test_script_manager_run_all_scripts_test_fail(script_manager, example_script, utils):
+def test_script_manager_run_all_scripts_test_fail(script_manager, example_script):
     """
     Test ScriptManager class method: run_all_scripts  mock tests fail
     Run all added scripts, updating the status packets, and ensuring plugins are reloaded between scripts if needed.
@@ -180,38 +204,11 @@ def test_script_manager_run_all_scripts_test_fail(script_manager, example_script
 
     script_manager.script_list[0].run_script = Mock()
     script_manager.script_list[0].tests[0].test_result = False
-    assert script_manager.run_all_scripts() is None
-
-
-def test_script_manager_prep_logging_exception(script_manager, utils):
-    """
-    Test ScriptManager class method: prep_logging - raise exception
-    Prepares logging directories for a CTF test run. Logging directories will include script-specific log
-    directories, as well as high-level log files and results summary.
-    """
-    with patch('os.makedirs') as mock_makedirs:
-        utils.clear_log()
-        # two exceptions in prep_logging, trigger the first one
-        mock_makedirs.side_effect = OSError
-        with pytest.raises(OSError):
-            script_manager.prep_logging()
-        assert utils.has_log_level('ERROR')
-        mock_makedirs.assert_called_once()
-
-
-def test_script_manager_prep_logging_exception2(script_manager, utils):
-    """
-    Test ScriptManager class method: prep_logging - raise exception
-    Prepares logging directories for a CTF test run. Logging directories will include script-specific log
-    directories, as well as high-level log files and results summary.
-    """
-    with patch('os.makedirs') as mock_makedirs:
-        utils.clear_log()
-        # two exceptions in prep_logging, trigger the second one
-        mock_makedirs.side_effect = [None, OSError]
-        with pytest.raises(OSError):
-            script_manager.prep_logging()
-        assert utils.has_log_level('ERROR')
+    with patch('builtins.open', new_callable=mock_open()), \
+         patch('os.makedirs'), \
+         patch("lib.script_manager.change_log_file"),\
+         patch.object(script_manager, 'plugin_manager', Mock(spec=PluginManager)):
+        assert script_manager.run_all_scripts() is None
 
 
 def test_script_manager__del__(script_manager):
@@ -235,7 +232,7 @@ def test_script_manager__del__exception(script_manager, utils):
         mock_close.assert_called_once()
 
 
-def test_script_manager_write_summary_line_exception(script_manager, utils):
+def test_script_manager_write_summary_line_exception(script_manager):
     """
     Test ScriptManager class method: write_summary_line  raise exception when calling self.summary_file.close()
     """
@@ -244,18 +241,3 @@ def test_script_manager_write_summary_line_exception(script_manager, utils):
         mock_close.side_effect = IOError
         script_manager.write_summary_line('mock summary line')
         mock_close.assert_called_once()
-
-
-def test_script_manager_test_json(script_manager, example_script):
-    """
-    Test ScriptManager class method: test_json
-    Helper function to test JSON results output
-    """
-    assert script_manager.test_json() is None
-
-    # set regression_summary_json_file
-    script_manager.add_script(example_script)
-    with patch("lib.test_script.TestScript.run_script", return_value=None):
-        assert script_manager.run_all_scripts() is None
-
-    assert script_manager.test_json() is None

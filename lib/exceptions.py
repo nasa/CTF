@@ -26,6 +26,9 @@ class CtfTestError(Exception):
     General top-level exception that is thrown when a CTF Test Error occurs during a test run.
     """
     def __init__(self, message):
+        """
+        Constructor of CtfTestError Class
+        """
         super().__init__(message)
         log.debug(traceback.format_exc())
 
@@ -35,6 +38,9 @@ class CtfConditionError(CtfTestError):
     CTF Condition Error thrown when a CTF Instruction Condition is not met during test run.
     """
     def __init__(self, message, test_condition):
+        """
+        Constructor of CtfConditionError Class
+        """
         super().__init__(message)
         self.condition = test_condition
 
@@ -44,5 +50,8 @@ class CtfParameterError(CtfTestError):
     CTF Parameter Error thrown when a CTF Instruction Parameter is invalid.
     """
     def __init__(self, message, parameter):
+        """
+        Constructor of CtfParameterError Class
+        """
         super().__init__(message)
         self.parameter = parameter

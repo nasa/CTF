@@ -10,16 +10,6 @@
     "ctf_options": {
         "verify_timeout": 4
     },
-    "telemetry_watch_list": {
-        "TO_HK_TLM_MID": [
-            "usCmdCnt"
-        ]
-    },
-    "command_watch_list": {
-        "TO_CMD_MID": [
-            "TO_NOOP_CC"
-        ]
-    },
     "import": {},
     "tests": [
         {

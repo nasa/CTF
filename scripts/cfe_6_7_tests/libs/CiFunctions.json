@@ -10,19 +10,6 @@
   "ctf_options": {
     "verify_timeout": 4
   },
-  "telemetry_watch_list": {
-    "CI_HK_TLM_MID": [
-      "usCmdErrCnt",
-      "usCmdCnt"
-    ]
-  },
-  "command_watch_list": {
-    "CI_CMD_MID": [
-      "CI_NOOP_CC",
-      "CI_RESET_CC",
-      "CI_ENABLE_TO_CC"
-    ]
-  },
   "import": {},
   "functions": {
     "SendCheckCiNoopCmd": {

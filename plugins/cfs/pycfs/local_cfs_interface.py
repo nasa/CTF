@@ -22,7 +22,7 @@ local_cfs_interface.py: Lower-level interface to communicate with cFS locally (l
 
 import os
 from io import StringIO
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import run, Popen, PIPE, STDOUT
 from distutils.spawn import find_executable
 import time
 
@@ -84,8 +84,8 @@ class LocalCfsInterface(CfsInterface):
             if self.config.cfs_run_in_xterm:
                 log.error("Dependency 'xterm' not found. Attempting to run in an embedded terminal window instead.")
         else:
-            start_string = "xterm -l -geometry 130X24+800+0 -e \"script -c \'%s ./%s; wait &\' -q -f -e %s\"" % \
-                           (debug, target, self.cfs_std_out_path)
+            start_string = "xterm -T {} -l -geometry 130X24+800+0 -e \"script -c \'{} ./{}\' -q -f {}\"" \
+                .format(self.config.cfs_exe, debug, target, self.cfs_std_out_path)
         log.info("Starting CFS with command: {}".format(start_string))
         return start_string
 
@@ -138,6 +138,14 @@ class LocalCfsInterface(CfsInterface):
             "result": None,
             "pid": None
         }
+
+        # check whether CFS Executable has already started
+        pidof_cfs = "pidof {}".format(self.config.cfs_run_cmd)
+        pid = run(pidof_cfs, stdout=PIPE, stderr=STDOUT, shell=True, check=False).stdout.decode()
+        if pid != "":
+            log.error("CFS executable {} has already started! its pid is {}".format(self.config.cfs_run_cmd, pid))
+            return_values["result"] = False
+            return return_values
 
         log.info("Starting CFS Executable")
         log.debug("\t Command : {}".format(start_string))

@@ -24,9 +24,7 @@ from plugins.cfs.cfs_time_manager import CfsTimeManager
 @pytest.fixture(scope="session", autouse=True)
 def init_global():
     from lib.ctf_global import Global
-    from lib.logger import set_logger_options_from_config
     Global.load_config("./configs/default_config.ini")
-    set_logger_options_from_config(Global.config)
 
 
 @pytest.fixture(name='time_mgr')

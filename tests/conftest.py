@@ -18,7 +18,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from lib.ctf_global import Global
-from lib.logger import set_logger_options_from_config
 from plugins.cfs.cfs_config import CfsConfig
 from plugins.cfs.cfs_plugin import CfsPlugin
 
@@ -28,7 +27,8 @@ def init_global():
     from lib.ctf_global import Global
     from lib.logger import set_logger_options_from_config
     Global.load_config("./configs/default_config.ini")
-    set_logger_options_from_config(Global.config)
+    with patch('os.makedirs'):
+        set_logger_options_from_config(Global.config)
 
 
 @pytest.fixture
@@ -48,7 +48,6 @@ def cfs_plugin(mock_local, mock_remote, mock_sp0):
 @pytest.fixture
 def cfs_config():
     Global.load_config("./configs/default_config.ini")
-    set_logger_options_from_config(Global.config)
     return CfsConfig("cfs")
 
 

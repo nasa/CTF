@@ -32,7 +32,7 @@ import {
 import { EditingContext } from '../../../../model/editing-context';
 import { VehicleData } from '../../../../model/vehicle-data';
 import { AutoCompleteField } from './AutoCompleteField';
-import { Comparison } from './Comparison';
+import { Comparison, Condition } from './Comparison';
 import { ParamArray } from './ctf-file-editor-utils';
 import { CascaderOptionType } from 'antd/lib/cascader';
 
@@ -66,9 +66,6 @@ interface CommandState {
 }
 
 function setValue(object, path, value): void {
-    // console.log(object)
-    // console.log(path)
-    // console.log(value)
     var keys = path.split('.'),
         last = keys.pop();
     keys.reduce(function (o, k) { return o[k] = o[k] || {}; }, object)[last] = value;
@@ -217,7 +214,6 @@ export class Command extends React.Component<CommandState, CommandState> {
 
     // handler to listen for cmd_code field changes
     ccChanged = (newCc: string) => {
-        console
         // reset the value of any cmd_arg arrays
         const resetArgs = Object.create({});
         this.state.definition.parameters.map(p => {
@@ -422,7 +418,20 @@ export class Command extends React.Component<CommandState, CommandState> {
                     }}
                 />
             );
-        } else if (param.type === 'cmd_mid') {
+        }
+        else if (param.type === 'loop_condition') {
+             return (
+                <Condition
+                    style={style}
+                    comparison={value as CtfComparisonType}
+                    context={context}
+                    onChange={value => {
+                        onChange(param, value, index);
+                    }}
+                />
+            );
+        }
+        else if (param.type === 'cmd_mid') {
             return (
                 <AutoCompleteField
                     title={param.name}
@@ -505,7 +514,8 @@ export class Command extends React.Component<CommandState, CommandState> {
                 />
             );
         } else if (param.type === 'cmd_arg') {
-            const cmdParamName = this.mapVehicleDataToFilteredCommandParams(
+
+            let cmdParamName = this.mapVehicleDataToFilteredCommandParams(
                 context.vehicleData,
                 this.state.cmdMidFilter,
                 this.state.ccFilter
@@ -526,13 +536,27 @@ export class Command extends React.Component<CommandState, CommandState> {
             else{
                 cmd_arg_obj = value;
             }
+
+            let element_name = null
+            let element_value = null
+            if (value instanceof Object) {
+                element_name = Object.keys(value)[0]
+                element_value= value[element_name]
+                cmdParamName = element_name
+            }
+
+            let disabled = false;
+            if (typeof(element_name) === "string" && element_name.includes("[...]"))
+                disabled = true;
+
             return (
                 <Tooltip  placement="leftTop" title={cmdParamType} color='geekblue' key={cmdParamName + cmdParamType} >
                 <div>
                 <AutoCompleteField
-                    title={cmdParamName}
+                    title={element_name}
                     style={style}
                     defaultValue={this.getValue(cmd_arg_obj, cmdParamName)}
+                    disabled = {disabled}
                     dataSource={[
                         {
                             label: 'Enumerations',
@@ -653,8 +677,86 @@ export class Command extends React.Component<CommandState, CommandState> {
             /> )
     }
 
+    processCmdParamNames(cmd_para_names: array, value_array: array) {
+      let new_cmd_para_names = [];
+      let last_para_name = "";
+      let last_para_num = 0, insert_index = 0, to_insert_index = 0;
+      const N = cmd_para_names.length;
+      const MAX_DISPLAYED_ARRAY_ELEMENTS = 4
+
+      //during rendering, value_array may be modified from Array to object
+      let value_array_keys = [];
+      if (Array.isArray(value_array)) {
+            value_array_keys = value_array.map( (obj) => {
+                        return Object.keys(obj)[0];
+           });
+      } else {
+            value_array_keys = Object.keys(value_array);
+      }
+
+      for (let i = 0; i < N; i++) {
+           let index_s  = cmd_para_names[i].indexOf('[');
+           let index_e  = cmd_para_names[i].indexOf(']');
+	       let para_name  = cmd_para_names[i];
+           let para_index = "0";
+
+           if (index_s != -1) {
+               para_name  = cmd_para_names[i].substring(0, index_s);
+               para_index = cmd_para_names[i].substring(index_s+1, index_e);
+           }
+
+	        if (para_name != last_para_name && last_para_num >= MAX_DISPLAYED_ARRAY_ELEMENTS ) {
+             	new_cmd_para_names.splice(to_insert_index, 0, last_para_name); insert_index++;
+                new_cmd_para_names.push(last_para_name+"[...]"); insert_index++;
+	        }
+
+           if (para_name != last_para_name) {
+                to_insert_index = insert_index;
+            }
+
+           if (parseInt(para_index) < MAX_DISPLAYED_ARRAY_ELEMENTS || value_array_keys.includes(cmd_para_names[i]) ) {
+                  new_cmd_para_names.push(cmd_para_names[i]);
+                  insert_index++;
+           }
+
+           last_para_num  = parseInt(para_index);
+           last_para_name = para_name;
+         }
+
+      if (last_para_num >= MAX_DISPLAYED_ARRAY_ELEMENTS ) {
+         new_cmd_para_names.splice(to_insert_index, 0, last_para_name);
+         insert_index++;
+         new_cmd_para_names.push(last_para_name+"[...]");
+         insert_index++;
+      }
+
+      return new_cmd_para_names;
+    }
+
+    copy_valueArray(cmd_para_names: array, value_array: array) {
+      let new_value_array = [];
+      const N = cmd_para_names.length;
+      for (let i = 0; i < N; i++) {
+           let key = cmd_para_names[i], value = '';
+           for (let j = 0 ; j < value_array.length; j++) {
+                 if ( value_array[j].hasOwnProperty(key) ) {
+                     value = value_array[j][key];
+                     break;
+                 }
+           }
+           let dic = {};
+           if (key.indexOf('[...]') != -1) {
+               value = 'Array size too large, modify test files directly'
+           }
+           dic[key] = value;
+           new_value_array.push(dic);
+       }
+       return new_value_array;
+    }
+
     // Render the arguments as either arrays or regular
     renderArguments(params: CtfPluginInstructionParam[], data: CtfInstructionData) {
+        const MAX_ARGS_RENDERED = 20
 
         return Object.keys(data).map( (paramName, index) => {
             const param = params.filter(p => p.name === paramName)[0];
@@ -665,37 +767,40 @@ export class Command extends React.Component<CommandState, CommandState> {
             if (param.isArray) {
                 if (param.type === 'cmd_arg') {
                     // show only the possible args (fixed length array)
-                    const cmdParamNames = this.mapVehicleDataToFilteredCommandParams(
+                    let cmdParamNames = this.mapVehicleDataToFilteredCommandParams(
                         this.state.context.vehicleData,
                         this.state.cmdMidFilter,
                         this.state.ccFilter
                     );
-                    if (data[param.name] as CtfInstructionArg[]){
-                        if (
-                            (data[param.name] as CtfInstructionArg[]).length !==
-                            cmdParamNames.length
-                        ) {
-                            data[paramName] = cmdParamNames.map((name, i) => {
-                                var dict = {}
-                                this.setValue(dict, name, "")
-                            })
-                        }
+                    let valueArray = data[paramName] as CtfInstructionArg[];
+                    let cmdParamNames_processed = this.processCmdParamNames(cmdParamNames, valueArray)
 
-                    const valueArray = data[paramName] as CtfInstructionArg[];
+
+                    if (data[param.name] as CtfInstructionArg[]){
+
+                        const copied_valueArray = this.copy_valueArray(cmdParamNames_processed, valueArray );
                         return (
                             <ParamArray name={paramName} key = {index}>
-                                {cmdParamNames.map((name, i) => (
-                                    <div key={i}>
+                                {copied_valueArray.map((name, i) => {
+                                   if ( i > MAX_ARGS_RENDERED ) {
+                                         console.log("Could not render too many args");
+                                         return;
+                                   }
+                                   return ( <div key={i.toString()+"_"+cmdParamNames_processed[i]}>
                                         {this.renderArgument(
                                             param,
-                                            valueArray[i],
+                                            copied_valueArray[i],
                                             this.state.context,
                                             i,
                                             true,
                                             this.arrayElementChanged
-                                        )}
-                                    </div>
-                                ))}
+                                          )
+                                        }
+                                        </div>
+                                      )
+                                    }
+                                 )
+                              }
                             </ParamArray>
                         );
                                     }
@@ -716,12 +821,7 @@ export class Command extends React.Component<CommandState, CommandState> {
                                         )}
                                         <Button
                                             type="link"
-                                            onClick={e => {
-                                                this.deleteArrayArgument(
-                                                    param,
-                                                    i
-                                                );
-                                            }}
+                                            onClick={e => {  this.deleteArrayArgument( param, i );  }}
                                         >
                                             <Icon type="delete" />
                                         </Button>
@@ -730,9 +830,7 @@ export class Command extends React.Component<CommandState, CommandState> {
                             )}
                             <Button
                                 type="dashed"
-                                onClick={e => {
-                                    this.addArrayArgument(param);
-                                }}
+                                onClick={e => {  this.addArrayArgument(param);   }}
                                 block
                             >
                                 ADD ARGUMENT

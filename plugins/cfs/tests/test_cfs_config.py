@@ -19,7 +19,6 @@ import pytest
 
 from lib.ctf_global import Global
 from lib.exceptions import CtfTestError
-from lib.logger import set_logger_options_from_config
 from plugins.cfs.cfs_config import CfsConfig, RemoteCfsConfig, SP0CfsConfig
 
 
@@ -40,7 +39,6 @@ def test_cfs_config_init(cfs_config):
     assert cfs_config.cfs_run_args == ""
     assert cfs_config.cfs_run_cmd == "core-lx1"
     assert cfs_config.cfs_output_file == "cfs_stdout.txt"
-    assert cfs_config.start_cfs_on_init is False
     assert cfs_config.remove_continuous_on_fail is True
     assert cfs_config.cfs_target_ip == "127.0.0.1"
     assert cfs_config.ctf_ip == "127.0.0.1"
@@ -60,7 +58,6 @@ def test_cfs_config_init(cfs_config):
 
 def test_cfs_config_init_error(caplog):
     Global.load_config("./configs/default_config.ini")
-    set_logger_options_from_config(Global.config)
     caplog.clear()
     with patch.object(Global.config, 'get') as mock_config:
         mock_config.side_effect = Exception("Mock Error")
@@ -70,7 +67,6 @@ def test_cfs_config_init_error(caplog):
 
 def test_cfs_config_init_invalid(caplog):
     Global.load_config("./configs/default_config.ini")
-    set_logger_options_from_config(Global.config)
     caplog.clear()
     cfs_config = CfsConfig("invalid")
     assert cfs_config.get_error_count() == 1
@@ -133,7 +129,6 @@ def test_cfs_config_load_config_data_invalid(cfs_config, caplog):
     assert cfs_config.cfs_run_args == ""
     assert cfs_config.cfs_run_cmd == "core-lx1"
     assert cfs_config.cfs_output_file == "cfs_stdout.txt"
-    assert cfs_config.start_cfs_on_init is False
     assert cfs_config.remove_continuous_on_fail is True
     assert cfs_config.cfs_target_ip == "127.0.0.1"
     assert cfs_config.ctf_ip == "127.0.0.1"
@@ -182,7 +177,6 @@ def test_cfs_config_get_error_count(cfs_config):
 @pytest.fixture
 def remote_cfs_config():
     Global.load_config("./configs/example_configs/cfe_6_7_config_examples.ini")
-    set_logger_options_from_config(Global.config)
     return RemoteCfsConfig("local_ssh")
 
 
@@ -204,7 +198,6 @@ def test_remote_cfs_config_init(remote_cfs_config):
     assert remote_cfs_config.cfs_run_args == ""
     assert remote_cfs_config.cfs_run_cmd == "core-lx1"
     assert remote_cfs_config.cfs_output_file == "cfs_stdout.txt"
-    assert remote_cfs_config.start_cfs_on_init is False
     assert remote_cfs_config.remove_continuous_on_fail is True
     assert remote_cfs_config.cfs_target_ip == "127.0.0.1"
     assert remote_cfs_config.ctf_ip == "127.0.0.1"
@@ -226,7 +219,6 @@ def test_remote_cfs_config_init(remote_cfs_config):
 @pytest.fixture
 def sp0_cfs_config():
     Global.load_config("./configs/example_configs/example_config_sp0.ini")
-    set_logger_options_from_config(Global.config)
     # TODO find a better workaround to test verify_symbol without producing an error
     with patch('lib.args_validation.ArgsValidation.verify_symbol'):
         return SP0CfsConfig("cfs_SP01")
@@ -250,7 +242,6 @@ def test_sp0_cfs_config_init(sp0_cfs_config):
     assert sp0_cfs_config.cfs_run_args == ""
     assert sp0_cfs_config.cfs_run_cmd == "core-vw1.exe"
     assert sp0_cfs_config.cfs_output_file == "cfs_stdout.txt"
-    assert sp0_cfs_config.start_cfs_on_init is False
     assert sp0_cfs_config.remove_continuous_on_fail is True
     assert sp0_cfs_config.cfs_target_ip == "10.5.5.238"
     # TODO For some reason the IP resolves to 127.0.0.1 for the other cases but the real local IP here
@@ -267,7 +258,6 @@ def test_sp0_cfs_config_init(sp0_cfs_config):
     assert sp0_cfs_config.evs_messages_clear_after_time == 5
     assert sp0_cfs_config.endianess_of_target == "big"
     assert sp0_cfs_config.ccsds_header_info_included is False
-    assert sp0_cfs_config.auto_run is False
     assert sp0_cfs_config.reboot is True
     assert sp0_cfs_config.cfs_exe_path == "/ram0"
     assert sp0_cfs_config.cfs_entry_point == "CFE_PSP_Main"

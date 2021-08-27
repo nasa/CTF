@@ -7,7 +7,7 @@
       "parameters": [
         {
           "name": "target",
-          "description": "Target CFS Name",
+          "description": "",
           "type": "string"
         }
       ]
@@ -18,7 +18,7 @@
       "parameters": [
         {
           "name": "target",
-          "description": "Target CFS Name",
+          "description": "",
           "type": "string"
         }
       ]
@@ -29,7 +29,7 @@
       "parameters": [
         {
           "name": "target",
-          "description": "Target CFS Name",
+          "description": "",
           "type": "string"
         },
         {
@@ -45,7 +45,7 @@
       "parameters": [
         {
           "name": "target",
-          "description": "Target CFS Name",
+          "description": "",
           "type": "string"
         }
       ]
@@ -72,7 +72,7 @@
         },
         {
           "name": "target",
-          "description": "Target CFS Name",
+          "description": "",
           "type": "string"
         }
       ]
@@ -99,7 +99,7 @@
         },
         {
           "name": "target",
-          "description": "Target CFS Name",
+          "description": "",
           "type": "number"
         },
         {
@@ -126,7 +126,39 @@
         },
         {
           "name": "target",
-          "description": "Target CFS Name",
+          "description": "",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "CheckTlmPacket",
+      "description": "",
+      "parameters": [
+        {
+          "name": "mid",
+          "description": "",
+          "type": "tlm_mid"
+        },
+        {
+          "name": "target",
+          "description": "",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "CheckNoTlmPacket",
+      "description": "",
+      "parameters": [
+        {
+          "name": "mid",
+          "description": "",
+          "type": "tlm_mid"
+        },
+        {
+          "name": "target",
+          "description": "",
           "type": "string"
         }
       ]
@@ -153,7 +185,7 @@
         },
         {
           "name": "target",
-          "description": "Target CFS Name",
+          "description": "",
           "type": "string"
         }
       ]
@@ -169,7 +201,7 @@
         },
         {
           "name": "target",
-          "description": "Target CFS Name",
+          "description": "",
           "type": "string"
         }
       ]
@@ -194,18 +226,19 @@
           "type": "string"
         },
         {
-          "name": "msg_args",
+          "name": "is_regex",
           "description": "",
-          "type": "string"
-        },
-        {
-          "name" : "is_regex",
-          "description": "Is the msg field a regular expression?",
           "type": "boolean"
         },
         {
+          "name": "msg_args",
+          "description": "",
+          "type": "cmd_arg",
+          "isArray": true
+        },
+        {
           "name": "target",
-          "description": "Target CFS Name",
+          "description": "",
           "type": "string"
         }
       ]
@@ -258,7 +291,7 @@
         },
         {
           "name": "target",
-          "description": "Target CFS Name",
+          "description": "",
           "type": "string"
         }
       ]
@@ -269,7 +302,7 @@
       "parameters": [
         {
           "name": "target",
-          "description": "Target CFS Name",
+          "description": "",
           "type": "string"
         }
       ]

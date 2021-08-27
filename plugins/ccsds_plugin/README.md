@@ -16,21 +16,21 @@ Validates the format of CFS data types by sending one of each known command with
 Example:
 ```javascript
 {
-    "command": "RegisterCfs",
+    "instruction": "RegisterCfs",
     "data": {
         "target": "cfs_workstation"
     },
     "wait": 1
 },
 {
-    "command": "StartCfs",
+    "instruction": "StartCfs",
     "data": {
         "target": "cfs_workstation"
     },
     "wait": 1
 },
 {
-    "command": "ValidateCfsCcsdsData",
+    "instruction": "ValidateCfsCcsdsData",
     "data": {
         "target": "cfs_workstation"
     },

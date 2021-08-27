@@ -151,9 +151,10 @@ Example:
 - **mid:** The message ID of the command (i.e. "BEX_CMD_MID") (string)
 - **cc:** The command code for the command (i.e. "BEX_NOOP_CC") (string)
 - **payload_length:** (Optional) The size of the payload in bytes for an invalid length command. Do not specify for valid commands. The actual length of the sent message will be plus the header size.
-- **args:** An object where the key is the argument name,
-  and the value is the argument value.
-  Because args is a dictionary, the order does not matter. (i.e. {, "field_b": 1, "field_a": 0})
+- **args:** An object where the key is the argument name, and the value is the argument value.
+  Because `args` is a dictionary, the order does not matter. (i.e. `{"field_b": 1, "field_a": 0}` is equivalent to `{"field_a": 0, "field_b": 1}`)
+- **header:** (Optional) An object where the key is the header field name, and the value is the field value.
+  This object is passed into to the `CcsdsCommand` type (as determined by the config field [`ccsds:CCSDS_header_path`](../ccsds_plugin/README.md)) and is not handled by CTF directly. It is made available for custom CCSDS header implementations to allow specification of the packet header.
 
 Example:
 ```javascript
@@ -223,8 +224,7 @@ Example:
 ### CheckTlmValue
 Checks that a telemetry message matching the given parameters has been received from the CFS target.
 - **target:** (Optional) A previously registered target name. If no name is given, applies to all registered targets.
-- **mid**: The telemetry message ID to check. **NOTE**: this message ID MUST be listed in the
- `telemetry_watch_list` attribute of the **Test Script** object.
+- **mid**: The telemetry message ID to check.
 - **args**: an array of argument objects that describe the values to be checked. Multiple arguments
 can be listed here to check multiple attributes of a given packet at once.
     - **compare**: How to compare the telemetry value with the test value.
@@ -267,12 +267,46 @@ Example:
 }
 ```
 
+### CheckTlmPacket
+Checks that a telemetry message with the given MID has been received from the CFS target. This is equivalent to
+`CheckTlmValue` without comparing args.
+- **target:** (Optional) A previously registered target name. If no name is given, applies to all registered targets.
+- **mid**: The telemetry message ID to check.
+
+Example:
+```javascript
+{
+    "instruction": "CheckTlmPacket",
+    "data": {
+        "target": "cfs_workstation",
+        "mid": "TO_HK_TLM_MID"
+    },
+    "wait": 1
+}
+```
+
+### CheckNoTlmPacket
+Checks that a telemetry message with the given MID is no longer valid in received messages from the CFS target.
+- **target:** (Optional) A previously registered target name. If no name is given, applies to all registered targets.
+- **mid**: The telemetry message ID to check.
+
+Example:
+```javascript
+{
+    "instruction": "CheckNoTlmPacket",
+    "data": {
+        "target": "cfs_workstation",
+        "mid": "TO_HK_TLM_MID"
+    },
+    "wait": 1
+}
+```
+
 ### CheckTlmContinuous
 Similar to `CheckTlmValue` except the check is performed each time telemetry is received, until the test ends or the check is removed by `RemoveCheckTlmContinuous`.
 - **target:** (Optional) A previously registered target name. If no name is given, applies to all registered targets.
 - **verification_id**: A unique string to identify this check within the test.
-- **mid**: The telemetry message ID to check. **NOTE**: this message ID MUST be listed in the
- `telemetry_watch_list` attribute of the **Test Script** object.
+- **mid**: The telemetry message ID to check.
 - **args**: an array of argument objects that describe the values to be checked. Multiple arguments
 can be listed here to check multiple attributes of a given packet at once.
     - **compare**: How to compare the telemetry value with the test value.

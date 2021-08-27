@@ -45,25 +45,22 @@ The CTF environment is properly installed and activated when a `(pythonEnv3)` pr
 
 Note - During the sourcing of `setup_ctf_env.sh`, you might see warning statements.  It is okay to ignore them as long as the `(pythonEnv3)` is shown at the end of the sourcing.
 
-Next, navigate to the `sample_cfs_workspace/ctf_tests` directory. This directory contains the project's CTF environment setup script, configuration files, test scripts, and workspace for the CTF editor.
+Next, navigate to the `sample_cfs_workspace/ctf_tests` directory. This directory contains the project's CTF environment setup script, configuration files, and workspace for the CTF editor.
 
-## Running CTF script on Sample CFS Workspace
+## Running CTF scripts 
 
 Ensure the CTF environment is activated. (`(pythonEnv3)` should be shown in your terminal).
 
-Navigate to `sample_cfs_workspace/ctf_tests`, and run `ctf --config_file configs/default_config.ini test_scripts/`. This command runs CTF with the default configuration for that cFS project, and executes all test scripts present in the `test_scripts` directory.
+Sample CFS Workspace does not contain test scripts. To run CTF tests, navigate to `ctf` directory. And run `ctf --config_file configs/default_config.ini scripts/cfe_6_7_tests`. 
+This command runs CTF with the default configuration for that cFS project, and executes all test scripts present in the `scripts/cfe_6_7_tests` directory.
 
-After all the CTF tests have been executed, you can examine the test results at `sample_cfs_workspace/ctf_tests/results/Run_<mm_dd_yyyy_hh_mm_ss>` directory.
+After all the CTF tests have been executed, you can examine the test results at `ctf/CTF_Results/Run_<mm_dd_yyyy_hh_mm_ss>` directory.
 
 Note - The `default_config.ini` defines the `sample_cfs_workspace` and `ctf` home directory paths to be at the user's home directory.  If that is not so, either (1) move them to the user's home directory, or (2) create symbolic links for them at the user's home directory, or (3) edit this file for `project_dir` and `CCSDS_header_path` settings to point to the correct directory locations.
 
-## Suggested cFS Project Structure
-
-It is recommended for a cFS project to designate a sub-directory in its workspace to store the configurations, test scripts, and other CTF-related files. In the `Sample CFS Workspace`, the `test_scripts` directory is set up for such purpose.
-
 ## Activating CTF environment after Setup
 
-After running `source setup_ctf_env.sh`, the CTF environment will be automatically active in the current session. This allows users to run `ctf` or `ctf_editor` from the `ctf_tests` directory.
+After running `source setup_ctf_env.sh`, the CTF environment will be automatically active in the current session. This allows users to run `ctf` or `ctf_editor` from the `ctf` directory.
 
 To activate the CTF environment in a new terminal window after installation, run the `activate_ctf_env.sh` either from the CTF repo, or from the `ctf_tests` directory. This will prompt you for the conda environment location to specify (only needed if a different directory was specified in the setup script).
 

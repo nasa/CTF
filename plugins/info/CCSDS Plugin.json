@@ -6,7 +6,7 @@
       "description": "",
       "parameters": [
         {
-          "name": "name",
+          "name": "target",
           "description": "",
           "type": "string"
         }

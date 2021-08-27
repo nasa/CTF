@@ -7,12 +7,6 @@
     "ctf_options": {},
     "environment": {},
     "requirements": {},
-    "telemetry_watch_list": {},
-    "command_watch_list": {
-        "CFE_EVS_CMD_MID": [
-            "CFE_EVS_SET_EVENT_FORMAT_MODE_CC"
-        ]
-    },
     "functions": {},
     "tests": [
         {

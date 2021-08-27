@@ -10,18 +10,6 @@
     "ctf_options": {
         "verify_timeout": 4
     },
-    "telemetry_watch_list": {
-        "TO_HK_TLM_MID": [
-            "usCmdErrCnt",
-            "usCmdCnt"
-        ]
-    },
-    "command_watch_list": {
-        "TO_CMD_MID": [
-            "TO_NOOP_CC",
-            "TO_RESET_CC"
-        ]
-    },
     "import": {},
     "functions": {
         "Increment Event": {
@@ -171,7 +159,6 @@
                                 "value": [
                                     0.1
                                 ],
-                                "tolerance_plus": 0.1,
                                 "tolerance_minus": 0.1
                             }
                         ]
@@ -239,10 +226,9 @@
                                 "compare": "==",
                                 "variable": "usCmdCnt",
                                 "value": [
-                                    3.05
+                                    2.95
                                 ],
-                                "tolerance_plus": 0.1,
-                                "tolerance_minus": 0.1
+                                "tolerance_plus": 0.1
                             }
                         ]
                     },
@@ -276,6 +262,7 @@
                     "wait": 1
                 },
                 {
+                    "description": "Demonstrate the use of header parameters (has no effect in default CCSDS implementation)",
                     "instruction": "SendCfsCommand",
                     "data": {
                         "target": "",
@@ -286,6 +273,9 @@
                                 "CmdString": "hostname",
                                 "OutputFilename": "/cf/test_output.txt"
                             }
+                        },
+                        "header": {
+                            "field_name": "value"
                         }
                     },
                     "wait": 1

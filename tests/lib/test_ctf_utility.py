@@ -17,6 +17,7 @@ import pathlib
 from unittest.mock import patch
 
 from lib import ctf_utility
+from lib.ctf_global import Global
 
 
 def test_ctf_utility_expand_path():
@@ -27,3 +28,34 @@ def test_ctf_utility_expand_path():
     with patch.dict(os.environ, {'myvar': 'foo/bar'}):
         assert ctf_utility.expand_path('$myvar/dir') == 'foo/bar/dir'
         assert ctf_utility.expand_path('~/$myvar/path') == str(pathlib.Path.home()) + '/foo/bar/path'
+
+
+def test_ctf_utility_get_current_instruction_index():
+    assert ctf_utility.get_current_instruction_index() is None
+
+
+def test_ctf_utility_set_goto_instruction_index():
+    assert Global.goto_instruction_index is None
+    assert ctf_utility.set_goto_instruction_index(1) is None
+    assert Global.goto_instruction_index == 1
+    Global.goto_instruction_index = None
+
+
+def test_ctf_utility_set_variable_pass():
+    assert ctf_utility.set_variable('var_1', '=', 100)
+    assert ctf_utility.set_variable('var_2', '=', 100)
+    assert ctf_utility.set_variable('var_2', '<', 100)
+    Global.variable_store.clear()
+
+
+def test_ctf_utility_set_variable_fail():
+    assert not ctf_utility.set_variable('var_1', '?', 100)
+    assert not ctf_utility.set_variable('var_2', '<', 100)
+    Global.variable_store.clear()
+
+
+def test_ctf_utility_get_variable():
+    assert ctf_utility.get_variable('var_1') is None
+    assert ctf_utility.set_variable('var_1', '=', 100)
+    assert ctf_utility.get_variable('var_1') == 100
+    Global.variable_store.clear()

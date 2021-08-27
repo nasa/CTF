@@ -1,0 +1,80 @@
+{
+  "group_name": "VariablePlugin",
+  "instructions": [
+    {
+      "name": "SetUserVariable",
+      "description": "",
+      "parameters": [
+        {
+          "name": "variable_name",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "operator",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "description": "",
+          "type": "other"
+        }
+      ]
+    },
+    {
+      "name": "SetLabel",
+      "description": "",
+      "parameters": [
+        {
+          "name": "label",
+          "description": "",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "SetUserVariableFromTlm",
+      "description": "",
+      "parameters": [
+        {
+          "name": "user_variable",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "mid",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "tlm_variable",
+          "description": "",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "CheckUserVariable",
+      "description": "",
+      "parameters": [
+        {
+          "name": "variable_name",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "operator",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "description": "",
+          "type": "other"
+        }
+      ]
+    }
+  ],
+  "description": "Variable Plugin"
+}

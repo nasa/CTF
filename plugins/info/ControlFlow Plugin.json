@@ -1,0 +1,34 @@
+{
+  "group_name": "ControlFlow Plugin",
+  "instructions": [
+    {
+      "name": "BeginLoop",
+      "description": "",
+      "parameters": [
+        {
+          "name": "label",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "conditions",
+          "description": "",
+          "type": "loop_condition",
+          "isArray": true
+        }
+      ]
+    },
+    {
+      "name": "EndLoop",
+      "description": "",
+      "parameters": [
+        {
+          "name": "label",
+          "description": "",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "description": "CTF ControlFlow Plugin"
+}

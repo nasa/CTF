@@ -10,8 +10,6 @@
   "ctf_options": {
     "verif_timeout": 2.0
   },
-  "telemetry_watch_list": {},
-  "command_watch_list": {},
   "tests": [
         {
             "case_number": "Userio Plugin Test",

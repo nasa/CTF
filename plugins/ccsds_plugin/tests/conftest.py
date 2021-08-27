@@ -26,7 +26,6 @@ from plugins.cfs.cfs_plugin import CfsPlugin
 @pytest.fixture(scope="session", autouse=True)
 def init_global():
     Global.load_config("./configs/default_config.ini")
-    set_logger_options_from_config(Global.config)
     # Global.plugin_manager is set by PluginManager constructor
     PluginManager(['plugins'])
 

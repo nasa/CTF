@@ -10,32 +10,6 @@
   "ctf_options": {
     "verify_timeout": 4
   },
-  "telemetry_watch_list": {
-    "CFE_TIME_HK_TLM_MID": [
-      "Payload.CommandErrorCounter",
-      "Payload.CommandCounter"
-    ]
-  },
-  "command_watch_list": {
-    "CFE_TIME_CMD_MID": [
-      "CFE_TIME_NOOP_CC",
-      "CFE_TIME_RESET_COUNTERS_CC",
-      "CFE_TIME_SEND_DIAGNOSTIC_TLM_CC",
-      "CFE_TIME_SET_SOURCE_CC",
-      "CFE_TIME_SET_STATE_CC",
-      "CFE_TIME_ADD_DELAY_CC",
-      "CFE_TIME_SUB_DELAY_CC",
-      "CFE_TIME_SET_TIME_CC",
-      "CFE_TIME_SET_MET_CC",
-      "CFE_TIME_SET_STCF_CC",
-      "CFE_TIME_SET_LEAP_SECONDS_CC",
-      "CFE_TIME_ADD_ADJUST_CC",
-      "CFE_TIME_SUB_ADJUST_CC",
-      "CFE_TIME_ADD_1HZ_ADJUSTMENT_CC",
-      "CFE_TIME_SUB_1HZ_ADJUSTMENT_CC",
-      "CFE_TIME_SET_SIGNAL_CC"
-    ]
-  },
   "import": {},
   "functions": {
     "SendCheckCfsTimeNoopCmd": {

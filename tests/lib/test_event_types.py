@@ -12,11 +12,11 @@
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 
-from lib.event_types import Command
+from lib.event_types import Instruction
 
 
 def test_command():
-    cmd = Command(1.0, "Command", "Test", 0, True)
+    cmd = Instruction(1.0, "Command", "Test", 0, True)
     assert cmd.delay == 1.0
     assert cmd.command == "Command"
     assert cmd.test == "Test"

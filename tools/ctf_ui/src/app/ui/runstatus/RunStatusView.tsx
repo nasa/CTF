@@ -362,6 +362,9 @@ export class RunStatusView
     implements IRunStatusView {
     constructor(props: RunStatusProps) {
         super(props);
+        this.linenumber = 0;
+        this.ctf_output_array = []
+
         this.state = Object.assign(
             {
                 presenter: new RunStatusPresenter(
@@ -381,6 +384,7 @@ export class RunStatusView
     runDidFinish = (): void => {
         this.state.onComplete();
         this.setState({ complete: true });
+        this.ctf_output_array = []
     };
 
     showMessage = (content: string): void => {
@@ -394,8 +398,9 @@ export class RunStatusView
 
     showOutput = async (content: string) => {
         await this.setState(prevState => ({
-            output: prevState.output + content
+            output: content
         }) );
+        this.updateCTFOutput()
     }
 
     scrollToBottom() {
@@ -403,6 +408,43 @@ export class RunStatusView
           containerId: "output_log"
         });
     }
+
+    updateCTFOutput() {
+        const MAX_LINES = 300;
+        let output_temp = []
+        let content_array = this.state.output.split("\n");
+        let content_lines = content_array.length;
+        let output_lines = this.ctf_output_array.length;
+
+        // do not need to keep all ctf output, remove some lines
+        if ( (content_lines + output_lines) >= MAX_LINES ) {
+            if (content_lines >= MAX_LINES) {
+                this.ctf_output_array = []
+                this.ctf_output_array.push( {line_color: 'blue', key : ++this.linenumber, line: "  ..."})
+            } else {
+                let delete_lines = output_lines - (MAX_LINES - content_lines) ;
+                this.ctf_output_array.splice(0, delete_lines, {line_color: 'blue', key : ++this.linenumber, line: "  ..."} )
+            }
+        }
+
+        // add the new lines to ctf_output_array
+        content_array.map((content) => {
+          let color = 'blue'
+          let label = "INFO"
+          if (content.indexOf("FAIL") > 0){
+             color = 'red';
+             label = "FAIL";
+          }
+          else if (content.indexOf("PASS") > 0){
+             color = 'green';
+             label = "PASS";
+          }
+
+          let cur_line = { line_color: color, key : ++this.linenumber, line: content}
+
+          if (content.length > 2) { this.ctf_output_array.push(cur_line); }
+        });
+    };
     
     componentDidMount = () => {
         this.state.presenter.viewDidLoad();
@@ -479,25 +521,14 @@ export class RunStatusView
                     </Row>
                     <div id="output_log" style={OutputStyle}>
                     <Timeline pending={!this.state.error && !this.state.complete}>
-                    {this.state.output.split("\n").map((value, index) => {
-                        var color = 'blue'
-                        var label = "INFO"
-                        if (value.indexOf("FAIL") > 0){
-                            color = 'red'
-                            label = "FAIL"
-                        }
-                        else if (value.indexOf("PASS") > 0){
-                            color = 'green'
-                            label = "PASS"
-                        }
-                        // Filter out debug message if we are not in debug mode
-                        if (value.indexOf("DEBUG") > 0 && !this.state.debug_output)
-                            return
-
-                        return <Timeline.Item color={color} key = {index}>
-                                <Typography.Text code={true}>{value.replace(/].*\*\*\*/, '').substr(1)}</Typography.Text>
+                      {this.ctf_output_array.map((value) => {
+                        return (
+                           <Timeline.Item color={value.line_color} key = {value.key}>
+                                <Typography.Text code={true}>{value.line.replace(/].*\*\*\*/, '').substr(1)}</Typography.Text>
                             </Timeline.Item>
+                        )
                     })}
+
                     </Timeline>
                     </div>
                     </div>

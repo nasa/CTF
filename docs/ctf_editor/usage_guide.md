@@ -26,9 +26,9 @@ When saving a script from the editor, a new version of the JSON script is writte
 
 To launch the editor, make sure you are within the CTF environment. If not, run `source activate_ctf_env.sh` at the root directory of the CTF repo.
 
-After activating the environment, run `ctf_editor` to launch the editor.
+After activating the environment, run `./run_editor.sh` script to launch the editor.
 
-###### Note -  The `ctf_editor` command serves as an alias to build/run the editor from the `tools/ctf_ui` directory. To launch the editor manually, navigate to the `ctf_ui` directory and execute `npm run prod`. This will launch an instance of the editor. 
+###### Note -  The `run_editor` script serves as an alias to build/run the editor from the `tools/ctf_ui` directory. To launch the editor manually, navigate to the `ctf_ui` directory and execute `npm run prod`. This will launch an instance of the editor. 
 
 ###### Note - If  errors are seen related to the "chrome-sandbox" permissions, run the following commands
     sudo chown root /path/to/chrome-sandbox

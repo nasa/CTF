@@ -87,8 +87,6 @@ With the above plugin definition, the following snippet of a JSON test script sh
   "ctf_options": {
     "verif_timeout": 2.0
   },
-  "telemetry_watch_list": {},
-  "command_watch_list": {},
   "tests": [
         {
             "case_number": "Example Plugin Test",

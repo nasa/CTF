@@ -17,6 +17,12 @@ import pytest
 from lib.exceptions import CtfTestError, CtfConditionError, CtfParameterError
 
 
+@pytest.fixture(scope="session", autouse=True)
+def init_logger():
+    from lib.logger import logger
+    logger.setLevel('DEBUG')
+
+
 def test_ctftesterror(utils):
     e = CtfTestError('message')
     assert str(e) == 'message'

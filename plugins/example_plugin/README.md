@@ -12,7 +12,7 @@ Simply logs that the test command was executed with the provided arguments.
 Example:
 ```javascript
 {
-    "command":"TestCommand",
+    "instruction":"TestCommand",
     "data":{
         "arg1": "foo",
         "arg2": 42
@@ -27,7 +27,7 @@ Increments the plugin's example_counter value and checks if it is greater than `
 Example:
 ```javascript
 {
-    "command":"TestVerifyCommand",
+    "instruction":"TestVerifyCommand",
     "data":{}
 }
 ```
@@ -38,7 +38,7 @@ Uses libc to get the system time and log it to system output. Verifies that the 
 Example:
 ```javascript
 {
-    "command":"TestSharedLibraryCommand",
+    "instruction":"TestSharedLibraryCommand",
     "data":{}
 }
 ```

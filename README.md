@@ -13,6 +13,7 @@
          * [New cFS Project Configuration](#new-cfs-project-configuration)
          * [Developing New Test Scripts](#developing-new-test-scripts)
       * [Developing or Extending CTF Plugins](#developing-or-extending-ctf-plugins)
+      * [Using CTF Editor](#using-ctf-editor)
       * [Updating CTF](#updating-ctf)
       * [CTF Validation Tools](#ctf-validation-tools)
       * [Release Notes](#release-notes)
@@ -109,21 +110,21 @@ Please refer to each plugin's `README` document for information on the required 
 
 By default, The CTF tool contains a minimal cFS workspace (`external/sample_cfs_workspace.tgz`) for CTF testing and evaluation purposes. It also provides a reference cFS/CTF workspace layout that is applicable to other cFS projects. 
 
-The `sample_cfs_workspace` contains a set of cFS apps that receive CCSDS commands and output CCSDS telemetry messages through the CI/TO apps. It also contains a set of sample CTF test scripts that can be executed against the compiled cFS system from `sample_cfs_workspace`.
+The `sample_cfs_workspace` contains a set of cFS apps that receive CCSDS commands and output CCSDS telemetry messages through the CI/TO apps. 
 
 To get started using the `sample_cfs_workspace`, follow the documentation under [external/README.md](external/README.md). After completing the instructions, CTF will be set up as a cFS tool *within* the `sample_cfs_workspace` and can be used to execute test scripts against that cFS workspace. A similar approach can be followed to add CTF to an existing cFS project.
 
 ###### Note: If cFS does not build, you may have missing dependencies. Install of `gcc-multilib` in order to build cFS projects successfully. On CentOS 7, run the following command `sudo yum install libgcc.i686 glibc-devel.i686`
 
-#### Running the Sample cFS Workspace Scripts
+#### Running the Sample cFS Test Scripts
 First, review the contents of `configs/default_config.ini`. Update any fields as needed. Specifically, the `[cfs]: workspace_dir` may need to be update with the appropriate path according to where `sample_cfs_workspace` is extracted.
 
 To run the provided example scripts, simply run the `ctf` executable (ensure the CTF environment is activated) with the configuration file and the script to run as follows.
 
 ```
-cd ~/sample_cfs_workspace/ctf_tests
+cd ~/ctf
 source activate_ctf_env.sh
-ctf --config_file configs/default_config.ini --script_dir test_scripts/sample_test_suite
+ctf --config_file configs/default_config.ini scripts/cfe_6_7_tests
 ```
 
 ###### Note: Ensure `build_cfs` is set to `true` in the `configs/default_config.ini` file, if the cFS executable has not been built manually.
@@ -242,8 +243,7 @@ It is recommended to start with simple tests that start/stop cFS to verify that 
 
 ### Developing New Test Scripts
 
-The CTF tool provides a [CTF Editor](tools/ctf_ui/README.md) to assist in the creation, modification, and running of scripts. Currently, the editor can be obtained from the repository above. Please refer to the [CTF Editor User's Guide](docs/ctf_editor/usage_guide.md) for information on how to run and use the editor.
-
+The CTF tool provides a [CTF Editor](tools/ctf_ui/README.md) to assist in the creation, modification, and running of scripts. Currently, the editor can be obtained from the repository above.
 
 Refer to the following [guide](docs/ctf/ctf_json_test_script_guide.md) for information on the JSON input script file description. This is useful when scripts are to be written manually without the aid of the editor.
 
@@ -254,10 +254,20 @@ Plugin READMEs include documentation of their own instructions and configuration
 * [Example Plugin](plugins/example_plugin/README.md)
 * [SSH Plugin](plugins/ssh/README.md)
 * [UserIO Plugin](plugins/userio_plugin/README.md)
+* [Variable Plugin](plugins/variable_plugin/README.md)
+* [Control_flow Plugin](plugins/control_flow_plugin/README.md)
+
+Here is a quick reference  [Test_Instruction_Reference](docs/ctf/CTF_Test_Instruction_Reference-OpenSource.pdf).  
 
 ## Developing or Extending CTF Plugins
 
 Refer to the [plugin guide](docs/ctf/ctf_plugin_guide.md) for information on creating custom CTF plugins.
+
+
+## Using CTF Editor
+
+Please refer to the [CTF Editor User's Guide](docs/ctf_editor/usage_guide.md) for information on how to run and use the editor.
+
 
 ## Updating CTF
 
@@ -368,6 +378,68 @@ pytest -v ./tests/ --cov-config=.ctf_coveragerc --cov=plugins --cov=lib --cov-re
 Upon completion, a summary will be printed to the console and the CTF unit test coverage report can be found in `UnitTests_Coverage/index.html`.
 
 ## Release Notes
+
+### v1.3 
+08/26/2021
+
+* CTF Core Changes
+    * Logging improvements
+        * No longer create temporary logging directory during test execution
+        * Use the same log format with colors if `colorlog` is installed. Use `pip install colorlog` to enable.
+
+    * Allow test scripts' import paths to include environment variables, including the configured `workspace_dir`
+
+    * Allow FTP upload to a directory that already exists.
+
+    * Minor improvements and bug fixes.
+    
+* CTF Plugins Changes
+    * Add two new plugins: Variable Plugin and Control-Flow Plugin. 
+        * These provide new instructions to allow CTF users to do looping and conditional statements. See plugin docs for more information.
+
+    * Sort CCDD files before parsing so the files are always processed in alphabetical order.
+
+    * Allow CCDD macros for non-numeric string literals.
+
+    * Support custom field arguments for CCSDS headers in `SendCfsCommand`.
+    
+    * Support the default fill value of arrays in `SendCfsCommand` args, if the array name is given instead of an index.
+
+    * Add two new instructions `CheckTlmPacket` and `CheckNoTlmPacket` in cFS plugin.
+
+    * Allow `CheckTlmValue` to check elements in arrays.
+
+    * Remove `start_cfs_on_init` and `auto_run` configuration options for cFS targets.
+
+    * Improve the mechanism to shut down cFS.
+        * Note - on some distros you may need to install the `sysvinit-tools` package to enable the `pidof` command.
+
+    * Minor improvements and bug fixes.
+
+ * CTF Editor Changes
+    * Add Editor support for new Control Flow instructions.
+    
+    * Improve Editor response while running 2 cFS instances. 
+    
+    * Improve handling of large arrays such as in `MM_LOAD_MEM_WID_CC` by truncating inputs.
+      
+    * Minor improvements and bug fixes.   
+ 
+ * CTF Tool and Scripts Changes
+    * Expand unit test coverage.
+    
+    * Purge test scripts from `sample_cfs_workspace`. 
+    
+    * Purge `start_cfs_on_init` and `auto_run` from INI files.
+    
+    * Purge command & telemetry watch lists from CTF test scripts.
+    
+    
+### v1.2.1
+05/20/2021
+
+* Fixed the type conversion of args for object arrays in `SendCfsCommand`.
+
 ### v1.2
 05/06/2021
 

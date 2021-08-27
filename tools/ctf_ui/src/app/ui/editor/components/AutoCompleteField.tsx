@@ -83,6 +83,7 @@ export class AutoCompleteField extends React.Component<FieldProps, FieldState> {
                 style={Object.assign({ marginBottom: 6 }, this.state.style)}
                 size={"small"}
                 autoFocus={true}
+                disabled={this.state.disabled}
                 defaultActiveFirstOption={true}
                 filterOption={(inputValue, option) => {
                     return (

@@ -36,8 +36,6 @@ import traceback
 from ast import literal_eval
 from pathlib import Path
 
-import psutil
-
 from lib.exceptions import CtfParameterError, CtfTestError
 from lib.ctf_global import Global, CtfVerificationStage
 from lib.logger import logger as log
@@ -115,7 +113,7 @@ class CfsController:
             log.error("Unable to import required CCSDS header types")
             return False
 
-        log.info("Starting Local CFS Interface")
+        log.info("Starting Local CFS Interface to {}:{}".format(self.config.cfs_target_ip, self.config.cmd_udp_port))
         command = CommandInterface(ccsds, self.config.cmd_udp_port, self.config.cfs_target_ip,
                                    self.config.endianess_of_target)
         telemetry = TlmListener(self.config.ctf_ip, self.config.tlm_udp_port)
@@ -123,15 +121,6 @@ class CfsController:
         result = self.cfs.init_passed
         if not result:
             log.error("Failed to initialize LocalCfsInterface")
-        else:
-            if self.config.start_cfs_on_init and not self.cfs_running:
-                try:
-                    result = self.cfs.start_cfs("")
-                except CtfTestError:
-                    result = False
-                    log.error("Error: cfs.start_cfs exception caught!")
-            else:
-                log.warning("Not starting CFS executable... Expecting \"StartCfs\" in test script...")
 
         if result:
             log.info("CfsController Initialized")
@@ -162,10 +151,6 @@ class CfsController:
             # If CFS properly launches the pid will be stored for later use
             self.cfs_process_list.append(result["pid"])
             Global.time_manager.wait(3)
-            if self.config.start_cfs_on_init:
-                self.cfs.enable_output()
-            else:
-                log.info("Skipping enable output...")
         else:
             log.error("Failed to start CFS!")
             return False
@@ -181,7 +166,8 @@ class CfsController:
         return self.cfs.enable_output()
 
     # noinspection PyProtectedMember
-    def send_cfs_command(self, mid, cc, args, payload_length=None, ctype_args=False):
+    # pylint: disable=protected-access
+    def send_cfs_command(self, mid, cc, args, header_args=None, payload_length=None, ctype_args=False):
         """
         Implementation of CFS plugin instructions send_cfs_command.  When CFS plugin instructions
         (send_cfs_command) is executed, it calls CfsController instance's send_cfs_command function.
@@ -191,7 +177,7 @@ class CfsController:
         value of 'None' to prevent any issues.
         @note If ctype_args is true, CFS Plugin will use the "args" parameters as the raw ctype Structure to be sent
         """
-        # pylint: disable=invalid-name
+        # pylint: disable=invalid-name, protected-access
         if not ctype_args:
             log.info("Sending CFS Command to target: {}, {}:{} with Args: {}".format(self.config.name, mid,
                                                                                      cc, json.dumps(args)))
@@ -239,7 +225,8 @@ class CfsController:
                 if isinstance(args, dict):
                     args = self.resolve_args_from_dict(args, arg_class)
                 else:
-                    args = self.resolve_simple_type(args, arg_class)
+                    assert len(arg_class._fields_) == 1, 'Raw values can only be used for types with a single field'
+                    args = arg_class(self.resolve_simple_type(args, arg_class._fields_[0][1]))
             except Exception as exception:
                 log.error("Failed to build command message from args: {}".format(exception))
                 raise CtfTestError("Error in send_cfs_command") from exception
@@ -303,7 +290,7 @@ class CfsController:
             arg_data = buf.raw
 
         log.debug("Sending bytes: {}".format(arg_data))
-        result = self.cfs.send_command(cmd_mid, cc, arg_data)
+        result = self.cfs.send_command(cmd_mid, cc, arg_data, header_args)
 
         if not result:
             log.error("Failed to send command message: MID {}, CC {}, args {}".format(cmd_mid, cc, args))
@@ -327,25 +314,23 @@ class CfsController:
         return arg
 
     # noinspection PyProtectedMember
-    def resolve_simple_type(self, arg, arg_class):
+    def resolve_simple_type(self, arg, arg_type):
         """
         Implementation of helper function resolve_simple_type.
         Resolves any macros in arg and converts it to a type appropriate for arg_class
-
-        @note - arg_class must have a _type_ attribute
         """
         # pylint: disable=protected-access
         arg = self.resolve_macros(arg)
-        if arg_class._type_ == ctypes.c_bool:
+        if arg_type == ctypes.c_bool:
             if isinstance(arg, int):
                 arg = bool(arg)
             elif isinstance(arg, str) and arg.lower() in ['true', 'false']:
                 arg = arg.lower() == 'true'
             else:
                 raise CtfParameterError("Invalid value for bool: {}".format(arg), arg)
-        elif arg_class._type_ in [ctypes.c_char, ctypes.c_char_p, ctypes.c_wchar, ctypes.c_wchar_p]:
+        elif arg_type in [ctypes.c_char, ctypes.c_char_p, ctypes.c_wchar, ctypes.c_wchar_p]:
             arg = str(arg).encode()
-        elif arg_class._type_ in [ctypes.c_float, ctypes.c_double, ctypes.c_longdouble]:
+        elif arg_type in [ctypes.c_float, ctypes.c_double, ctypes.c_longdouble]:
             arg = float(arg)
         else:
             arg = int(str(arg), 0)
@@ -357,6 +342,7 @@ class CfsController:
         Implementation of helper function resolve_args_from_dict.
         Convert argument args to args_class
         """
+        # pylint: disable=protected-access
         for key, value in list(args.items()):
             name = self.resolve_macros(key)
             index = None
@@ -376,6 +362,23 @@ class CfsController:
                 else:
                     assert isinstance(args[name], field_class)
                 field_class = field_class._type_  # pylint: disable=protected-access
+            else:
+                # handle default value to the array. For example, the args element is "DataArray": 200
+                # instead of "DataArray[1]": 200. So the index is None, and field_class is array.
+                if hasattr(field_class, '_length_'):
+                    value = self.resolve_macros(value)
+                    # resolve_macros may convert macros to str,  need to convert str to element type
+                    # if it can be converted into int
+                    if isinstance(value, str) and value.isdigit():
+                        value = int(value)
+                    if not isinstance(value, str):
+                        log.debug("Assign default value '{}' for array {}".format(value, field_class))
+                        args[name] = field_class()
+                        array_element_type = field_class._type_
+                        array_element_value = self.resolve_simple_type(value, array_element_type)
+                        # dynamic initialization of ctypes array from list of ctypes value
+                        args[name] = field_class(*[array_element_type(array_element_value)] * field_class._length_)
+                        continue
 
             if isinstance(value, (list, tuple)):
                 raise CtfParameterError("Dictionary containing list is not a supported args format."
@@ -384,6 +387,7 @@ class CfsController:
             if isinstance(value, dict):
                 args[key] = self.resolve_args_from_dict(value, field_class)
             else:
+                field_class = field_class._type_ if hasattr(field_class, '_length_') else field_class
                 args[key] = self.resolve_simple_type(value, field_class)
 
             # If we've created an indexed arg, it must now be moved into the array container
@@ -407,7 +411,7 @@ class CfsController:
                 return field[1]
         raise CtfParameterError("No field {} in {}".format(name, args_class.__name__), name)
 
-    def check_tlm_value(self, mid, args):
+    def check_tlm_value(self, mid, args=None):
         """
         Implementation of CFS plugin instructions check_tlm_value. When CFS plugin instructions (check_tlm_value)
         is executed, it calls CfsController instance's check_tlm_value function.
@@ -425,12 +429,31 @@ class CfsController:
                 log.error("Messages never received for MID {}:{}.".format(mid, current_mid_value))
                 return False
 
-        args = self.convert_check_tlm_args(args)
+        args = self.convert_check_tlm_args(args) if args else None
         result = self.cfs.check_tlm_value(mid, args)
 
         if result:
             log.info("PASSED Final Check for MID:{}, Args:{}".format(mid, args))
 
+        return result
+
+    def get_tlm_value(self, mid, tlm_variable):
+        """
+        Implementation of CFS plugin instructions get_tlm_value. When CFS plugin method (get_tlm_value)
+        is executed, it calls CfsController instance's get_tlm_value function.
+        """
+        if not self.mid_available(mid):
+            log.error("MID {} not in the mid_map.".format(mid))
+            return None
+
+        mid = self.mid_map[mid]
+        current_mid_value = mid["MID"]
+
+        if current_mid_value not in self.cfs.received_mid_packets_dic.keys():
+            log.error("Messages never received for MID {}:{}.".format(mid, current_mid_value))
+            return None
+
+        result = self.cfs.get_tlm_value(mid, tlm_variable)
         return result
 
     def check_tlm_continuous(self, v_id, mid, args):
@@ -544,33 +567,19 @@ class CfsController:
         Implementation of CFS plugin instructions shutdown_cfs. When CFS plugin instructions
         (shutdown_cfs) is executed, it calls CfsController instance's shutdown_cfs function.
         """
-        log.info("Shutting down CFS on{}".format(self.config.name))
+        log.info("Shutting down CFS on {}".format(self.config.name))
 
         # Close the command socket, close the telemetry socket and write the CFS EVS Log File
         if self.cfs:
             self.cfs.stop_cfs()
 
-        # Close any subprocess launched by CTF which include the CFS application that was being tested
-        for current_process in self.cfs_process_list:
-            process = psutil.Process(current_process)
-            for pro_child in process.children(recursive=True):
-                try:
-                    pro_child.kill()
-                except psutil.NoSuchProcess as exception:
-                    log.debug(exception)
-                    log.debug("Failed to close process {}".format(current_process))
-                    continue
-            try:
-                process.kill()
-            except Exception as exception:
-                log.debug(exception)
-                log.debug("Failed to close parent process {}".format(current_process))
-                raise CtfTestError('Error in shutdown_cfs') from exception
-            finally:
-                self.cfs_process_list = []
-                self.cfs_running = False
-
-        return True
+        kill_string = "kill -9 $(pidof {})".format(self.config.cfs_exe)
+        status = os.system(kill_string) == 0
+        if not status:
+            log.error("Failed to kill process {}. CFS may have already exited.")
+        self.cfs_process_list = []
+        self.cfs_running = False
+        return status
 
     def shutdown(self):
         """
@@ -641,7 +650,7 @@ class RemoteCfsController(CfsController):
             log.error("Unable to import required CCSDS header types")
             return False
 
-        log.info("Starting Remote CFS Interface")
+        log.info("Starting Remote CFS Interface to {}:{}".format(self.config.cfs_target_ip, self.config.cmd_udp_port))
         self.execution = SshController(SshConfig())
         result = self.execution.init_connection(self.config.destination)
         if not result:
@@ -653,8 +662,6 @@ class RemoteCfsController(CfsController):
             result = self.cfs.init_passed
             if not result:
                 log.error("Failed to initialize RemoteCfsInterface")
-            elif self.config.start_cfs_on_init and not self.cfs_running:
-                result = self.start_cfs("")
             else:
                 log.warning("Not starting CFS executable... Expecting \"StartCfs\" in test script...")
 
@@ -697,17 +704,16 @@ class RemoteCfsController(CfsController):
         if self.cfs:
             self.cfs.stop_cfs()
 
-        result = True
-        for pid in self.cfs_process_list:
-            kill_string = "kill -SIGINT {}".format(pid)
-            try:
-                result &= self.execution.run_command(kill_string)
-            except Exception as exception:
-                log.error("Failed to kill process with PID {}: {}".format(pid, exception))
-                result = False
-                self.cfs_running = False
-                raise CtfTestError('Error in shutdown_cfs') from exception
+        kill_string = "kill -9 $(pidof {})".format(self.config.cfs_exe)
+        try:
+            result = self.execution.run_command(kill_string)
+        except Exception as exception:
+            log.error("Failed to kill process {}: {}".format(self.config.cfs_exe, exception))
+            self.cfs_process_list = []
+            self.cfs_running = False
+            raise CtfTestError('Error in shutdown_cfs') from exception
 
+        self.cfs_process_list = []
         self.cfs_running = False
         return result
 
@@ -773,7 +779,7 @@ if SP0CfsInterface:
                 log.error("Unable to import required CCSDS header types")
                 return False
 
-            log.info("Starting SP0 CFS Interface")
+            log.info("Starting SP0 CFS Interface to {}:{}".format(self.config.cfs_target_ip, self.config.cmd_udp_port))
             result = self.sp0_plugin = Global.plugin_manager.find_plugin_for_command("SP0_Register")
             if not result:
                 log.error("Failed to connect to SP0 plugin.")
@@ -788,8 +794,6 @@ if SP0CfsInterface:
                     result = self.cfs.init_passed
                     if not result:
                         log.error("Failed to initialize SP0CfsInterface")
-                    elif self.config.start_cfs_on_init and not self.cfs_running:
-                        result = self.start_cfs("")
                     else:
                         log.warning("Not starting CFS executable... Expecting \"StartCfs\" in test script...")
 

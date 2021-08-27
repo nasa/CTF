@@ -23,10 +23,11 @@ import json
 import traceback
 import os
 
+from lib.ctf_utility import expand_path
 from lib.exceptions import CtfTestError
 from lib.test import Test
 from lib.test_script import TestScript
-from lib.event_types import Command
+from lib.event_types import Instruction
 from lib.logger import logger as log
 
 
@@ -37,21 +38,17 @@ class JSONScriptReader:
     @param input_script_path: The path to the input JSON script
     """
     def __init__(self, input_script_path):
-        # Load JSON Input File
+        """
+        Constructor for the JSONScriptReader class.
+        Loads and parses the contents of a single JSON test script file, and resolves imports
+        """
         try:
             with open(input_script_path, "r") as script:
-                try:
-                    self.raw_data = json.load(script)
-                except ValueError as exception:
-                    log.error(exception)
-                    log.error("Skipping Input Script")
-                    log.debug(traceback.format_exc())
-                    self.valid_script = False
-                    return
-
-        except (IOError, OSError) as exception:
+                self.raw_data = json.load(script)
+        except (IOError, OSError, ValueError) as exception:
+            log.error("Failed to load script file {}, skipping...".format(input_script_path))
             log.error(exception)
-            log.error("Skipping Input Script")
+            log.debug(traceback.format_exc())
             self.valid_script = False
             return
 
@@ -65,14 +62,13 @@ class JSONScriptReader:
         self.functions = dict()
 
         # ENHANCE - validate file against a schema
-
-        self.process_header()
-
-        self.process_watchlists()
-
-        self.process_functions()
-
-        self.process_tests()
+        try:
+            self.process_header()
+            self.process_functions()
+            self.process_tests()
+        except (CtfTestError, ValueError, KeyError) as ex:
+            log.error("Failed to process JSON script {}: {}".format(input_script_path, ex))
+            self.valid_script = False
 
     def process_header(self):
         """
@@ -96,29 +92,6 @@ class JSONScriptReader:
 
             self.valid_script = False
 
-    # Process watchlists
-    def process_watchlists(self):
-        """
-        Parse the 'telemetry_watch_list' and 'command_watch_list' field in the test script
-        """
-        try:
-            telemetry_watch_list_mids = []
-            cmd_watch_list_mids = []
-            # Process Telemetry watch list
-            if "telemetry_watch_list" in self.raw_data:
-                for mid_str in self.raw_data["telemetry_watch_list"].keys():
-                    telemetry_watch_list_mids.append(str(mid_str))
-            # Process Command watch list
-            if "command_watch_list" in self.raw_data:
-                for mid_str in self.raw_data["command_watch_list"].keys():
-                    cmd_watch_list_mids.append(str(mid_str))
-            self.script.set_watch_lists(telemetry_watch_list_mids, cmd_watch_list_mids)
-
-        except KeyError as exception:
-            log.error("Exception: Invalid Json Script file: {} does not contain {}"
-                      .format(self.input_script_path, exception))
-            raise exception
-
     def process_functions(self):
         """
         Parse the function definitions and imports in the test script
@@ -132,6 +105,7 @@ class JSONScriptReader:
             # Process function imports
             if "import" in self.raw_data.keys():
                 for util in self.raw_data["import"].keys():
+                    util = expand_path(util)
                     if not os.path.exists(util):
                         util = os.path.join(self.script.input_file_path, util)
                     if not os.path.exists(util):
@@ -203,9 +177,10 @@ class JSONScriptReader:
 
         # Build event list
         for curr_test in tests:
-            event_list = []
+            instruction_list = []
             test = Test()
             commands = curr_test["instructions"]
+            default_index = -1
             for _, command in enumerate(commands):
                 data = command.get("data")
                 args = None if data is None else data.get("args")
@@ -224,7 +199,7 @@ class JSONScriptReader:
                         log.error("Failed to process test case due to the error(s) above. Skipping {}".format(
                             curr_test["case_number"]
                         ))
-                        event_list = []
+                        instruction_list = []
                         break
                     if not inline_commands:
                         log.error("No commands in function {}".format(command["function"]))
@@ -236,27 +211,25 @@ class JSONScriptReader:
 
                     disabled = bool(command.get('disabled', False))
                     for c_index, c_inline in enumerate(inline_commands):
-                        # Set the default delay value of 0
-                        # then obtain wait value from test script
                         delay = 0
                         if "wait" in c_inline.keys():
                             delay = c_inline["wait"]
                         if c_index == 0:
                             delay += function_call_delay
                         disabled |= bool(c_inline.get('disabled', False))
-                        event_list.append(Command(delay, c_inline, len(test_list), -1, disabled))
+                        instruction_list.append(Instruction(delay, c_inline, len(test_list), default_index, disabled))
                 else:
                     delay = 0
                     if "wait" in command.keys():
                         delay = command["wait"]
                     disabled = bool(command.get('disabled', False))
-                    event_list.append(Command(delay, command, len(test_list), -1, disabled))
+                    instruction_list.append(Instruction(delay, command, len(test_list), default_index, disabled))
 
-            for i, _ in enumerate(event_list):
-                event_list[i].command_index = i
+            for i, _ in enumerate(instruction_list):
+                instruction_list[i].command_index = i
 
             test.test_info = {"test_case": curr_test["case_number"], "description": curr_test["description"]}
-            test.event_list = event_list
+            test.instructions = instruction_list
             test_list.append(test)
         self.script.set_tests(test_list)
 

@@ -25,9 +25,9 @@ import json
 
 from lib.exceptions import CtfTestError
 from lib.logger import logger as log, change_log_file
+from lib.readers.json_script_reader import JSONScriptReader
 from lib.status_manager import StatusDefs
 from lib.ctf_global import Global
-from lib.ctf_utility import expand_path
 
 
 class ScriptManagerConfig:
@@ -36,17 +36,14 @@ class ScriptManagerConfig:
     """
 
     def __init__(self):
-        ## Results output directory
-        self.regression_dir = expand_path(Global.config.get("logging", "results_output_dir"))
-
-        # Temporary results output directory
-        self.script_output_dir = expand_path(Global.config.get("logging", "temp_script_output_dir"))
+        """
+        Constructor of ScriptManagerConfig class. Initialize properties from INI file
+        """
 
         # Whether the script manager should reset plugins between scripts (shutdown all loaded plugins,
         # reload and initialize all plugins)
         self.reset_plugins_between_scripts = Global.config.getboolean("core", "reset_plugins_between_scripts")
 
-        # Whether to output results in JSON format
         self.json_results = Global.config.getboolean("logging", "json_results")
 
 
@@ -64,10 +61,9 @@ class ScriptManager:
     def __init__(self, plugin_manager, status_manager):
         self.script_list = []
         self.config = ScriptManagerConfig()
-        self.regression_summary_file = ""
-        self.regression_summary_json_file = ""
-        self.curr_regression_dir = ""
-        self.curr_script_log_dir = ""
+        self.regression_summary_file_path = ""
+        self.regression_summary_json_file_path = ""
+        self.curr_script_log_dir_path = ""
         self.plugin_manager = plugin_manager
         self.status_manager = status_manager
         self.summary_file = None
@@ -78,11 +74,22 @@ class ScriptManager:
         """
         self.script_list.append(script)
 
+    def add_script_file(self, file):
+        """
+        Adds a script file to the list of scripts. If the file is not valid, skip it.
+        """
+        script_reader = JSONScriptReader(file)
+        if script_reader.valid_script:
+            self.add_script(script_reader.script)
+            log.info("Loaded Script: {}".format(script_reader.input_script_path))
+        else:
+            log.warning("Invalid Input Test JSON Script: {}. Skipping.".format(file))
+
     def run_all_scripts(self):
         """
         Run all added scripts, updating the status packets, and ensuring plugins are reloaded between scripts if needed.
         """
-        self.status_manager.set_start_time()
+        self.status_manager.start()
         self.status_manager.set_scripts(self.script_list)
 
         suite_status = StatusDefs.active
@@ -90,10 +97,8 @@ class ScriptManager:
         self.status_manager.update_suite_status(suite_status, suite_details)
 
         try:
-            # Initialize plugins before running scripts only once in the beginning
             self.plugin_manager.initialize_plugins()
 
-            # Prepare logging files/dirs
             self.prep_logging()
 
             # Run each script in the script_list sequentially
@@ -101,14 +106,14 @@ class ScriptManager:
                 "Test_Results": []
             }
             test_count = 1
+            wait_time = Global.config.getfloat("core", "delay_between_scripts", fallback=1.0)
+
             for script in self.script_list:
                 # Create directory to log each script output
-                logs_dirname = self.curr_regression_dir + "/logs/" + script.input_file + script.params
+                logs_dirname = Global.test_log_dir + "/logs/" + script.input_file + script.params
                 current_time = time.time()
-                self.curr_script_log_dir = str("%0s_%0d" % (logs_dirname, current_time))
-                Global.current_script_log_dir = self.curr_script_log_dir
-                Global.telemetry_watch_list_mids = script.telem_watch_list
-                Global.command_watch_list_mids = script.cmd_watch_list
+                self.curr_script_log_dir_path = str("%0s_%0d" % (logs_dirname, current_time))
+                Global.current_script_log_dir = self.curr_script_log_dir_path
 
                 if self.config.reset_plugins_between_scripts and test_count > 1:
                     # Re-initialize to re-run plugin __init__ function (constructor)
@@ -118,7 +123,7 @@ class ScriptManager:
                     self.plugin_manager.initialize_plugins()
 
                 # Start logging in script's log directory
-                os.makedirs(self.curr_script_log_dir)
+                os.makedirs(self.curr_script_log_dir_path)
                 change_log_file(os.path.join(Global.current_script_log_dir, script.input_file + ".log"))
 
                 try:
@@ -148,7 +153,7 @@ class ScriptManager:
                 if self.config.json_results is True:
                     results["Test_Results"].append({
                         "Status": script.status,
-                        "Time": script.time_taken,
+                        "Time": script.exec_time,
                         "Ver_Num": script.test_number,
                         "Req_Num": script.requirements,
                         "Test_Run": script.num_tests,
@@ -160,77 +165,55 @@ class ScriptManager:
 
                 test_count = test_count + 1
 
-                # If we are resetting plugins between scripts reinitialize all plugins
                 if self.config.reset_plugins_between_scripts:
                     self.plugin_manager.shutdown_plugins()
 
                 try:
                     # Revert logging back to CTF main log
                     change_log_file(Global.CTF_log_dir_file)
-                except Exception as exception:
+                except Exception as ex:
                     log.warning("Failed to revert logging to CTF. Does {} still exist?".format(Global.CTF_log_dir_file))
-                    raise CtfTestError("Error in run_all_scripts") from exception
+                    raise CtfTestError("Error in run_all_scripts") from ex
 
-                # Wait the configured amount time between scripts for any cleanup to occur
-                wait_time = Global.config.getfloat("core", "delay_between_scripts", fallback=1.0)
                 log.info("Waiting {} seconds for plugins to cleanup...".format(wait_time))
                 Global.time_manager.wait(wait_time)
 
-            # Shutdown all plugins if they were not already shut down between scripts
             if not self.config.reset_plugins_between_scripts:
                 self.plugin_manager.shutdown_plugins()
 
             self.status_manager.finalize_suite_status()
             if self.config.json_results is True:
-                with open(self.regression_summary_json_file, "a") as file:
+                with open(self.regression_summary_json_file_path, "a") as file:
                     json.dump(results, file, indent=4)
 
-        except Exception as exception:
+        except Exception as ex:
             log.error("Exception: ", exc_info=True)
             suite_status = StatusDefs.error
             suite_details = str(traceback.format_exc())
             self.status_manager.update_suite_status(suite_status, suite_details)
-            raise CtfTestError("Error in run_all_scripts") from exception
+            raise CtfTestError("Error in run_all_scripts") from ex
 
     def prep_logging(self):
         """
         Prepares logging directories for a CTF test run. Logging directories will include script-specific log
         directories, as well as high-level log files and results summary.
         """
-        Global.test_start_time = time.localtime()
-        self.curr_regression_dir = os.path.join(self.config.regression_dir, "Run_" + \
-                                                time.strftime("%m_%d_%Y_%H_%M_%S", Global.test_start_time))
+        self.regression_summary_file_path = Global.test_log_dir + "/results_summary.txt"
+        self.regression_summary_json_file_path = Global.test_log_dir + "/results_summary.json"
 
-        Global.test_log_dir = self.curr_regression_dir
-
-        self.regression_summary_file = self.curr_regression_dir + "/results_summary.txt"
-
-        self.regression_summary_json_file = self.curr_regression_dir + "/results_summary.json"
-
-        try:
-            os.makedirs(self.curr_regression_dir)
-        except OSError as exception:
-            log.error("Directory {} could not be created.".format(self.curr_regression_dir))
-            raise exception
-
-        try:
-            os.makedirs(self.curr_regression_dir + "/logs")
-        except OSError as exception:
-            log.error("Directory: {} could not be created.".format(self.curr_regression_dir + "/logs"))
-            raise exception
-
-        log.debug("Successfully created the test results and log directories at {}".format(self.curr_regression_dir))
-
-        self.summary_file = open(self.regression_summary_file, "w", buffering=10)
-
+        self.summary_file = open(self.regression_summary_file_path, "w", buffering=10)
         self.summary_file.write(str("%0s | %0s | %0s | %0s | %0s | %0s | %0s | %0s | %0s\n"
-                                    % ("Status".ljust(10), "Time (s)".ljust(8), "Verification Number".ljust(30),
-                                       "Requirement Verified".ljust(30), "Test Run".ljust(
-            8), "Test Passed".ljust(12),
-                                       "Test Failed".ljust(12), "Test Error".ljust(12), "Script".ljust(60))))
-        self.summary_file.write(
-            "------------------------------------------------------------------------------------------------------"
-            "------------------------------------------\n")
+                                    % ("Status".ljust(10),
+                                       "Time (s)".ljust(8),
+                                       "Verification Number".ljust(50),
+                                       "Requirement Verified".ljust(25),
+                                       "Test Run".ljust(8),
+                                       "Test Passed".ljust(12),
+                                       "Test Failed".ljust(12),
+                                       "Test Error".ljust(12),
+                                       "Script".ljust(50))))
+
+        self.summary_file.write("-" * 180 + "\n")
         self.summary_file.close()
 
     def write_summary_line(self, summary_line):
@@ -254,18 +237,18 @@ class ScriptManager:
                 log.error("Failed to close CTF results summary file!")
                 return
 
-        formatted_time = "%3.2f" % summary_line.time_taken
-        self.summary_file = open(self.regression_summary_file, "a+", buffering=10)
+        formatted_time = "%3.2f" % summary_line.exec_time
+        self.summary_file = open(self.regression_summary_file_path, "a+", buffering=10)
         self.summary_file.write(str("%0s   %0s   %0s   %0s   %0s   %0s   %0s   %0s   %0s\n"
                                     % (str(summary_line.status).ljust(10),
                                        formatted_time.ljust(8),
-                                       str(summary_line.test_number).ljust(30),
-                                       str(summary_line.requirements).ljust(30),
+                                       str(summary_line.test_number).ljust(50),
+                                       str(summary_line.requirements).ljust(25),
                                        str(summary_line.num_tests).ljust(8),
                                        str(summary_line.num_passed).ljust(12),
                                        str(summary_line.num_failed).ljust(12),
                                        str(summary_line.num_error).ljust(12),
-                                       summary_line.input_file.ljust(60))))
+                                       summary_line.input_file.ljust(50))))
         self.summary_file.close()
 
     def __del__(self):
@@ -278,23 +261,3 @@ class ScriptManager:
             except IOError as exception:
                 log.error("Failed to write CTF results summary file!")
                 log.error(exception)
-
-    def test_json(self):
-        """
-        Helper function to test JSON results output
-        """
-        if not self.regression_summary_json_file:
-            return
-
-        with open(self.regression_summary_json_file) as json_file:
-            data = json.load(json_file)
-            for result in data['Test_Results']:
-                print('Status: ', result['Status'])
-                print('Time: ', result['Time'])
-                print('Ver_Num: ', result['Ver_Num'])
-                print('Req_Num: ', result['Req_Num'])
-                print('Test_Run: ', result['Test_Run'])
-                print('Test_Passed: ', result['Test_Passed'])
-                print('Test_Failed: ', result['Test_Failed'])
-                print('Test_Error: ',result['Test_Error'])
-                print('Script: ',  result['Script'])

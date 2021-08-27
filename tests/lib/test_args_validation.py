@@ -13,10 +13,9 @@
 # either expressed or implied.
 
 import logging
-import os
 from unittest.mock import patch
-
 import pytest
+from mock import Mock
 
 from lib.args_validation import ArgsValidation
 
@@ -54,18 +53,42 @@ def test_increment_error_count(argsval):
     assert argsval.get_error_count() == before_count + 1, "Error count has been incremented"
 
 
-@pytest.mark.skip("No valid test case in the development environment. Needs portable test implementation.")
-def test_verify_symbol(argsval):
-    with pytest.raises(TypeError):
-        argsval.verify_symbol()
-    assert False, 'test not implemented'
+def test_verify_symbol_none(argsval):
+    assert not argsval.verify_symbol("", None)
 
 
-@pytest.mark.skip("No valid test case in the development environment. Needs portable test implementation.")
-def test_validate_symbol(argsval):
-    with pytest.raises(TypeError):
-        argsval.validate_symbol()
-    assert False, 'test not implemented'
+def test_verify_symbol_no_file(argsval):
+    assert not argsval.verify_symbol("no_file", "symbol")
+
+
+def test_verify_symbol_no_section(argsval):
+    with patch("lib.args_validation.ELFFile") as mock_elf:
+        mock_elf.return_value.get_section_by_name.side_effect = [False]
+        assert not argsval.verify_symbol("ctf", "symbol")
+
+
+def test_verify_symbol_symbol(argsval):
+    with patch("lib.args_validation.ELFFile") as mock_elf, \
+            patch("lib.args_validation.isinstance", return_value=True):
+        mock_section = Mock()
+        mock_symbols = Mock()
+        mock_symbols.name = "symbol2"
+        mock_section.iter_symbols.side_effect = [[mock_symbols, mock_symbols]]
+        mock_elf.return_value.get_section_by_name.side_effect = [mock_section]
+        assert not argsval.verify_symbol("ctf", "symbol")
+
+
+def test_validate_symbol_path_none(argsval):
+    with patch("lib.args_validation.ArgsValidation.validate_file", return_value=None):
+        assert argsval.validate_symbol("symbol", "./") is None
+
+    with patch("lib.args_validation.ArgsValidation.validate_file", return_value="./"), \
+         patch("lib.args_validation.ArgsValidation.verify_symbol", return_value=True):
+        assert argsval.validate_symbol("symbol", "./") == "symbol"
+
+    with patch("lib.args_validation.ArgsValidation.validate_file", return_value="./"), \
+         patch("lib.args_validation.ArgsValidation.verify_symbol", return_value=False):
+        assert argsval.validate_symbol("symbol", "./") is None
 
 
 def test_validate_file(argsval, caplog):
@@ -73,17 +96,13 @@ def test_validate_file(argsval, caplog):
         isfile.side_effect = [True, False, False]
         assert argsval.validate_file("a/valid/path") == "a/valid/path", "Valid path is returned"
         assert argsval.get_error_count() == 0, "No errors captured"
-        assert argsval.validate_file("a/missing/path") == "a/missing/path", "Missing path is returned and warning is logged"
+        assert argsval.validate_file(
+            "a/missing/path") == "a/missing/path", "Missing path is returned and warning is logged"
         assert argsval.get_error_count() == 0, "No errors captured"
         assert any(record.levelname == "WARNING" for record in caplog.records), "Warning was logged"
-        assert argsval.validate_file("an/invalid/path", True) is None, "Invalid path is not returned and error is logged"
+        assert argsval.validate_file("an/invalid/path",
+                                     True) is None, "Invalid path is not returned and error is logged"
         assert argsval.get_error_count() == 1, "Error was captured"
-
-
-def test_expand_directory(argsval):
-    assert argsval.expand_directory("foo/bar") == "foo/bar", "Simple path is returned unchanged"
-    with patch.dict(os.environ, {"HOME": "/user/foo"}):
-        assert argsval.expand_directory("~/bar") == "/user/foo/bar", "Path is returned with variables expanded"
 
 
 def test_validate_directory(argsval, caplog):

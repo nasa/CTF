@@ -16,16 +16,16 @@
 @namespace plugins.cfs.pycfs.cfs_interface
 cfs_interface.py: Base-class Lower-level interface to communicate with cFS.
 """
+import ctypes
 import importlib
 import os
 import re
-import ctypes
 import socket
 import traceback
 from collections import namedtuple
-import functools
 
 # external dependencies
+from lib import ctf_utility
 from lib.ctf_global import Global, CtfVerificationStage
 from lib.exceptions import CtfConditionError
 from lib.logger import logger as log
@@ -389,11 +389,11 @@ class CfsInterface:
                     verification.pass_count += 1
         self.unchecked_packet_mids.clear()
 
-    def send_command(self, msg_id, function_code, data):
+    def send_command(self, msg_id, function_code, data, header_args=None):
         """
         Send instruction to CFS instance through command interface.
         """
-        sent_bytes = self.command.send_command(msg_id, function_code, data)
+        sent_bytes = self.command.send_command(msg_id, function_code, data, header_args)
         return sent_bytes
 
     @staticmethod
@@ -498,7 +498,7 @@ class CfsInterface:
         ]
         return
 
-    def check_tlm_value(self, mid, args, discard_old_packets=True):
+    def check_tlm_value(self, mid, args=None, discard_old_packets=True):
         """
          Given a mid and a arguments, iterate over all received packets since the start of the verification.
          Validate each packet until a success is seen, or there are no more packets to check.
@@ -536,15 +536,50 @@ class CfsInterface:
             if payload is None:
                 log.error("Failed to extract packet from received MID: {}. Continuing...".format(hex(mid)))
                 continue
-            # Check the current packet against provided args. If successful,
+            # Check the current packet against provided args, if any. If successful,
             # the check_tlm_value will pass and discard packets if needed.
-            check_tlm_result = self.check_tlm_packet(payload, args)
+            check_tlm_result = (not args) or self.check_tlm_packet(payload, args)
             if check_tlm_result:
                 break
 
         if discard_old_packets:
             self.received_mid_packets_dic[mid] = []
         return check_tlm_result
+
+    def get_tlm_value(self, mid: dict, tlm_variable: str):
+        """
+        Given a mid and a tlm_variable, iterate over all received packets, and return the latest tlm value.
+        """
+        latest_tlm_value = None
+        if isinstance(mid, dict):
+            mid_name = mid
+            mid = mid.get("MID")
+            if mid is None:
+                log.error("No MID Value found in: {}".format(mid_name))
+                return None
+        if mid not in self.received_mid_packets_dic:
+            log.error("Unknown MID value {}".format(mid))
+            return None
+
+        if len(self.received_mid_packets_dic[mid]) == 0:
+            log.error("No messages received for MID = {}".format(hex(mid)))
+            return None
+
+        # Traverse packets backwards validating each packet for the selected MID
+        log.debug("There are {} packets with mid {}".format(len(self.received_mid_packets_dic[mid]), mid_name))
+        for i in range(len(self.received_mid_packets_dic[mid]) - 1, -1, -1):
+            # Get current packet for the selected MID
+            payload = self.received_mid_packets_dic[mid][i].payload
+            log.debug("payload = {} ".format(payload))
+            # Check that a payload exists, otherwise proceed to the next packet
+            if payload is None:
+                log.error("Failed to extract packet from received MID: {}. Continuing...".format(hex(mid)))
+                continue
+            latest_tlm_value = getattr(payload, tlm_variable, None)
+            if latest_tlm_value is not None:
+                break
+
+        return latest_tlm_value
 
     def check_tlm_packet(self, payload, args):
         """
@@ -589,20 +624,10 @@ class CfsInterface:
                 tol_plus = 0
             if tol_minus is None:
                 tol_minus = 0
-            eval_string = ""
             try:
-                eval_string = "payload.{}".format(variable)
-
-                def _rgetattr(obj, attr, *args):
-                    def _getattr(obj, attr):
-                        return getattr(obj, attr, *args)
-
-                    return functools.reduce(_getattr, [obj] + attr.split('.'))
-
-                actual = _rgetattr(payload, variable)
-
-            except (SyntaxError, AttributeError) as exception:
-                log.error("Failed to Evaluate: {} error as {}".format(eval_string, exception))
+                actual = ctf_utility.rgetattr(payload, variable)
+            except (AttributeError, ValueError) as exception:
+                log.error("Failed to evaluate variable payload.{}: {}".format(variable, exception))
                 log.debug(traceback.format_exc())
                 packet_passed = False
                 break
@@ -611,18 +636,19 @@ class CfsInterface:
                 actual = actual.decode()
 
             initial_result = self.check_value(actual, expected_value, arg["compare"], mask, mask_value)
+            arg_result = initial_result
 
             if tol_plus:
                 tol_plus_value = expected_value + tol_plus
                 tol_plus_result = self.check_value(actual, tol_plus_value, "<=", mask, mask_value)
+                tol_plus_result &= self.check_value(actual, expected_value, ">=", mask, mask_value)
+                arg_result |= tol_plus_result
 
             if tol_minus:
                 tol_minus_value = expected_value - tol_minus
                 tol_minus_result = self.check_value(actual, tol_minus_value, ">=", mask, mask_value)
-
-            arg_result = initial_result
-            if tol_plus_result and tol_minus_result:
-                arg_result = arg_result or (tol_plus_result and tol_minus_result)
+                tol_minus_result &= self.check_value(actual, expected_value, "<=", mask, mask_value)
+                arg_result |= tol_minus_result
 
             if not arg_result:
                 log.warning(

@@ -45,10 +45,10 @@ Unit Test for Plugin class: The Plugin Manager is a CTF core component that mana
 
 
 from unittest.mock import patch
-
 import pytest
+from mock import Mock
 
-from lib.plugin_manager import Plugin, PluginManager
+from lib.plugin_manager import Plugin, PluginManager, ArgTypes
 
 
 @pytest.fixture(name="plugin")
@@ -71,6 +71,23 @@ def test_plugin_init(plugin):
     assert len(plugin.verify_required_commands) == 0
     assert len(plugin.continuous_verification_commands) == 0
     assert len(plugin.end_test_on_fail_commands) == 0
+
+
+def test_plugin_process_command(plugin, utils):
+    """
+    test Plugin class method: process_command
+    Given a CTF Test Instruction, this function finds the first plugin that "contains" that test instruction within
+    its command map. Once a valid plugin is found, the implementation of that instruction is invoked using
+    keyworded variable length of arguments in kwargs.
+    """
+    kwargs = {'instruction': 'StartCfs', 'data': {'target': '', 'run_args': ''}}
+    mock_func = Mock()
+    mock_func.return_value = None
+
+    plugin.command_map = {'StartCfs': (mock_func, ['string', 'string'])}
+    plugin.verify_required_commands = ['CheckTlmValue', 'CheckTlmPacket', 'CheckNoTlmPacket']
+
+    plugin.process_command(**kwargs)
 
 
 def test_plugin_initialize(plugin, utils):
@@ -98,13 +115,13 @@ def test_plugin_manager_init(plugin_manager):
     test PluginManager class constructor
     """
     assert plugin_manager.plugin_packages == ['plugins']
-    assert len(plugin_manager.plugins) == 5
+    assert len(plugin_manager.plugins) == 7
     assert 'CCSDS Plugin' in plugin_manager.plugins
     assert 'CFS Plugin' in plugin_manager.plugins
     assert 'ExamplePlugin' in plugin_manager.plugins
     assert 'SshPlugin' in plugin_manager.plugins
     assert 'UserIOPlugin' in plugin_manager.plugins
-    assert len(plugin_manager.plugin_name_list) == 5
+    assert len(plugin_manager.plugin_name_list) == 7
     assert 'CCSDS Plugin' in plugin_manager.plugin_name_list
     assert 'CFS Plugin' in plugin_manager.plugin_name_list
     assert 'ExamplePlugin' in plugin_manager.plugin_name_list
@@ -162,6 +179,15 @@ def test_plugin_manager_find_plugin_for_command_and_execute(plugin_manager, util
         assert plugin_manager.find_plugin_for_command_and_execute(instruction)
 
 
+def test_plugin_manager_walk_package_skip_disabled_plugins(plugin_manager):
+    """
+    test PluginManager class method: walk_package
+    Recursively walk the supplied package to retrieve all plugins
+    """
+    plugin_manager.disabled_plugins.append('cfe')
+    plugin_manager.walk_package('plugins.ccsds_plugin.cfe')
+
+
 def test_plugin_manager_reload_plugins(plugin_manager, utils):
     """
     test PluginManager class method: reload_plugins
@@ -169,7 +195,7 @@ def test_plugin_manager_reload_plugins(plugin_manager, utils):
     provided plugin package to load all available plugins
     """
     assert plugin_manager.reload_plugins() is None
-    assert len(plugin_manager.plugin_name_list) == 5
+    assert len(plugin_manager.plugin_name_list) == 7
     assert 'CCSDS Plugin' in plugin_manager.plugin_name_list
     assert 'CFS Plugin' in plugin_manager.plugin_name_list
     assert 'ExamplePlugin' in plugin_manager.plugin_name_list
@@ -181,12 +207,19 @@ def test_plugin_manager_reload_plugins(plugin_manager, utils):
     assert plugin_manager.reload_plugins() is None
     assert utils.has_log_level('ERROR')
 
+    plugin_manager.plugin_packages = ['plugins/cfs']
+    assert plugin_manager.reload_plugins() is None
+
 
 def test_plugin_manager_create_plugin_info(plugin_manager, utils):
     """
     test PluginManager class method: create_plugin_info
     Outputs the plugin information files in JSON format for utilization by the CTF editor or other tools.
     """
+    assert plugin_manager.create_plugin_info('plugin_info_output') is None
+
+    plugin_manager.plugins['ExamplePlugin'].command_map['TestCommand'] = \
+        (plugin_manager.plugins['ExamplePlugin'].command_map['TestCommand'][0], [ArgTypes.ignore])
     assert plugin_manager.create_plugin_info('plugin_info_output') is None
 
 

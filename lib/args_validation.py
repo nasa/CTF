@@ -24,13 +24,16 @@ from lib.ctf_utility import expand_path
 from lib.logger import logger as log
 
 
-class ArgsValidation():
+class ArgsValidation:
     """
     Helper class to validate arguments and data used by CTF
     """
 
     def __init__(self):
-        ## Tracks the number of errors encountered during validation
+        """
+        Constructor of ArgsValidation class. Initialize instance variable "parameter_errors",
+        which tracks the number of errors encountered during validation.
+        """
         self.parameter_errors = 0
 
     def add_error(self, field, exception=None):
@@ -66,7 +69,8 @@ class ArgsValidation():
 
     def verify_symbol(self, file_path, symbol):
         """
-        Given a file path, verify that a given symbol exists within that file
+        Given a file path, verify that a given symbol exists within that file.
+        Return True if the symbol exists, otherwise return False
 
         @note - Primarily used to validate SP0 executables
 
@@ -80,17 +84,15 @@ class ArgsValidation():
         if os.path.isfile(file_path):
             with open(file_path, 'rb') as file:
                 elffile = ELFFile(file)
-                log.debug('{} sections'.format(elffile.num_sections()))
+                log.debug('{} sections in file {}'.format(elffile.num_sections(), file_path))
                 section = elffile.get_section_by_name('.symtab')
                 if not section:
                     log.error("Invalid ELF file no symbol table found.")
                     status = False
                 elif isinstance(section, SymbolTableSection):
-                    num_symbols = section.num_symbols()
-                    for symbol_num in range(0, num_symbols):
-                        if section.get_symbol(symbol_num).name == symbol:
-                            status = True
-                            break
+                    status = any(s.name == symbol for s in section.iter_symbols())
+                    if not status:
+                        log.error("Section does not have the symbol: {}".format(symbol))
         else:
             log.error("File {} does not exist.".format(file_path))
 
@@ -98,7 +100,8 @@ class ArgsValidation():
 
     def validate_symbol(self, symbol, file_path):
         """
-        Given a file path, verify that a given symbol exists within that file
+        Given a file path, verify that the file exists on disk and contains the given symbol.
+        Return the symbol if it exists, otherwise return None
 
         @note - Primarily used to validate SP0 executables
 
@@ -118,7 +121,8 @@ class ArgsValidation():
 
     def validate_file(self, file_path, fail_if_not_valid=False):
         """
-        Given a file path, verify that the file exists on disk
+        Given a file path, verify that the file exists on disk.
+        Return the expanded absolute path, or None if invalid.
 
         @param file_path: Path to file to check
         @param fail_if_not_valid: Whether to consider an invalid path a failure or not
@@ -134,17 +138,10 @@ class ArgsValidation():
         return new_file_path
 
     @staticmethod
-    def expand_directory(directory):
-        """
-        Given a directory path, expand the path with the user directory and variables, returning the expanded path
-        """
-        new_directory = expand_path(directory)
-        return new_directory
-
-    @staticmethod
     def validate_directory(directory):
         """
-        Given a directory path, verify that the directory exists on disk
+        Given a directory path, verify that the directory exists on disk.
+        Return the expanded absolute path, or None if invalid.
         """
         new_directory = expand_path(directory)
         if not os.path.isdir(new_directory):
@@ -154,7 +151,8 @@ class ArgsValidation():
 
     def validate_number(self, number):
         """
-        Verify that a given value is numerical
+        Verify that a given value is valid as a numerical (float).
+        Return the converted value, or None if not a number.
         """
         new_number = None
         try:
@@ -165,7 +163,8 @@ class ArgsValidation():
 
     def validate_int(self, integer):
         """
-        Verify that a given value is an integer
+        Verify that a given value is valid as an integer.
+        Return the converted value, or None if not an integer.
         """
         new_integer = None
         try:
@@ -176,7 +175,8 @@ class ArgsValidation():
 
     def validate_ip(self, ip_address):
         """
-        Verify that the given value is a valid IP string
+        Verify that the given value is a valid and reachable network destination.
+        Return the IP address, or None if invalid.
         """
         new_ip = None
         try:
@@ -185,12 +185,12 @@ class ArgsValidation():
             new_ip = ip_address
         except socket.error as exception:
             self.add_error("IP", exception)
-
         return new_ip
 
     def validate_boolean(self, value):
         """
-        Verify that the given value is a valid boolean
+        Verify that the given value is valid as a boolean.
+        Return the converted value, or None if not a boolean.
         """
         new_value = None
         if isinstance(value, bool):

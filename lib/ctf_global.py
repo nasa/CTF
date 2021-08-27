@@ -59,15 +59,6 @@ class Global:
     ## Reference to the plugin manager object. May be used to invoke instructions (or access) other plugins.
     plugin_manager = None
 
-    ## Level of logging. Support values: ERROR, INFO, DEBUG.
-    log_level = "DEBUG"
-
-    ## Telemetry watch list MIDs (unused)
-    telemetry_watch_list_mids = []
-
-    ## Command watch list MIDs (unused)
-    command_watch_list_mids = []
-
     ## Log directory of current script. Useful when needing to write data to the current log directory.
     current_script_log_dir = ""
 
@@ -90,8 +81,23 @@ class Global:
     ## Start time of current verification
     current_verification_start_time = None
 
-    ## Current verification stage. Use CtfVerificationStage to evaluate what verification stage CTF is currently at
+    ## Current verification stage. Use CtfVerificationStage to evaluate what verification stage CTF is currently at.
     current_verification_stage = CtfVerificationStage.none
+
+    ## [Read-Only] Current Instruction Index, default value is None.
+    # current_instruction_index is updated by lib/test.py to track the execution instruction index of the test.
+    # Use Utility function "get_current_instruction_index()" to get the index value (int).
+    current_instruction_index = None
+
+    ## [Read-Only] Current goto instruction index, default value is None.
+    # Control Flow Plugins can set the next instruction index to execute based on user input
+    # or logic within the plugin. Do not use it directly
+    goto_instruction_index = None
+
+    ## [Read-Only] Variable Storage. Recommend using utility functions to set/get variables.
+    variable_store = {}
+    label_map = {}
+    goto_label_map = {}
 
     @staticmethod
     def create_arg_parser():
@@ -107,18 +113,17 @@ class Global:
                             required=False)
         parser.add_argument('--config_file', type=str,
                             help='Config file for CTF', default=DEFAULT_CONFIG)
-        parser.add_argument('--script_dir', type=str,
-                            help='Run all JSON CTF scripts in the given directory', required=False)
         return parser
 
     @staticmethod
     def load_config(config_file):
         """
-        Loads the config file specified and sets the global log level accordingly.
+        Loads the config file specified and sets the workspace_dir environment variable
 
         @note - Command line arguments are not visible here, so the status message indicates if the default config
         is being used in case it was not explicitly provided.
         @note - If the config file does not exist, the application will exit with an error.
+        @note - The config field cfs:workspace_dir will be set as an environment variable for the current process.
 
         @return str: An optional status message, since logging will not have been configured yet
         """
@@ -132,7 +137,7 @@ class Global:
 
         Global.config = configparser.ConfigParser(os.environ, interpolation=configparser.ExtendedInterpolation())
         Global.config.read(config_file)
-        Global.log_level = Global.config.get("logging", "log_level", fallback=Global.log_level)
+        os.environ["workspace_dir"] = Global.config.get("cfs", "workspace_dir", fallback="")
 
         return status
 

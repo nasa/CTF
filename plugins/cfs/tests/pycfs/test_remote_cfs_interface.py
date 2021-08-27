@@ -24,7 +24,6 @@ from plugins.ssh.ssh_plugin import SshController
 @pytest.fixture(scope='session', autouse=True)
 def init_global():
     Global.load_config('./configs/default_config.ini')
-    set_logger_options_from_config(Global.config)
     time_mgr = MagicMock()
     time_mgr.exec_time = 1.0
     Global.time_manager = time_mgr

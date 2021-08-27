@@ -10,26 +10,6 @@
   "ctf_options": {
     "verify_timeout": 4
   },
-  "telemetry_watch_list": {
-    "CFE_TBL_HK_TLM_MID": [
-      "Payload.CommandErrorCounter",
-      "Payload.CommandCounter"
-    ]
-  },
-  "command_watch_list": {
-    "CFE_TBL_CMD_MID": [
-      "CFE_TBL_NOOP_CC",
-      "CFE_TBL_RESET_COUNTERS_CC",
-      "CFE_TBL_LOAD_CC",
-      "CFE_TBL_DUMP_CC",
-      "CFE_TBL_VALIDATE_CC",
-      "CFE_TBL_ACTIVATE_CC",
-      "CFE_TBL_DUMP_REGISTRY_CC",
-      "CFE_TBL_SEND_REGISTRY_CC",
-      "CFE_TBL_DELETE_CDS_CC",
-      "CFE_TBL_ABORT_LOAD_CC"
-    ]
-  },
   "import": {},
   "functions": {
     "SendCheckCfsTblNoopCmd": {

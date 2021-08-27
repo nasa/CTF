@@ -49,10 +49,8 @@ import os
 import pkgutil
 import json
 import sys
-
 from inspect import signature
 
-from copy import deepcopy
 
 from lib.ctf_global import Global
 from lib.exceptions import CtfTestError
@@ -61,23 +59,7 @@ from lib.logger import logger as log
 # Template for Plugin Info Dictionary Objects:
 #   - Used for serializing and exporting the CTF plugin information
 #     JSON files.
-
-ParameterInfo = {
-    "name": "",
-    "description": "",
-    "type": ""
-}
-
-CommandInfo = {
-    "name": "",
-    "description": "",
-    "parameters": []
-}
-
-PluginInfo = {
-    "group_name": "",
-    "instructions": []
-}
+from lib.status import ObjectFactory
 
 
 class ArgTypes:
@@ -94,8 +76,9 @@ class ArgTypes:
     boolean = "boolean"
     number = "number"
     ignore = "ignore"
+    condition = "loop_condition"
     other = "other"
-    array_types = [cmd_arg, comparison]
+    array_types = [cmd_arg, comparison,condition]
 
 
 class Plugin():
@@ -104,6 +87,9 @@ class Plugin():
     """
 
     def __init__(self):
+        """
+        Constructor of Plugin Class: Initiate instance properties
+        """
         ## Plugin Name
         self.name = ""
 
@@ -144,7 +130,7 @@ class Plugin():
                 the number of required arguments (non-optional), and less than or equal to the total number of arguments
                 (required + optional)
         """
-        ret = False
+        result = False
         instruction = kwargs["instruction"]
         if "data" in kwargs.keys():
             data = kwargs["data"]
@@ -162,19 +148,18 @@ class Plugin():
 
             if req_args <= len(data) <= (req_args + optional_args):
                 try:
-                    ret = func(**data)
+                    result = func(**data)
                 except Exception as exception:
                     log.error("Error Applying Function {}".format(func))
                     raise CtfTestError("Error Applying Function") from exception
             else:
-                log.error(
-                    "Invalid number of parameters passed to {}. Expected at least {} args"
-                        .format(instruction, req_args))
-                ret = False
-        if ret is None and instruction not in self.verify_required_commands:
+                log.error("Invalid number of parameters passed to {}. Expected at least {} args".format(instruction,
+                                                                                                        req_args))
+                result = False
+        if result is None and instruction not in self.verify_required_commands:
             log.warning("Plugin Execution Result for {} is None. Please ensure all plugin instructions \
                      return a boolean result.".format(instruction))
-        return ret
+        return result
 
     def shutdown(self):
         """
@@ -192,7 +177,8 @@ class PluginManager:
     """
 
     def __init__(self, plugin_packages):
-        """Constructor that initiates the reading of all available plugins
+        """
+        Constructor of PluginManager Class: initiates the reading of all available plugins
         when an instance of the PluginManager object is created
         """
         Global.plugin_manager = self
@@ -241,13 +227,13 @@ class PluginManager:
         """
         instruction = command["instruction"]
         data = command["data"]
-        ret = False
+        result = False
         plugin_to_use = self.find_plugin_for_command(instruction)
         if plugin_to_use is not None:
-            ret = plugin_to_use.process_command(instruction=instruction, data=data)
+            result = plugin_to_use.process_command(instruction=instruction, data=data)
         else:
             log.error("No plugin found for command {}".format(instruction))
-        return ret
+        return result
 
     def reload_plugins(self):
         """Reset the list of all plugins and initiate the walk over the main
@@ -300,8 +286,9 @@ class PluginManager:
                         ))
                         new_object = class_member()
                         name = new_object.name
-                        self.plugins[name] = new_object
-                        self.plugin_name_list.append(name)
+                        if name not in self.plugin_name_list:
+                            self.plugins[name] = new_object
+                            self.plugin_name_list.append(name)
 
         # Now that we have looked at all the modules in the current package, start looking
         # recursively for additional modules in sub packages
@@ -336,25 +323,24 @@ class PluginManager:
             raise Exception("{} is not a directory! ".format(directory))
 
         for plugin_name, plugin in self.plugins.items():
-            plugin_info = deepcopy(PluginInfo)
+            plugin_info = ObjectFactory.create_object("PluginInfo")
             plugin_info["group_name"] = plugin_name
             plugin_info["description"] = plugin.description
             for command in plugin.command_map.keys():
                 param_index = 0
-                command_info = deepcopy(CommandInfo)
+                command_info = ObjectFactory.create_object("CommandInfo")
                 command_info["name"] = command
                 command_info["description"] = ""
                 sig = signature(plugin.command_map[command][0])
                 parameters = sig.parameters
                 for parameter in parameters.values():
-                    parameter_info = deepcopy(ParameterInfo)
+                    parameter_info = ObjectFactory.create_object("ParameterInfo")
                     parameter_info["name"] = parameter.name
                     parameter_info["description"] = ""
                     # If the argument is optional and has no type in the command map, ignore it
                     if param_index >= len(plugin.command_map[command][1]) and parameter.default != sig.empty:
-                        log.warning(
-                            "Parameter {} is optional in plugin {} and is not defined in the command map. Skipping..."
-                                .format(parameter.name, plugin_name))
+                        log.warning("Parameter {} is optional in plugin {} and is not defined in the  \
+                                    command map. Skipping...".format(parameter.name, plugin_name))
                         continue
 
                     if param_index >= len(plugin.command_map[command][1]):

@@ -16,12 +16,11 @@ Publishes CTF status messages over a UDP socket (utilized by the CTF editor)
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 import traceback
-from copy import deepcopy
 import socket
 import json
 import time
 
-from lib.status import StatusDefs, SuiteStatus, ScriptStatus, TestStatus, InstructionStatus
+from lib.status import StatusDefs, ObjectFactory
 from lib.logger import logger as log
 
 
@@ -34,8 +33,12 @@ class StatusManager:
     @param ip_address: IP of the external listener to connect to
     @param: port: Port used by the external listener to receive status messages
     """
+
     def __init__(self, ip_address="127.0.0.1", port=None):
-        self.status = self.blank_status_msg(list())
+        """
+        Constructor of StatusManager Class: initiate instance properties.
+        """
+        self.status = None
         self.script_index = 0
         self.test_index = 0
         self.command_index = 0
@@ -44,7 +47,7 @@ class StatusManager:
         self.socket = None
         self.start_time = None
 
-    def set_start_time(self):
+    def start(self):
         """
         Set the start time of test suite execution in the status message.
         """
@@ -61,26 +64,24 @@ class StatusManager:
         """
         Get a blank status message that contains status objects for each script loaded by CTF
         """
-        status = deepcopy(SuiteStatus)
+        status = ObjectFactory.create_object("SuiteStatus")
         for script in scripts:
-            script_status = deepcopy(ScriptStatus)
+            script_status = ObjectFactory.create_object("ScriptStatus")
             script_status["path"] = script.input_file
             script_status["test_name"] = script.test_name
             script_status["status"] = StatusDefs.waiting
             script_status["details"] = ""
             for test in script.tests:
-                test_status = deepcopy(TestStatus)
+                test_status = ObjectFactory.create_object("TestStatus")
                 test_status["case_number"] = test.test_info["test_case"]
                 test_status["status"] = StatusDefs.waiting
                 test_status["details"] = ""
                 test_status["description"] = test.test_info.get("description", "")
-                for command_obj in test.event_list:
-                    command_status = deepcopy(InstructionStatus)
+                for command_obj in test.instructions:
+                    command_status = ObjectFactory.create_object("InstructionStatus")
                     command_status["instruction"] = command_obj.command["instruction"]
-                    if "wait" in command_obj.command.keys():
-                        command_status["wait"] = command_obj.command["wait"]
-                    else:
-                        command_status["wait"] = 0
+                    command_status["wait"] = command_obj.command.get("wait", 0)
+
                     # command_status["data"] = self.sanitize_data(c.command.get("data")) or {}
                     command_status["data"] = command_obj.command.get("data")
 
@@ -112,18 +113,24 @@ class StatusManager:
             suite_passed &= i["status"] == StatusDefs.passed
         self.status["status"] = StatusDefs.passed if suite_passed else StatusDefs.failed
 
-    def update_script_status(self, status, details):
+    def update_script_status(self, status, details=""):
         """
         Update the status of a single script within the test suite.
         """
         status = self.sanitize_param(status)
         details = self.sanitize_param(details)
 
+        # ENHANCE: details seem unneeded at this level, as the only calls to this method use redundant details:
+        # (StatusDefs.active, "")
+        # (StatusDefs.passed, "Running")
+        # (StatusDefs.failed, "One or more tests failed")
+        # (StatusDefs.error, "Error")
+
         self.status["scripts"][self.script_index]["status"] = status
         self.status["scripts"][self.script_index]["details"] = details
         self.send_update()
 
-    def update_test_status(self, status, details):
+    def update_test_status(self, status, details=""):
         """
         Update the status of a single script within the test suite.
         """
@@ -143,6 +150,11 @@ class StatusManager:
 
         status = self.sanitize_param(status)
         details = self.sanitize_param(details)
+
+        # for looping control flow, reset statuses of instructions after the current index be to 'waiting'
+        instruction_list = self.status["scripts"][self.script_index]["tests"][self.test_index]["instructions"]
+        for i in range(index + 1, len(instruction_list)):
+            instruction_list[i]["status"] = "waiting"
 
         self.status["scripts"][self.script_index]["tests"][self.test_index]["instructions"][index][
             "status"] = status
@@ -205,7 +217,6 @@ class StatusManager:
                 return args
             except (TypeError, UnicodeDecodeError) as exception:
                 log.error("Cannot decode arguments. Ensure command arguments are formatted as follows\n"
-                          "[1, 2, 3] or \n"
                           "[{'arg1': 1, 'arg2': 2, 'arg3': 3}]")
                 log.debug(exception)
                 return None
@@ -230,9 +241,8 @@ class StatusManager:
         """
         Send the latest status packet over the UDP socket.
 
-
-        @note - If the UDP socket encounters an error for any reason, the current status packet is not sent, and the
-                socket is re-initialized at the next attempt to send an update
+        @note - If the UDP socket encounters an error for any reason, the port will be set to None and CTF will not
+        send updates to the Editor any more. The socket failure is most likely to be a computer issue, not CTF issue.
         """
         # Initialize connection if the first time sending an update
         if self.socket is None and self.port is not None:

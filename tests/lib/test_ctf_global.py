@@ -11,7 +11,7 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
-
+import os
 import sys
 from unittest.mock import patch, Mock
 
@@ -26,9 +26,6 @@ def global_reinit():
     Global.config = None
     Global.plugins_available = dict()
     Global.plugin_manager = None
-    Global.log_level = "DEBUG"
-    Global.telemetry_watch_list_mids = []
-    Global.command_watch_list_mids = []
     Global.current_script_log_dir = ""
     Global.test_log_dir = ""
     Global.CTF_log_dir = ""
@@ -43,9 +40,6 @@ def test_ctf_global_init():
     assert not Global.config
     assert not Global.plugins_available
     assert not Global.plugin_manager
-    assert Global.log_level == 'DEBUG'
-    assert not Global.telemetry_watch_list_mids
-    assert not Global.command_watch_list_mids
     assert not Global.current_script_log_dir
     assert not Global.test_log_dir
     assert not Global.CTF_log_dir
@@ -60,14 +54,13 @@ def test_ctf_global_create_arg_parser():
     with patch.object(sys, 'argv', ['ctf',
                                     '--port=1234',
                                     '--pluginInfo=./plugins/info',
-                                    '--config_file=./configs/ci_config.ini',
-                                    '--script_dir=./scripts']):
+                                    '--config_file=./configs/ci_config.ini'
+                                    ]):
         args = Global.create_arg_parser().parse_args()
     assert not args.scripts
     assert args.port == 1234
     assert args.pluginInfo == './plugins/info'
     assert args.config_file == './configs/ci_config.ini'
-    assert args.script_dir == './scripts'
 
     with patch.object(sys, 'argv', ['ctf',
                                     './scripts/example_tests/test_ctf_basic_example.json',
@@ -78,14 +71,13 @@ def test_ctf_global_create_arg_parser():
     assert not args.port
     assert not args.pluginInfo
     assert args.config_file == 'configs/default_config.ini'
-    assert not args.script_dir
 
 
 def test_ctf_global_load_config():
     status = Global.load_config("configs/default_config.ini")
     assert status
     assert Global.config
-    assert Global.log_level == 'INFO'
+    assert os.environ['workspace_dir'] == '~/sample_cfs_workspace'
 
 
 def test_ctf_global_load_config_invalid():

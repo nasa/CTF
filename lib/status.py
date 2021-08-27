@@ -17,11 +17,14 @@ Defines status messages to be sent out by CTF during a test run
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 
+from lib.exceptions import CtfTestError
+
 
 class StatusDefs:
     """
     This class defines enumerations for the status definitions used by CTF to send instruction status.
     """
+    # ENHANCE: add additional status to indicate looping
     waiting = 'waiting'
     active = 'active'
     stopped = 'stopped'
@@ -33,40 +36,106 @@ class StatusDefs:
     disabled = 'disabled'
 
 
-## Template Dictionary Definition of an Instruction Status Object. Includes all status fields at the instruction-level.
-InstructionStatus = {
-    "instruction": "",
-    "wait": 0,
-    "data": {},
-    "status": StatusDefs.waiting,
-    "details": "",
-    "comment": "",
-    "description": ""
-}
+class ObjectFactory:
+    """
+    This class defines enumerations for the status definitions used by CTF to send instruction status.
+    """
 
-## Template Dictionary Definition of an Test Status Object. Includes all status fields at the test case level.
-TestStatus = {
-    "case_number": "",
-    "status": StatusDefs.waiting,
-    "details": "",
-    "instructions": [],
-    "comment": "",
-    "description": ""
-}
+    @staticmethod
+    def create_object(obj_name: str):
+        """
+        Static ObjectFactory class method: create objects using factory methods
+        """
+        if obj_name == 'SuiteStatus':
+            return ObjectFactory.__create_suite_status()
+        if obj_name == 'TestStatus':
+            return ObjectFactory.__create_test_status()
+        if obj_name == 'ScriptStatus':
+            return ObjectFactory.__create_script_status()
+        if obj_name == 'InstructionStatus':
+            return ObjectFactory.__create_instruction_status()
+        if obj_name == 'PluginInfo':
+            return ObjectFactory.__create_plugin_info()
+        if obj_name == 'CommandInfo':
+            return ObjectFactory.__create_command_info()
+        if obj_name == 'ParameterInfo':
+            return ObjectFactory.__create_parameter_info()
 
-## Template Dictionary Definition of an Scripts Status Object. Includes all status fields at the script level.
-ScriptStatus = {
-    "path": "",
-    "test_name": "",
-    "status": StatusDefs.waiting,
-    "details": "",
-    "tests": []
-}
+        raise CtfTestError('Undefined object {}'.format(obj_name))
 
-## Template Dictionary Definition of an Test Status Object. Includes all status fields at the test suite level (multiple
-## test scripts.
-SuiteStatus = {
-    "elapsed_time": 0,
-    "status": StatusDefs.waiting,
-    "scripts": []
-}
+    @staticmethod
+    def __create_suite_status():
+        ## Template Dictionary Definition of an Test Status Object. Includes all status fields at the test suite level
+        ## (multiple test scripts).
+        suite_status = {
+            "elapsed_time": 0,
+            "status": StatusDefs.waiting,
+            "scripts": []
+        }
+        return suite_status
+
+    @staticmethod
+    def __create_test_status():
+        ## Template Dictionary Definition of an Test Status Object. Includes all status fields at the test case level.
+        test_status = {
+            "case_number": "",
+            "status": StatusDefs.waiting,
+            "details": "",
+            "instructions": [],
+            "comment": "",
+            "description": ""
+        }
+        return test_status
+
+    @staticmethod
+    def __create_instruction_status():
+        ## Template Dictionary Definition of an Instruction Status Object.
+        ## Includes all status fields at the instruction-level.
+        instruction_status = {
+            "instruction": "",
+            "wait": 0,
+            "data": {},
+            "status": StatusDefs.waiting,
+            "details": "",
+            "comment": "",
+            "description": ""
+        }
+        return instruction_status
+
+    @staticmethod
+    def __create_script_status():
+        ## Template Dictionary Definition of an Scripts Status Object. Includes all status fields at the script level.
+        script_status = {
+            "path": "",
+            "test_name": "",
+            "status": StatusDefs.waiting,
+            "details": "",
+            "tests": []
+        }
+        return script_status
+
+    @staticmethod
+    def __create_plugin_info():
+        plugin_info = {
+            "group_name": "",
+            "instructions": []
+        }
+        return plugin_info
+
+    @staticmethod
+    def __create_command_info():
+        command_info = {
+            "name": "",
+            "description": "",
+            "parameters": []
+        }
+        return command_info
+
+    @staticmethod
+    def __create_parameter_info():
+        parameter_info = {
+            "name": "",
+            "description": "",
+            "type": ""
+        }
+        return parameter_info

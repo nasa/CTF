@@ -81,13 +81,13 @@ def test_ccsds_plugin_validate_cfs_ccsds_data(ccsds_plugin_instance, cfs_plugin_
     Test CCSDS plugin validate_cfs_ccsds_data method:
     Validates the CCSDS data types by sending an empty instance of each command code found in the MID map to CFS.
     """
+    with patch('plugins.cfs.pycfs.cfs_controllers.LocalCfsInterface'):
+        if Global.get_time_manager() is None:
+            print("Global.get_time_manager() is None:")
+            cfs_plugin_instance.initialize()
 
-    cfs_plugin_instance.register_cfs('cfs')
-    Global.plugins_available = {"CFS Plugin": cfs_plugin_instance}
-
-    if Global.get_time_manager() is None:
-        print("Global.get_time_manager() is None:")
-        cfs_plugin_instance.initialize()
+        Global.plugins_available = {"CFS Plugin": cfs_plugin_instance}
+        cfs_plugin_instance.register_cfs('cfs')
 
     with patch('plugins.cfs.cfs_plugin.CfsPlugin.send_cfs_command', return_value=True), \
          patch('lib.ctf_global.Global.time_manager.wait', return_value=True):

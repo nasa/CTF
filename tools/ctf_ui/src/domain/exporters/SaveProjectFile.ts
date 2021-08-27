@@ -190,6 +190,15 @@ export class SaveProjectFile {
                     else if (param.type === 'cmd_arg') {
                         let args = instruction.data[param.name] as CtfInstructionArg[]
                         var finalArgs = {}
+
+                        if (Array.isArray(args) && args.length > 0) {
+                            args = args.filter((arg)=> {
+                                let argKey = Object.keys(arg)[0];
+                                if (argKey.indexOf('[...]') != -1) return false;
+                                return true;
+                             });
+                        }
+
                         if (args.length > 0){
                             args.forEach((arg: CtfInstructionArg) => {
                                 if (arg){

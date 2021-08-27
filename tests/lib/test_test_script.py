@@ -51,7 +51,7 @@ def test_test_script_init(test_script_instance):
     assert test_script_instance.params == ""
     assert test_script_instance.status == ""
     assert test_script_instance.start_time == 0
-    assert test_script_instance.time_taken == 0
+    assert test_script_instance.exec_time == 0
     assert test_script_instance.num_tests == 0
     assert test_script_instance.num_passed == 0
     assert test_script_instance.num_failed == 0
@@ -112,6 +112,7 @@ def test_test_script_run_script_exception(test_script_instance):
     status_manager = StatusManager(port=None)
     script = {'status': 'waiting','details':'','elapsed_time': 0}
     status_manager.start_time = 0
+    status_manager.set_scripts([])
     status_manager.status["scripts"] = [script]
     with pytest.raises(CtfTestError):
         test_script_instance.run_script(status_manager)
@@ -125,6 +126,7 @@ def test_test_script_run_script(test_script_instance,utils):
     status_manager = StatusManager(port=None)
     script = {'status': 'waiting','details':'','elapsed_time': 0}
     status_manager.start_time = 0
+    status_manager.set_scripts([])
     status_manager.status["scripts"] = [script]
 
     test_script_instance.set_header_info('CFE-ES-Functions-Test', 'CFE ES Functions Test', 'MyRequirement',
