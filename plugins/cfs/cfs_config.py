@@ -289,6 +289,7 @@ class SP0CfsConfig(CfsConfig):
         self.cfs_entry_point = None
         self.cfs_startup_time = None
         self.log_stdout = None
+        self.stop_command = None
         super().__init__(name)
 
         # Overrides
@@ -314,3 +315,4 @@ class SP0CfsConfig(CfsConfig):
                                                     self.validation.validate_number)
             self.log_stdout = self.load_field(self.name, "log_stdout", Global.config.getboolean,
                                               self.validation.validate_boolean)
+            self.stop_command = self.load_field(self.name, "stop_command", Global.config.get)

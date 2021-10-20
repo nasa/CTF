@@ -287,17 +287,17 @@ def test_cfs_controller_resolve_macros(cfs_controller_inited):
      Implementation of helper function resolve_macros, search macro_map to convert arg to string.
     """
     # nominal case
-    assert cfs_controller_inited.resolve_macros('#CF_RESET_CC') == '1'
+    assert cfs_controller_inited.resolve_macros('#CF_RESET_CC#') == '1'
 
     # embedded macro
-    assert cfs_controller_inited.resolve_macros('1 == #CF_RESET_CC') == '1 == 1'
+    assert cfs_controller_inited.resolve_macros('1 == #CF_RESET_CC#') == '1 == 1'
 
     # no macro
-    assert cfs_controller_inited.resolve_macros('CF_RESET_CC') == 'CF_RESET_CC'
+    assert cfs_controller_inited.resolve_macros('#CF_RESET_CC') == '#CF_RESET_CC'
 
     # invalid macro
     with pytest.raises(CtfParameterError):
-        cfs_controller_inited.resolve_macros('#CF_RESET_CC_X')
+        cfs_controller_inited.resolve_macros('#CF_RESET_CC_X#')
 
 
 def test_cfs_controller_resolve_simple_type(cfs_controller_inited):
@@ -482,7 +482,7 @@ def test_cfs_controller_convert_check_tlm_args(cfs_controller_inited):
     assert cfs_controller_inited.convert_check_tlm_args(args) == args
 
     # value is macro
-    args = [{'variable': 'Payload.CommandErrorCounter', 'value': '#FALSE', 'compare': '=='}]
+    args = [{'variable': 'Payload.CommandErrorCounter', 'value': '#FALSE#', 'compare': '=='}]
     assert cfs_controller_inited.convert_check_tlm_args(args)[0]['value'] == '0'
 
 
@@ -598,8 +598,10 @@ def test_cfs_controller_shutdown_cfs_fail(cfs_controller_inited):
     (shutdown_cfs) is executed, it calls CfsController instance's shutdown_cfs function.
     """
     cfs_controller_inited.cfs_process_list = ['pid-1', 'pid-2']
-    with patch('os.system') as mock_system:
+    with patch('os.system') as mock_system, \
+         patch('plugins.cfs.pycfs.cfs_controllers.run') as mock_run:
         mock_system.return_value = 255
+        mock_run.stdout = "0"
         assert not cfs_controller_inited.shutdown_cfs()
         assert not cfs_controller_inited.cfs_process_list
         assert not cfs_controller_inited.cfs_running

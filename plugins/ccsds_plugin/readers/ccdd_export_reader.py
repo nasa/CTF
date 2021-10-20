@@ -307,6 +307,13 @@ class CCDDExportReader(CCSDSInterface):
             data_type = None
             log.error("Failed to create type class {}!".format(data_type_name))
 
+        primary_type_name = ('int8', 'int16', 'int32', 'int64','uint8', 'uint16', 'uint32', 'uint64','float',
+                             'double', 'char', 'string', 'bool', 'boolean', 'address', 'cpuaddr')
+        if data_type_name in primary_type_name and data_type_name in self.type_dict:
+            log.error("Override primary data type {}, it may be a potential issue".format(data_type_name))
+        elif data_type_name in self.type_dict:
+            log.warning("Data type {} is already created, it will be overridden".format(data_type_name))
+
         self.type_dict[data_type_name] = data_type
         parameterized_type = data_type, type_enums
         return parameterized_type

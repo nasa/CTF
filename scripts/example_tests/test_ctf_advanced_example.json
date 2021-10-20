@@ -288,8 +288,8 @@
                         "mid": "SCH_CMD_MID",
                         "cc": "SCH_ENABLE_CC",
                         "args": {
-                            "SlotNumber": "#SCH_TOTAL_SLOTS",
-                            "EntryNumber": "#SCH_ENTRIES_PER_SLOT"
+                            "SlotNumber": "#SCH_TOTAL_SLOTS#",
+                            "EntryNumber": "#SCH_ENTRIES_PER_SLOT#"
                         }
                     },
                     "wait": 1

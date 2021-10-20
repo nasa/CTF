@@ -32,6 +32,7 @@ import os
 import re
 import shutil
 import time
+from subprocess import run, PIPE, STDOUT
 import traceback
 from ast import literal_eval
 from pathlib import Path
@@ -305,12 +306,12 @@ class CfsController:
         search macro_map to convert arg to string.
         """
         if isinstance(arg, str):
-            while MACRO_MARKER in arg:
-                macro = arg.split(MACRO_MARKER)[1].split(']')[0]
+            while arg.count(MACRO_MARKER) > 1:
+                macro = arg.split(MACRO_MARKER, 1)[1].split(MACRO_MARKER, 1)[0]
                 if macro in self.macro_map:
-                    arg = arg.replace("{}{}".format(MACRO_MARKER, macro), str(self.macro_map[macro]))
+                    arg = arg.replace("{}{}{}".format(MACRO_MARKER, macro, MACRO_MARKER), str(self.macro_map[macro]))
                 else:
-                    raise CtfParameterError("Unknown macro {} in arg {}".format(macro, arg), arg)
+                    raise CtfParameterError("Unknown macro '{}' in arg {}. Use format #MACRO#".format(macro, arg), arg)
         return arg
 
     # noinspection PyProtectedMember
@@ -573,6 +574,15 @@ class CfsController:
         if self.cfs:
             self.cfs.stop_cfs()
 
+        # check whether cFS instance exists
+        pidof_cfs = "pidof {}".format(self.config.cfs_run_cmd)
+        pid = run(pidof_cfs, stdout=PIPE, stderr=STDOUT, shell=True, check=False).stdout.decode()
+        if pid == "":
+            log.error("CFS executable {} had already terminated!".format(self.config.cfs_run_cmd))
+            self.cfs_process_list = []
+            self.cfs_running = False
+            return True
+
         kill_string = "kill -9 $(pidof {})".format(self.config.cfs_exe)
         status = os.system(kill_string) == 0
         if not status:
@@ -831,16 +841,15 @@ if SP0CfsInterface:
             #         if self.sp0_plugin.last_result[self.config.name]:
             #             log.debug(self.sp0_plugin.last_result[self.config.name].stdout.strip())
 
-            if self.cfs:
-                if self.cfs_running:
-                    log.info("Sending SP0 Reboot Command...")
-                    self.sp0_plugin.send_command("reboot()\n", timeout=2, name=self.config.name)
-                    self.cfs.stop_cfs()
+            if self.cfs and self.cfs_running:
+                if self.config.stop_command:
+                    log.info("Sending Stop Command '{}'...".format(self.config.stop_command))
+                    self.sp0_plugin.send_command(self.config.stop_command + "\n", timeout=2, name=self.config.name)
+                self.cfs.stop_cfs()
+                self.cfs_running = False
 
-            # Wait 2 time units for shutdown to complete
-            Global.time_manager.wait_seconds(2)
-
-            self.cfs = None
+                # Wait 2 time units for shutdown to complete
+                Global.time_manager.wait_seconds(2)
 
         def shutdown(self):
             """

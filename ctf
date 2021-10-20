@@ -33,8 +33,8 @@ from lib.ctf_utility import expand_path
 from lib.logger import logger as log, set_logger_options_from_config, change_log_file
 from lib.exceptions import CtfTestError
 
-CTF_VERSION = "v1.3"
-CTF_RELEASE_DATE = "Aug 26 2021"
+CTF_VERSION = "v1.3.1"
+CTF_RELEASE_DATE = "Oct 19 2021"
 
 
 def main():

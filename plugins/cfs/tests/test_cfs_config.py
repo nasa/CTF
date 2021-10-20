@@ -263,3 +263,4 @@ def test_sp0_cfs_config_init(sp0_cfs_config):
     assert sp0_cfs_config.cfs_entry_point == "CFE_PSP_Main"
     assert sp0_cfs_config.cfs_startup_time == 20
     assert sp0_cfs_config.log_stdout is True
+    assert sp0_cfs_config.stop_command == "reboot()"

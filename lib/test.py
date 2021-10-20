@@ -223,7 +223,7 @@ class Test:
                 details = "Instruction is disabled. Skipping..."
                 self.status_manager.update_command_status(status, details, index=self.current_instruction_index)
                 self.status_manager.end_command()
-                log.info("Skipping disabled test instruction {} ".format(instruction))
+                log.info("Skipping disabled test instruction {} ".format(i.command))
                 self.num_skipped += 1
                 self.current_instruction_index += 1
                 continue

@@ -1,6 +1,6 @@
 """
 @namespace plugins.ssh_plugin
-The SSH Plug provides remote and local shell command execution capability for CTF.
+The SSH Plugin provides remote and local shell command execution capability for CTF.
 The module defines SshPlugin class and SshConfig, SshController helper class.
 """
 
@@ -428,7 +428,7 @@ class SshPlugin(Plugin):
         @note The shutdown function is called by the CTF plugin manager upon completion of a test run.
         @note The shutdown function can be exposed to test scripts by adding it to the command map.
         """
-        log.debug("SshPlugin.shutdown")
+        log.info("SshPlugin.shutdown")
         for name in self.targets:
             log.debug("Shutting down Execution target {}".format(name))
             self.targets[name].shutdown()

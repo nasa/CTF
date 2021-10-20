@@ -5,7 +5,7 @@ Table of Contents
    * [Test Scripts](#test-scripts)
    * [Functions](#functions)
    * [Tests](#tests)
-   * [CTF Commands](#ctf-commands)
+   * [CTF Instructions](#ctf-instructions)
    * [Complete Example](#complete-example)
 
 
@@ -15,7 +15,7 @@ you can find a great introduction here: https://www.w3schools.com/js/js_json_syn
 
 ## Test Scripts
 The JSON CTF input file, or **Test Script**, is comprised of a number of properties that describe the tests that will be executed. Each **Test Script** can have multiple tests, with each each testing multiple requirements.
-Example test scripts can be found at `examples/aspect_project/scripts` in the repo.
+Example test scripts can be found at `scripts` folder in the repo.
 
  The **Test Script** has the following properties:
 - **test_number**: Unique identifier for the test script. Format Should be a descriptive test ID that would allow the review to understand what is being tested.
@@ -36,7 +36,7 @@ Example:
     },
     "description": "Basic CTF Example Script Showing Simple Commands/Telemetry Verification",
     "owner": "CTF",
-    "test_setup": "Script will start ASPECT, execute a verification command test and close ASPECT",
+    "test_setup": "Script will start ASPECT, execute a verification instruction test and close ASPECT",
     "ctf_options": {
         "verify_timeout": 4
     },
@@ -44,15 +44,15 @@ Example:
     "tests": [
         {
             "case_number": "ASPECT-Plugin-Test-001",
-            "description": "Start CFS, Send TO NOOP command",
-            "commands": [
+            "description": "Start CFS, Send TO NOOP instruction",
+            "instructions": [
                 {
-                    "command": "StartCfs",
+                    "instruction": "StartCfs",
                     "wait": 1,
                     "data": {}
                 },
                 {
-                    "command": "CheckTlmValue",
+                    "instruction": "CheckTlmValue",
                     "data": {
                         "mid": "TO_HK_TLM_MID",
                         "args": [
@@ -68,7 +68,7 @@ Example:
                     "wait": 1
                 },
                 {
-                    "command": "SendCfsCommand",
+                    "instruction": "SendCfsCommand",
                     "data": {
                         "mid": "TO_CMD_MID",
                         "cc": "TO_NOOP_CC",
@@ -80,7 +80,7 @@ Example:
                     "wait": 1
                 },
                 {
-                    "command": "CheckTlmValue",
+                    "instruction": "CheckTlmValue",
                     "data": {
                         "mid": "TO_HK_TLM_MID",
                         "args": [
@@ -96,7 +96,7 @@ Example:
                     "wait": 1
                 },
                 {
-                    "command": "ShutdownCfs",
+                    "instruction": "ShutdownCfs",
                     "data": {},
                     "wait": 1
                 }
@@ -107,7 +107,7 @@ Example:
 ```
 
 ## Functions
-The **Function** objects are collections of **CTF Commands** that can be executed by each test case.  These functions can be defined within the same **Test Script** or in a separate file and be imported (see `examples/aspect_projects/script/utils/` for an example.  The object has the following properties:
+The **Function** objects are collections of **CTF Instructions** that can be executed by each test case.  These functions can be defined within the same **Test Script** or in a separate file and be imported (see `scripts/cfe_6_7_tests/libs/`).  The object has the following properties:
 - **description**: Describe purpose of the function including the steps the function with take and the results the function will provide.  Intended use details should also be included.
 - **varlist**: List of arguments required by the function
 
@@ -117,8 +117,8 @@ Example:
     "UserDefinedFunction":{
         "description":"<Explain purpose, results, steps of this user-defined functions>",
         "varlist":["_arg1", "_arg2"],
-        "commands":[
-        //CTF Command objects go here
+        "instructions":[
+        //CTF Instruction objects go here
         ]
     }
 }
@@ -126,33 +126,33 @@ Example:
 
 ## Tests
 The **Test** objects each describe a single test, which can verify any number of requirements. 
-Each **Test** contains the requirements verified by the test, a description of the test, and a number of **Command** 
+Each **Test** contains the requirements verified by the test, a description of the test, and a number of **Instructions** 
 objects that define the actions to take during the test.
 The object has the following properties:
 - **case_number**: Unique identifier of test case in the script.  Use Test name with a unique number.
-- **description**: Describes what actions this test is performing.  Include Preconditions, the expected actions/commands, and the expected results that are going to be observed.
-- **commands**: An array of **Command** objects that define the actions taken by the test (described below)
+- **description**: Describes what actions this test is performing.  Include Preconditions, the expected actions/instructions, and the expected results that are going to be observed.
+- **instructions**: An array of **Instruction** objects that define the actions taken by the test (described below)
 
 Example:
 ```javascript
 {
     "case_number":"ExampleTest-1",
     "description":"<Explain preconditions, actions, results, steps of test case>",
-    "commands":[
-    	//Command Objects go here
+    "instructions":[
+    	//Instruction Objects go here
     ]
 }
 ```
 
-## CTF Commands
-The **CTF Command** object defines what action CTF is supposed to take. Each command object has the following base structure:
-- **command:**: The **CTF command** to execute. Must be one of the values listed above (string)
-- **data:** The arguments for the **CTF Command**. Each **Command** is going to have a different data object, described below.
-- **wait:** The amount of time to wait from the completion of the last command before executing the current command.
-- **timeout:** (Optional) The amount of time for verification commands to wait for verification to succeed before timing out.
+## CTF Instructions
+The **CTF Instructions** object defines what action CTF is supposed to take. Each instruction object has the following base structure:
+- **instruction:**: The **CTF instruction** to execute. Must be one of the values listed above (string)
+- **data:** The arguments for the **CTF Instruction**. Each **Instruction** is going to have a different data object, described below.
+- **wait:** The amount of time to wait from the completion of the last instruction before executing the current instruction.
+- **timeout:** (Optional) The amount of time for verification instructions to wait for verification to succeed before timing out.
 
-Commands are implemented in their respective CTF plugin. Refer to the specific plugin's README document for more 
-information on commands supported by each plugin.
+Instructions are implemented in their respective CTF plugin. Refer to the specific plugin's README document for more 
+information on instructions supported by each plugin.
 
 ## Complete Example
 The following example shows the basic CTF test script found in the repo.
@@ -166,7 +166,7 @@ The following example shows the basic CTF test script found in the repo.
     },
     "description": "Basic CTF Example Script Showing Simple Commands/Telemetry Verification",
     "owner": "CTF",
-    "test_setup": "Script will start CFE-6-7, execute a verification command test and close CFE-6-7",
+    "test_setup": "Script will start CFE-6-7, execute a verification instruction test and close CFE-6-7",
     "ctf_options": {
         "verify_timeout": 4
     },
@@ -174,17 +174,17 @@ The following example shows the basic CTF test script found in the repo.
     "tests": [
         {
             "case_number": "CFE-6-7-Plugin-Test-001",
-            "description": "Start CFS, Send TO NOOP command",
-            "commands": [
+            "description": "Start CFS, Send TO NOOP instruction",
+            "instructions": [
                 {
-                    "command": "StartCfs",
+                    "instruction": "StartCfs",
                     "data": {
                         "name": ""
                     },
                     "wait": 1
                 },
                 {
-                    "command": "EnableCfsOutput",
+                    "instruction": "EnableCfsOutput",
                     "data": {
                         "name": ""
                     },
@@ -193,7 +193,7 @@ The following example shows the basic CTF test script found in the repo.
                     "comment": "Need this to enable the telemetry thread. Enable Output counts as 1 TO cmd"
                 },
                 {
-                    "command": "CheckEvent",
+                    "instruction": "CheckEvent",
                     "data": {
                         "app": "TO",
                         "id": "3",
@@ -206,7 +206,7 @@ The following example shows the basic CTF test script found in the repo.
                     "comment": "Need this to enable the telemetry thread. Enable Output counts as 1 TO cmd"
                 },
                 {
-                    "command": "SendCfsCommand",
+                    "instruction": "SendCfsCommand",
                     "data": {
                         "name": "",
                         "mid": "TO_CMD_MID",
@@ -216,7 +216,7 @@ The following example shows the basic CTF test script found in the repo.
                     "wait": 1
                 },
                 {
-                    "command": "CheckTlmContinuous",
+                    "instruction": "CheckTlmContinuous",
                     "comment": "Change 'name' to 'cfs_name' for all instructions",
                     "data": {
                         "name": "",
@@ -235,7 +235,7 @@ The following example shows the basic CTF test script found in the repo.
                     "wait": 1
                 },
                 {
-                    "command": "CheckTlmValue",
+                    "instruction": "CheckTlmValue",
                     "data": {
                         "name": "",
                         "mid": "TO_HK_TLM_MID",
@@ -252,7 +252,7 @@ The following example shows the basic CTF test script found in the repo.
                     "wait": 1
                 },
                 {
-                    "command": "SendCfsCommand",
+                    "instruction": "SendCfsCommand",
                     "data": {
                         "name": "",
                         "mid": "TO_CMD_MID",
@@ -262,7 +262,7 @@ The following example shows the basic CTF test script found in the repo.
                     "wait": 1
                 },
                 {
-                    "command": "CheckTlmValue",
+                    "instruction": "CheckTlmValue",
                     "data": {
                         "name": "",
                         "mid": "TO_HK_TLM_MID",
@@ -279,7 +279,7 @@ The following example shows the basic CTF test script found in the repo.
                     "wait": 1
                 },
                 {
-                    "command": "RemoveCheckTlmContinuous",
+                    "instruction": "RemoveCheckTlmContinuous",
                     "data": {
                         "name": "",
                         "verification_id": "no_error"

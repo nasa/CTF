@@ -209,14 +209,14 @@ class JSONScriptReader:
                     else:
                         function_call_delay = 1.0
 
-                    disabled = bool(command.get('disabled', False))
+                    function_disabled = bool(command.get('disabled', False))
                     for c_index, c_inline in enumerate(inline_commands):
                         delay = 0
                         if "wait" in c_inline.keys():
                             delay = c_inline["wait"]
                         if c_index == 0:
                             delay += function_call_delay
-                        disabled |= bool(c_inline.get('disabled', False))
+                        disabled = function_disabled or bool(c_inline.get('disabled', False))
                         instruction_list.append(Instruction(delay, c_inline, len(test_list), default_index, disabled))
                 else:
                     delay = 0

@@ -1,13 +1,13 @@
 # Introduction
 
-CTF Plugins allow developers to extend CTF with new test commands. Each new test command is mapped to its respective implementation in the plugin.
+CTF Plugins allow developers to extend CTF with new test instructions. Each new test instruction is mapped to its respective implementation in the plugin.
 
-# Types of test commands
+# Types of test instructions
 
-There are two types of supported test commands
-* Non-verification Commands: Commands that do not require verification at a later time and can be validated right away. Examples include sending data such as sending a CFS Command.
+There are two types of supported test instructions
+* Non-verification Instructions: Instructions that do not require verification at a later time and can be validated right away. Examples include sending data such as sending a CFS Command.
 
-* Verification Commands: Commands that require verification (via polling) until the verification is satisfied, or a timeout is reached. Examples including checking that a piece of telemetry changes at some point in the test. The implementation of those commands must be non-blocking in order to return control to CTF between the verification polls.
+* Verification Instructions: Instructions that require verification (via polling) until the verification is satisfied, or a timeout is reached. Examples including checking that a piece of telemetry changes at some point in the test. The implementation of those instructions must be non-blocking in order to return control to CTF between the verification polls.
 
 # Plugin Creation
 To create a new plugin, create a directory with the `plugin-name` under `plugins/`. For example we can create `example_plugin` at the directory `ctf/plugins/example_plugin`.
@@ -18,8 +18,8 @@ In the `example_plugin` directory, we create a new .py file `example_plugin.py`.
 
 *  `name` - plugin name
 *  `description` - plugin description
-*  `command_map` - python dict object mapping between the command string from the test script, to a python function for the implementation of that command.
-*  `verify_required_commands` - python list containing list of command strings that require verification.
+*  `command_map` - python dict object mapping between the instruction string from the test script, to a python function for the implementation of that instruction.
+*  `verify_required_commands` - python list containing list of instruction strings that require verification.
 
 Our `example_plugin.py` will look as follows
 
@@ -47,7 +47,7 @@ class ExamplePlugin(Plugin):
 
         # Command implementation goes here...
 
-        # Return status of that command
+        # Return status of that instruction
         status = True
         return status
 
@@ -72,7 +72,7 @@ class ExamplePlugin(Plugin):
         print("Optional shutdown/cleanup implementation for plugin")
 ```
 
-With the above plugin definition, the following snippet of a JSON test script shows how the commands are used.
+With the above plugin definition, the following snippet of a JSON test script shows how the instructions are used.
 
 ```JSON
 {
@@ -83,7 +83,7 @@ With the above plugin definition, the following snippet of a JSON test script sh
   },
   "description": "Testing Example Plugin",
   "owner": "CTF",
-  "test_setup": "Script will execute a single command, and a single verification",
+  "test_setup": "Script will execute a single instruction, and a single verification",
   "ctf_options": {
     "verif_timeout": 2.0
   },
@@ -91,9 +91,9 @@ With the above plugin definition, the following snippet of a JSON test script sh
         {
             "case_number": "Example Plugin Test",
             "description": "No description",
-            "commands": [
+            "instructions": [
                 {
-                    "command": "TestCommand",
+                    "instructions": "TestCommand",
                     "data": {
                         "arg1": "foo",
                         "arg2": 42
@@ -101,7 +101,7 @@ With the above plugin definition, the following snippet of a JSON test script sh
                     "wait": 1
                 },
                 {
-                    "command": "TestVerifyCommand",
+                    "instructions": "TestVerifyCommand",
                     "data": {},
                     "wait": 1
                 }
@@ -112,7 +112,7 @@ With the above plugin definition, the following snippet of a JSON test script sh
 
 ```
 
-Executing the script produces the following output showing the test command successfully processed, and the test verification command executed 6 times before it the verification was satisfied.
+Executing the script produces the following output showing the test instruction successfully processed, and the test verification instruction executed 6 times before it the verification was satisfied.
 
 ```
 [14:13:33.882] test_script                     (85 ) *** INFO: Input file utilized : test_ctf_example_plugin.json

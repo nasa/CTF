@@ -6,6 +6,7 @@
          * [Configuration](#configuration)
          * [Sample cFS Workspace](#sample-cfs-workspace)
             * [Running the Sample cFS Workspace Scripts](#running-the-sample-cfs-workspace-scripts)
+         * [Troubleshooting and Support](#troubleshooting-and-support)
       * [Using CTF on a New cFS Project](#using-ctf-on-a-new-cfs-project)
          * [CCSDS Message Definitions](#ccsds-message-definitions)
             * [CCDD Auto Export](#ccdd-auto-export)
@@ -143,9 +144,8 @@ Sample CTF output is shown below.
 [13:00:47.214] ccsds_plugin                    (35 ) *** WARNING: CFS Plugin not yet loaded... 
 [13:00:47.345] plugin_manager                  (235) *** INFO:     Found plugin class: plugins.cfs.cfs_plugin.CfsPlugin
 [13:00:47.346] plugin_manager                  (235) *** INFO:     Found plugin class: plugins.example_plugin.example_plugin.ExamplePlugin
-[13:00:47.348] plugin_manager                  (235) *** INFO:     Found plugin class: plugins.sp0_plugin.sp0_plugin.sp0Plugin
 [13:00:47.348] plugin_manager                  (235) *** INFO:     Found plugin class: plugins.ssh.ssh_plugin.SshPlugin
-[13:00:47.349] plugin_manager                  (211) *** INFO: From package: plugins  - Loaded the following plugins: ['CCSDS Plugin', 'CFS Plugin', 'ExamplePlugin', 'sp0_plugin', 'SshPlugin']
+[13:00:47.349] plugin_manager                  (211) *** INFO: From package: plugins  - Loaded the following plugins: ['CCSDS Plugin', 'CFS Plugin', 'ExamplePlugin', 'SshPlugin']
 [13:00:47.349] ctf                             (50 ) *** INFO: Loading Plugins - End
 [13:00:47.349] ctf                             (58 ) *** INFO: Status_Manager created
 [13:00:47.349] ctf                             (62 ) *** INFO: Script_Manager created
@@ -156,7 +156,6 @@ Sample CTF output is shown below.
 [13:00:47.350] ccsds_plugin                    (38 ) *** INFO: Initialized CCSDS Plugin
 [13:00:47.350] cfs_time_manager                (45 ) *** INFO: CfsTimeManager Initialized. Verification Poll Period = 0.05.
 [13:00:47.350] cfs_plugin                      (152) *** INFO: Initialized CfsPlugin
-[13:00:47.350] sp0_plugin                      (64 ) *** INFO: Initialized SP0 plugin
 [13:00:47.351] test_script                     (92 ) *** INFO: Verification Test Name: CFS CI Functions Test
 [13:00:47.351] test_script                     (93 ) *** INFO: Verification Test Number: CFS-CI-Functions-Test
 [13:00:47.351] test_script                     (94 ) *** INFO: Test Conductor: ashehata
@@ -202,6 +201,10 @@ xterm: cannot load font '-misc-fixed-medium-r-semicondensed--13-120-75-75-c-60-i
 [13:00:54.408] cfs_controllers                 (319) *** INFO: PASSED Final Check for MID:{'MID': 9220, 'name': 'CI_HkTlm_t', 'PARAM_CLASS': <class 'plugins.cfs.ccsds.ccdd_export_reader.CI_HkTlm_t'>}, Args:[{'variable': 'usCmdCnt', 'value': [1], 'compare': '=='}, {'variable': 'usCmdErrCnt', 'value': [0], 'compare': '=='}]
 [13:00:54.408] test                            (134) *** TEST_PASS: Verification Passed CheckTlmValue: {'name': '', 'mid': 'CI_HK_TLM_MID', 'args': [{'variable': 'usCmdCnt', 'value': [1], 'compare': '=='}, {'variable': 'usCmdErrCnt', 'value': [0], 'compare': '=='}]}
 ```
+
+### Troubleshooting and Support
+
+See the [Troubleshooting & FAQ Guide](docs/ctf/faq.md) for solutions to common issues. There is additional technical documentation for CTF and the editor in the `docs` directory. If your problem is not resolved, or you have other questions or suggestions for CTF, please open an issue on the public repository at https://github.com/nasa/CTF/issues
 
 ## Using CTF on a New cFS Project
 
@@ -379,6 +382,23 @@ Upon completion, a summary will be printed to the console and the CTF unit test 
 
 ## Release Notes
 
+### v1.3.1
+10/19/2021
+
+* CTF Plugins Changes
+
+    * CFS shutdown on Linux logs an error, but does not fail, if no such process is found.
+         
+    * CFS Plugin macros now require the format `#MACRO#` instead of `#MACRO`.
+        
+    * Fix the 'disable' attribute in function definition.
+
+* CTF Documentation Changes
+    * Updated JSON Test Script Guide
+    
+    * Add Troubleshooting & FAQ Guide section.
+
+
 ### v1.3 
 08/26/2021
 
@@ -447,13 +467,11 @@ Upon completion, a summary will be printed to the console and the CTF unit test 
     * Minor improvements and bug fixes.
 
 * CFS Plugin Changes
-    * Update SP0 Protocol and FTP Interface with changes from GSFC functional testing.
+    * Update FTP Interface with changes from GSFC functional testing.
     
     * Fix the use of CCDD macros in test scripts.
     
     * Improve argument type checking in `SendCfsCommand` instruction.
-    
-    * Improve validation of the SP0 and Remote CFS configs. `RegisterCfs` will fail if any errors are found.
     
     * Change `ValidateCcsdsData` parameter from `name` to `target` to match CFS instructions. 
    
@@ -496,8 +514,6 @@ Upon completion, a summary will be printed to the console and the CTF unit test 
     * Ensure args do not get malformed while sending a command to multiple cFS targets
     
     * Resolve CheckTlmValue passing if one or more variables fails to be evaluated from the telemetry packet.
-    
-    * Resolve connection and deployment issues with cFS targets running with the SP0 protocol (WIP)
     
     * Minor improvements and bug fixes.
 
@@ -667,11 +683,11 @@ Major backend updates to improve reliability/maintainability of CTF.
 
 * cFS Plugin Changes
     * Add new instruction "ArchiveCfsFiles", which accepts a FSW artifacts and moves any files created during the test run to the test results directory.
-        * Note: Currently, this feature is supported for Linux cFS targets only. SSH and SP0 support for archiving FSW artifacts is planned for a later version.
+        * Note: Currently, this feature is supported for Linux cFS targets only. SSH support for archiving FSW artifacts is planned for a later version.
     * Redesign multi-cfs architecture to be purely configuration based (remove script-specific overrides to allow scripts to be platform independent.) 
         * Each cFS Target should have its own configuration section in the config INI file.
         * RegisterCfs receives a name, and attempts to load target configuration (including protocol) from the loaded configuration.
-        * A PASS/FAIL for that instruction will be set after validating the necessary config fields for cFS and the specific protocol (Linux, SSH, SP0)
+        * A PASS/FAIL for that instruction will be set after validating the necessary config fields for cFS and the specific protocol (Linux, SSH)
     * Rework macro replacement logic such that 
         * Macro replacement occurs for command argument values, telemetry field values, and array indices.
         * All macros in a test script should start with the # prefix (example: "#SOME_MACRO_IN_MACRO_MAP").
@@ -717,12 +733,11 @@ Major backend updates to improve reliability/maintainability of CTF.
         * Add CCDD JSON Export Reader
     * Multi/Remote cFS Support
         * Allow the cFS Plugin to execute/manage multiple instances of cFS running on local or remote targets
-        * Remote Targets Support: SSH, SP0, Local (linux). More targets can be added as needed.
+        * Remote Targets Support: SSH, Local (linux). More targets can be added as needed.
     * Change command argument structure in test script JSON. Arguments are now encoded in the test script as a JSON dictionary.   
 
 * Initial Plugin Implementations For
     * SSH Plugin
-    * SP0 Plugin
     * CCSDS Plugin
            
 * Re-haul CTF Editor to support generic CCSDS JSON Exports, and multi/remote cFS.
