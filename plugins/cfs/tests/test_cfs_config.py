@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2021 United States Government as represented by the
+# Copyright (c) 2019-2022 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -19,7 +19,7 @@ import pytest
 
 from lib.ctf_global import Global
 from lib.exceptions import CtfTestError
-from plugins.cfs.cfs_config import CfsConfig, RemoteCfsConfig, SP0CfsConfig
+from plugins.cfs.cfs_config import CfsConfig, RemoteCfsConfig
 
 
 def test_cfs_config_init(cfs_config):
@@ -216,51 +216,3 @@ def test_remote_cfs_config_init(remote_cfs_config):
     assert remote_cfs_config.destination == "localhost"
 
 
-@pytest.fixture
-def sp0_cfs_config():
-    Global.load_config("./configs/example_configs/example_config_sp0.ini")
-    # TODO find a better workaround to test verify_symbol without producing an error
-    with patch('lib.args_validation.ArgsValidation.verify_symbol'):
-        return SP0CfsConfig("cfs_SP01")
-
-
-def test_sp0_cfs_config_init(sp0_cfs_config):
-    assert set(sp0_cfs_config.sections) == {"ccsds", "cfs", "cfs_SP01", "core", "logging", "ssh"}
-    # TODO There is an error due to the vw1 executable file being missing. Need a workaround
-    assert sp0_cfs_config.validation.get_error_count() == 0
-    assert sp0_cfs_config.name == "cfs_SP01"
-    assert sp0_cfs_config.cfs_protocol == "sp0"
-    assert sp0_cfs_config.build_cfs is False
-    assert sp0_cfs_config.ccsds_data_dir == os.path.expanduser("~/sample_cfs_workspace/ccdd/json")
-    assert sp0_cfs_config.ccsds_target == "set1"
-    assert sp0_cfs_config.log_ccsds_imports is True
-    assert sp0_cfs_config.cfs_build_dir == os.path.expanduser("~/sample_cfs_workspace")
-    assert sp0_cfs_config.cfs_build_cmd == "make; make install"
-    assert sp0_cfs_config.cfs_run_dir == os.path.expanduser("~/sample_cfs_workspace/build/exe/vw1")
-    assert sp0_cfs_config.cfs_port_arg is False
-    assert sp0_cfs_config.cfs_exe == "core-vw1.exe"
-    assert sp0_cfs_config.cfs_run_args == ""
-    assert sp0_cfs_config.cfs_run_cmd == "core-vw1.exe"
-    assert sp0_cfs_config.cfs_output_file == "cfs_stdout.txt"
-    assert sp0_cfs_config.remove_continuous_on_fail is True
-    assert sp0_cfs_config.cfs_target_ip == "10.5.5.238"
-    # TODO For some reason the IP resolves to 127.0.0.1 for the other cases but the real local IP here
-    #assert sp0_cfs_config.ctf_ip == "127.0.0.1"
-    assert sp0_cfs_config.cmd_udp_port == 5010
-    assert sp0_cfs_config.tlm_udp_port == 5011
-    assert sp0_cfs_config.evs_log_file == "evs_event_msgs.log"
-    assert sp0_cfs_config.cfs_debug is False
-    assert sp0_cfs_config.cfs_run_in_xterm is False
-    assert sp0_cfs_config.tlm_app_choice == "ToApi"
-    assert sp0_cfs_config.ccsds_ver == 2
-    assert sp0_cfs_config.evs_long_event_mid_name == "CFE_EVS_LONG_EVENT_MSG_MID"
-    assert sp0_cfs_config.evs_short_event_mid_name == "CFE_EVS_SHORT_EVENT_MSG_MID"
-    assert sp0_cfs_config.evs_messages_clear_after_time == 5
-    assert sp0_cfs_config.endianess_of_target == "big"
-    assert sp0_cfs_config.ccsds_header_info_included is False
-    assert sp0_cfs_config.reboot is True
-    assert sp0_cfs_config.cfs_exe_path == "/ram0"
-    assert sp0_cfs_config.cfs_entry_point == "CFE_PSP_Main"
-    assert sp0_cfs_config.cfs_startup_time == 20
-    assert sp0_cfs_config.log_stdout is True
-    assert sp0_cfs_config.stop_command == "reboot()"

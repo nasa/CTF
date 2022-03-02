@@ -74,11 +74,16 @@
           "name": "target",
           "description": "",
           "type": "string"
+        },
+        {
+          "name": "header",
+          "description": "",
+          "type": "string"
         }
       ]
     },
     {
-      "name": "SendInvalidLengthCfsCommand",
+      "name": "SendCfsCommandWithPayloadLength",
       "description": "",
       "parameters": [
         {
@@ -100,10 +105,46 @@
         {
           "name": "target",
           "description": "",
-          "type": "number"
+          "type": "string"
+        },
+        {
+          "name": "header",
+          "description": "",
+          "type": "string"
         },
         {
           "name": "payload_length",
+          "description": "",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "name": "SendCfsCommandWithRawPayload",
+      "description": "",
+      "parameters": [
+        {
+          "name": "mid",
+          "description": "",
+          "type": "cmd_mid"
+        },
+        {
+          "name": "cc",
+          "description": "",
+          "type": "cmd_code"
+        },
+        {
+          "name": "hex_buffer",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "target",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "header",
           "description": "",
           "type": "string"
         }
@@ -211,29 +252,9 @@
       "description": "",
       "parameters": [
         {
-          "name": "app",
+          "name": "args",
           "description": "",
-          "type": "string"
-        },
-        {
-          "name": "id",
-          "description": "",
-          "type": "string"
-        },
-        {
-          "name": "msg",
-          "description": "",
-          "type": "string"
-        },
-        {
-          "name": "is_regex",
-          "description": "",
-          "type": "boolean"
-        },
-        {
-          "name": "msg_args",
-          "description": "",
-          "type": "cmd_arg",
+          "type": "event",
           "isArray": true
         },
         {
@@ -248,29 +269,9 @@
       "description": "",
       "parameters": [
         {
-          "name": "app",
+          "name": "args",
           "description": "",
-          "type": "string"
-        },
-        {
-          "name": "id",
-          "description": "",
-          "type": "string"
-        },
-        {
-          "name": "msg",
-          "description": "",
-          "type": "string"
-        },
-        {
-          "name": "is_regex",
-          "description": "",
-          "type": "boolean"
-        },
-        {
-          "name": "msg_args",
-          "description": "",
-          "type": "cmd_arg",
+          "type": "event",
           "isArray": true
         },
         {

@@ -2,12 +2,12 @@
 cfs_config.py: CFS Plugin Config for CTF.
 
 - Defines the expected fields in the cFS config section for
-  a base (linux) target, as well as SP0 and Remote SSH targets.
+  a base (linux) target, as well as Remote SSH targets.
 """
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2021 United States Government as represented by the
+# Copyright (c) 2019-2022 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -61,6 +61,7 @@ class CfsConfig:
         self.cfs_port_arg = None
         self.cfs_exe = None
         self.cfs_run_args = None
+        self.cfs_ram_drive_path = None
         self.cfs_run_cmd = None
         self.cfs_output_file = None
         self.remove_continuous_on_fail = None
@@ -79,6 +80,7 @@ class CfsConfig:
         self.endianess_of_target = None
         # The following variable is set by the CCSDS Reader Implementation
         self.ccsds_header_info_included = None
+        self.telemetry_debug = None
 
         try:
             self.configure(self.name)
@@ -166,6 +168,8 @@ class CfsConfig:
 
             self.cfs_run_args = self.load_field(section_name, "cfs_run_args", Global.config.get)
 
+            self.cfs_ram_drive_path = self.load_field(section_name, "cfs_ram_drive_path", Global.config.get)
+
             self.cfs_output_file = self.load_field(section_name, "cfs_output_file", Global.config.get)
 
             self.remove_continuous_on_fail = self.load_field(section_name, "remove_continuous_on_fail",
@@ -208,6 +212,9 @@ class CfsConfig:
             self.evs_log_file = self.load_field(section_name, "evs_log_file", Global.config.get)
 
             self.cfs_protocol = self.load_field(section_name, "cfs_protocol", Global.config.get)
+
+            self.telemetry_debug = self.load_field(section_name, "telemetry_debug", Global.config.getboolean,
+                                                   self.validation.validate_boolean)
 
         else:
             log.warning("No CFS configuration defined for {}".format(section_name))
@@ -273,46 +280,3 @@ class RemoteCfsConfig(CfsConfig):
 
         if section_name in self.sections:
             self.destination = self.load_field(self.name, "destination", Global.config.get)
-
-
-class SP0CfsConfig(CfsConfig):
-    """
-    CFS Configuration for SP0 targets, inherited from CfsConfig class.
-    """
-
-    def __init__(self, name):
-        """
-        Constructor for RemoteCfsConfig Class. Override cfs_protocol attribute to sp0, add a few additional attributes.
-        """
-        self.reboot = None
-        self.cfs_exe_path = None
-        self.cfs_entry_point = None
-        self.cfs_startup_time = None
-        self.log_stdout = None
-        self.stop_command = None
-        super().__init__(name)
-
-        # Overrides
-        self.cfs_protocol = "sp0"
-        self.cfs_run_in_xterm = False
-
-    def load_config_data(self, section_name):
-        """
-        From loaded sections of INI config, interpret CFS target config attributes, including
-        build_cfs, CCSDS_data_dir, CCSDS_target, etc.
-        @param section_name: loaded Json CFS target section.
-        @return None
-        """
-        super().load_config_data(section_name)
-
-        if section_name in self.sections:
-            self.reboot = self.load_field(self.name, "reboot", Global.config.getboolean,
-                                          self.validation.validate_boolean)
-            self.cfs_exe_path = self.load_field(self.name, "cfs_exe_path", Global.config.get)
-            self.cfs_entry_point = self.load_field(self.name, "cfs_entry_point", Global.config.get)
-            self.validation.validate_symbol(self.cfs_entry_point, os.path.join(self.cfs_run_dir, self.cfs_exe))
-            self.cfs_startup_time = self.load_field(self.name, "cfs_startup_time", Global.config.getfloat,
-                                                    self.validation.validate_number)
-            self.log_stdout = self.load_field(self.name, "log_stdout", Global.config.getboolean,
-                                              self.validation.validate_boolean)
-            self.stop_command = self.load_field(self.name, "stop_command", Global.config.get)

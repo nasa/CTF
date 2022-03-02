@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2021 United States Government as represented by the
+# Copyright (c) 2019-2022 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -114,16 +114,16 @@ def test_cfs_interface_write_tlm_log(cfs, utils):
     assert cfs.tlm_log_file is None
     assert not utils.has_log_level('ERROR')
     with patch('builtins.open', new_callable=mock_open()) as mock_file:
-        cfs.write_tlm_log('payload1', 100)
+        cfs.write_tlm_log('payload1', bytearray('payload1','utf-8'), 100)
         assert cfs.tlm_log_file is mock_file.return_value
         mock_file.assert_called_once_with('./cfs_tlm_msgs.log', 'w+')
         assert mock_file.return_value.write.call_count == 2
         mock_file.return_value.write.reset_mock()
-        cfs.write_tlm_log('payload2', 200)
+        cfs.write_tlm_log('payload2', bytearray('payload2','utf-8'), 200)
         mock_file.return_value.write.assert_called_once()
         mock_file.return_value.write.reset_mock()
         mock_file.return_value.write.side_effect = IOError('mock error')
-        cfs.write_tlm_log('payload3', 300)
+        cfs.write_tlm_log('payload3', bytearray('payload3','utf-8'), 300)
         assert utils.has_log_level('ERROR')
 
 
@@ -529,6 +529,43 @@ def test_clear_received_msgs_before_verification_start(cfs, utils):
     assert len(cfs.received_mid_packets_dic[8198]) == 1
     assert len(cfs.received_mid_packets_dic[8199]) == 0
     assert len(cfs.received_mid_packets_dic[1337]) == 1
+
+
+def test_cfs_get_tlm_value_invalid_MID(cfs, utils):
+    mid = {'INVALID_MID': 8193, 'name': 'CFE_ES_HousekeepingTlm_t', 'PARAM_CLASS': None}
+    tlm_variable = 'Payload.CommandCounter'
+    utils.clear_log()
+    assert cfs.get_tlm_value(mid, tlm_variable) is None
+    assert utils.has_log_level('ERROR')
+
+    utils.clear_log()
+    mid = {'MID': 8193, 'name': 'CFE_ES_HousekeepingTlm_t', 'PARAM_CLASS': None}
+    assert cfs.get_tlm_value(mid, tlm_variable) is None
+    assert utils.has_log_level('ERROR')
+
+
+def test_cfs_get_tlm_value_no_packet(cfs, utils):
+    mid = {'MID': 8198, 'name': 'CFE_ES_HousekeepingTlm_t', 'PARAM_CLASS': None}
+    tlm_variable = 'Payload.CommandCounter'
+    utils.clear_log()
+    assert cfs.get_tlm_value(mid, tlm_variable) is None
+    assert utils.has_log_level('ERROR')
+
+
+def test_cfs_get_tlm_value_no_payload(cfs, utils):
+    mid = {'MID': 8198, 'name': 'CFE_ES_HousekeepingTlm_t', 'PARAM_CLASS': None}
+    tlm_variable = 'Payload.CommandCounter'
+    cfs.received_mid_packets_dic[8198].append(Packet(8198, None, 1, 4.0))
+    utils.clear_log()
+    assert cfs.get_tlm_value(mid, tlm_variable) is None
+    assert utils.has_log_level('ERROR')
+
+
+def test_cfs_get_tlm_value(cfs):
+    mid = {'MID': 8198, 'name': 'CFE_ES_HousekeepingTlm_t', 'PARAM_CLASS': None}
+    tlm_variable = 'Payload.CommandCounter'
+    cfs.received_mid_packets_dic[8198].append(Packet(8198, MagicMock(), 1, 4.0))
+    assert cfs.get_tlm_value(mid, tlm_variable)
 
 
 def test_cfs_check_tlm_value(cfs, mid_map, utils):

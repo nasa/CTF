@@ -5,7 +5,7 @@ The Variable Plugin module allows users to set / update / check variables define
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2021 United States Government as represented by the
+# Copyright (c) 2019-2022 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -19,9 +19,10 @@ The Variable Plugin module allows users to set / update / check variables define
 
 
 from lib import ctf_utility
-from lib.ctf_global import Global
-from lib.plugin_manager import Plugin, ArgTypes
 from lib.logger import logger as log
+from lib.ctf_global import Global
+from lib.ctf_utility import resolve_variable
+from lib.plugin_manager import Plugin, ArgTypes
 
 
 class VariablePlugin(Plugin):
@@ -96,15 +97,15 @@ class VariablePlugin(Plugin):
         return status
 
     @staticmethod
-    def set_user_variable_from_tlm(user_variable: str, mid: str, tlm_variable: str):
+    def set_user_variable_from_tlm(variable_name: str, mid: str, tlm_variable: str):
         """
         Get the latest telemetry value from queue, and set it to the specified variable.
         @return bool: True if successful, False otherwise.
         """
-        log.info("Set user variable: '{}' from tlm mid: '{}' variable: '{}'".format(user_variable, mid, tlm_variable))
+        log.info("Set user variable: '{}' from tlm mid: '{}' variable: '{}'".format(variable_name, mid, tlm_variable))
         cfs_plugin = Global.plugin_manager.find_plugin_for_command("StartCfs")
         tlm_value = cfs_plugin.get_tlm_value(mid, tlm_variable)
-        status = VariablePlugin.set_user_defined_variable(user_variable, "=", tlm_value)
+        status = VariablePlugin.set_user_defined_variable(variable_name, "=", tlm_value)
         return status
 
     @staticmethod
@@ -146,6 +147,13 @@ class VariablePlugin(Plugin):
             return False
 
         log.info("Variable {} = {}".format(variable_name, variable_value))
+
+        value = resolve_variable(value)
+
+        # pylint: disable=unidiomatic-typecheck
+        if type(variable_value) != type(value):
+            log.warning("Variable and the compared value are not the same type!")
+
         status = op_func(variable_value, value)
         log_func = log.info if status else log.warning
         log_func("Checking {} {} {} => {}".format(variable_value, operator, value, status))

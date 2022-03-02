@@ -6,7 +6,7 @@ including looping and conditional statements.
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2021 United States Government as represented by the
+# Copyright (c) 2019-2022 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -17,10 +17,11 @@ including looping and conditional statements.
 # Unless required by applicable law or agreed to in writing, software distributed under the
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
-
+from copy import deepcopy
 
 from lib import ctf_utility
 from lib.ctf_global import Global
+from lib.ctf_utility import resolve_variable
 from lib.plugin_manager import Plugin, ArgTypes
 from lib.logger import logger as log
 from plugins.variable_plugin.variable_plugin import VariablePlugin
@@ -68,11 +69,11 @@ class ControlFlowPlugin(Plugin):
         ## Plugin Command Map
         self.command_map = {
             #   "GoTo": (self.control_flow__goto, [ArgTypes.number]),
-            #   "ControlFlowDo": (self.control_flow_do, []),
-            #   "ControlFlowWhile": (self.control_flow_while, [ArgTypes.string, ArgTypes.string, ArgTypes.other,
-            #                                                  ArgTypes.number]),
             # "ConditionalGoTo": (self.control_flow_conditional_goto, [ArgTypes.string, ArgTypes.string, ArgTypes.other,
             #                                                         ArgTypes.number, ArgTypes.number]),
+            "IfCondition": (self.if_condition, [ArgTypes.string, ArgTypes.condition]),
+            "ElseCondition": (self.else_condition, [ArgTypes.string]),
+            "EndCondition": (self.end_condition, [ArgTypes.string]),
             "BeginLoop": (self.begin_loop, [ArgTypes.string, ArgTypes.condition]),
             "EndLoop": (self.end_loop, [ArgTypes.string])
         }
@@ -101,6 +102,87 @@ class ControlFlowPlugin(Plugin):
         """
         log.info("Setting next instruction index: {}".format(command_index))
         ctf_utility.set_goto_instruction_index(command_index)
+        return True
+
+    @staticmethod
+    def if_condition(label, conditions):
+        """
+        Create a if conditional branch block entry point. It is identified by a unique label per test script.
+        The IfCondition must be in pairs with EndCondition instruction. ElseCondition instruction is optional.
+        The if condition is defined in parameter "conditions" as a list of variables
+        and the associated comparison operations. The condition is True, only if all comparison operations are True.
+
+        @param label: a user defined label (example: "if_label_1")
+        @param conditions: a list of comparison conditions. Each includes "name", "operator" and "value".
+         (example: {"name": "my_var", "operator": "<", "value": 20})
+
+        @return bool: return True, unless conditions argument is not a list .
+        """
+        log.info("IfCondition instruction is labeled with '{}', start the conditional branch".format(label))
+
+        conditional_branch = Global.conditional_branch_map[label]
+        status = True
+
+        if not isinstance(conditions, list):
+            log.info("Conditional branch condition should be defined as a list of object" )
+            return False
+
+        for condition in conditions:
+            status = status and VariablePlugin.check_user_defined_variable(condition['variable'],
+                                                                           condition['compare'],
+                                                                           condition['value'])
+        if status:
+            log.info("Conditional branch condition is True, proceed to the Next test instruction")
+            conditional_branch['condition_eval'] = True
+        else:
+            if conditional_branch['else_condition_index']:
+                info_str = 'ElseCondition'
+                next_instruction_index = conditional_branch['else_condition_index']
+            else:
+                info_str = 'EndCondition'
+                next_instruction_index = conditional_branch['end_condition_index']
+            log.info("Conditional branch condition is False, jump to the {} instruction".format(info_str))
+            conditional_branch['condition_eval'] = False
+            ctf_utility.set_goto_instruction_index(next_instruction_index)
+
+        return True
+
+    @staticmethod
+    def else_condition(label):
+        """
+        Create a else conditional branch entry point. It must match a IfCondition and a EndCondition instruction
+        with the same label. It is optional in conditional branch block.
+        If the condition of IfCondition instruction is False, the control flow skips the 'if' branch block,
+        only executes the 'else' branch block. If ElseCondition instruction is not defined,
+        the control flow jumps to the end of conditional branch block defined by a EndCondition instruction.
+
+        @param label: a user defined label (example: "if_label_1")
+
+        @return bool: always True
+        """
+
+        log.info("ElseCondition instruction is labeled with '{}' ".format(label))
+        conditional_branch = Global.conditional_branch_map[label]
+
+        if conditional_branch['condition_eval']:
+            log.info("Conditional branch condition is True, skip ElseCondition block,jump to EndCondition instruction")
+            ctf_utility.set_goto_instruction_index(conditional_branch['end_condition_index'])
+        else:
+            log.info("Conditional branch condition is False, proceed with ElseCondition block instructions")
+
+        return True
+
+    @staticmethod
+    def end_condition(label):
+        """
+        Create a if conditional branch exit point. It must match a IfCondition instruction with the same label.
+        When the control flow reaches EndCondition instruction, it exits the conditional branch block.
+
+        @param label: a user defined label (example: "if_label_1")
+
+        @return bool: always True
+        """
+        log.info("EndCondition instruction is labeled with '{}', complete the conditional branch.".format(label))
         return True
 
     @staticmethod
@@ -135,16 +217,6 @@ class ControlFlowPlugin(Plugin):
 
         return True
 
-    def control_flow_do(self):
-        """
-        Deprecated function, may be removed in future.
-
-        @return bool: always True .
-        """
-        log.info("Starting Do-While...")
-        self.begin_loop_index = ctf_utility.get_current_instruction_index() + 1
-        return True
-
     @staticmethod
     def begin_loop(label, conditions):
         """
@@ -173,7 +245,10 @@ class ControlFlowPlugin(Plugin):
             # conditions is a test instruction
             status = False
         elif isinstance(conditions, list):
-            for condition in conditions:
+            copied_conditions = deepcopy(conditions)
+            for condition in copied_conditions:
+                condition['variable'] = resolve_variable(condition['variable'])
+                condition['value'] = resolve_variable(condition['value'])
                 status = status and VariablePlugin.check_user_defined_variable(condition['variable'],
                                                                                condition['compare'],
                                                                                condition['value'])
@@ -181,11 +256,11 @@ class ControlFlowPlugin(Plugin):
 
         if status:
             log.info("Continuing Loop...  Proceed To The Next Test Instruction")
-            Global.label_map[label][2] = True
+            Global.label_map[label]['condition_eval'] = True
         else:
             log.info("Ending Loop... Jump to the End_loop")
-            Global.label_map[label][2] = False
-            ctf_utility.set_goto_instruction_index(control_flow[1])
+            Global.label_map[label]['condition_eval'] = False
+            ctf_utility.set_goto_instruction_index(control_flow['endloop_index'])
 
         return True
 
@@ -203,29 +278,12 @@ class ControlFlowPlugin(Plugin):
         # Global.label_map dict is set by lib.test.process_control_flow_label
         # each item in Global.label_map includes 3 elements: instruction "BeginLoop" index (int);
         # instruction "EndLoop" index (int); and loop_condition (bool)
-        if Global.label_map[label][2]:
+        if Global.label_map[label]['condition_eval']:
             log.info("Continuing Loop... Jump to the Begin_loop instruction labeled with '{}' ".format(label))
-            ctf_utility.set_goto_instruction_index(Global.label_map[label][0])
+            ctf_utility.set_goto_instruction_index(Global.label_map[label]['beginloop_index'])
         else:
             log.info("Ending Loop... ")
         return True
-
-    def control_flow_while(self, variable_name, operator, value):
-        """
-        Deprecated function, may be removed in future.
-
-        @return bool: always True .
-        """
-        status = VariablePlugin.check_user_defined_variable(variable_name, operator, value)
-        # If the while comparison passed, go to the do instruction index + 1
-        if status:
-            log.info("Continuing Do-While...")
-            ctf_utility.set_goto_instruction_index(self.begin_loop_index)
-        else:
-            log.info("Ending Do-While...")
-        return True
-
-    # ENHANCE - Implement cFS capabilities and process variable markers (maybe ${my_var})
 
     def shutdown(self):
         """

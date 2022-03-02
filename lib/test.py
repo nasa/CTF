@@ -5,7 +5,7 @@ Represents a single CTF test case
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2021 United States Government as represented by the
+# Copyright (c) 2019-2022 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -21,6 +21,7 @@ Represents a single CTF test case
 import time
 
 from lib.ctf_global import Global, CtfVerificationStage
+from lib.event_types import Instruction
 from lib.exceptions import CtfTestError, CtfConditionError
 from lib.logger import logger as log
 from lib.status import StatusDefs
@@ -297,6 +298,64 @@ class Test:
             if self.current_instruction_index > len(self.instructions) - 1:
                 break
 
+    @staticmethod
+    def __check_label_def(name: str, instruction: Instruction, defined: bool, label_map: dict):
+        """
+        Helper method to check the label definition
+        """
+        if 'label' not in instruction.command['data'] or instruction.command['data']['label'] == '':
+            log.error("{} instruction does not include 'label' {}".format(name, instruction.command))
+            raise CtfTestError("Instruction does not include 'label'")
+        label = instruction.command['data']['label']
+        if not defined and label in label_map:
+            log.error("The label '{}' has been already defined in current test script".format(label))
+            raise CtfTestError("The label in instruction has been already defined in current test script")
+        if defined and label not in label_map:
+            log.error("The label '{}' in instruction is not defined by previous instructions".format(label))
+            raise CtfTestError("The label in instruction is not defined")
+
+    def process_conditional_branch_label(self):
+        """
+        Process conditional branch labels defined in test instructions 'IfCondition', 'ElseCondition', 'EndCondition'
+        """
+        Global.conditional_branch_map.clear()
+        label_stack = []
+        log.info("Process conditional branch labels defined in test instructions 'IfCondition', 'ElseCondition', "
+                 "'EndCondition'")
+        for event in self.instructions:
+            log.info("Instruction defined in test scripts: {}".format(event.command))
+            if event.command['instruction'] == 'IfCondition':
+                self.__check_label_def('IfCondition', event, False, Global.conditional_branch_map)
+                label = event.command['data']['label']
+                Global.conditional_branch_map[label] = {"condition_eval": None, "end_condition_index": None,
+                                                        "else_condition_index": None, }
+                label_stack.append(label)
+
+            if event.command['instruction'] == 'ElseCondition':
+                self.__check_label_def('ElseCondition', event, True, Global.conditional_branch_map)
+                label = event.command['data']['label']
+                Global.conditional_branch_map[label]['else_condition_index'] = event.command_index
+
+                if len(label_stack) == 0 or label_stack[-1] != label:
+                    raise CtfTestError("The label matching fails for ElseCondition")
+
+            if event.command['instruction'] == 'EndCondition':
+                self.__check_label_def('EndCondition', event, True, Global.conditional_branch_map)
+                label = event.command['data']['label']
+                Global.conditional_branch_map[label]['end_condition_index'] = event.command_index
+
+                if len(label_stack) > 0 and label_stack[-1] == label:
+                    label_stack.pop()
+                else:
+                    expected_label = label_stack[-1] if len(label_stack) > 0 else ""
+                    log.error("The label matching fails, the actual label: '{}'  "
+                              "the expected label: '{}' ".format(label, expected_label))
+                    raise CtfTestError("The label matching fails")
+
+        if len(label_stack) != 0:
+            log.error("IfCondition & EndCondition not in pairs")
+            raise CtfTestError("IfCondition & EndCondition not in pairs")
+
     def process_control_flow_label(self):
         """
         Process control flow labels defined in test instructions 'BeginLoop' and 'EndLoop'
@@ -305,6 +364,7 @@ class Test:
         Global.goto_label_map.clear()
         label_stack = []
         log.info("Process control flow labels defined in test instructions 'BeginLoop' and 'EndLoop'")
+
         for event in self.instructions:
             log.info("Instruction defined in test scripts: {}".format(event.command))
 
@@ -316,35 +376,26 @@ class Test:
                 if label in Global.goto_label_map:
                     log.error("The label '{}' has been already defined in current test script".format(label))
                     raise CtfTestError("The label in instruction has been already defined in current test script")
+
                 Global.goto_label_map[label] = event.command_index
 
             if event.command['instruction'] == 'BeginLoop':
-                if 'label' not in event.command['data'] or event.command['data']['label'] == '':
-                    log.error("BeginLoop instruction does not include 'label' {}".format(event.command))
-                    raise CtfTestError("BeginLoop instruction does not include 'label'")
+                self.__check_label_def('BeginLoop', event, False, Global.label_map)
                 label = event.command['data']['label']
-                if label in Global.label_map:
-                    log.error("The label '{}' has been already defined in current test script".format(label))
-                    raise CtfTestError("The label in instruction has been already defined in current test script")
-                Global.label_map[label] = [event.command_index, -1, False]
+                Global.label_map[label] = {"condition_eval": None, "beginloop_index": event.command_index,
+                                                        "endloop_index": None }
                 label_stack.append(label)
 
             if event.command['instruction'] == 'EndLoop':
-                if 'label' not in event.command['data'] or event.command['data']['label'] == '':
-                    log.error("EndLoop instruction does not include 'label' {}".format(event.command))
-                    raise CtfTestError("EndLoop instruction does not include 'label'")
+                self.__check_label_def('EndLoop', event, True, Global.label_map)
                 label = event.command['data']['label']
-                if label not in Global.label_map:
-                    log.error("The label '{}' in instruction is not defined by previous "
-                              "BeginLoop instructions".format(label))
-                    raise CtfTestError("The label in instruction is not defined")
-                Global.label_map[label][1] = event.command_index
+                Global.label_map[label]['endloop_index'] = event.command_index
                 if len(label_stack) > 0 and label_stack[-1] == label:
                     label_stack.pop()
                 else:
                     expected_label = label_stack[-1] if len(label_stack) > 0 else ""
                     log.error("The label matching fails, the actual label: {}  "
-                              "the expected label: {} ".format(label,expected_label))
+                              "the expected label: {} ".format(label, expected_label))
                     raise CtfTestError("The label matching fails")
 
         if len(label_stack) != 0:
@@ -372,6 +423,7 @@ class Test:
 
         try:
             self.process_control_flow_label()
+            self.process_conditional_branch_label()
             self.run_commands()
             if self.test_result:
                 test_status = StatusDefs.passed

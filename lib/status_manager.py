@@ -4,7 +4,7 @@ Publishes CTF status messages over a UDP socket (utilized by the CTF editor)
 """
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2021 United States Government as represented by the
+# Copyright (c) 2019-2022 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -189,8 +189,10 @@ class StatusManager:
         """
         Sanitize a test instruction parameter by attempting to decode it if needed
         """
-        if not isinstance(param, str):
+        try:
             param = param.decode()
+        except AttributeError:
+            pass
         return param
 
     @staticmethod

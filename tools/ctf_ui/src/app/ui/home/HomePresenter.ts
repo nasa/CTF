@@ -1,7 +1,7 @@
 /*
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2021 United States Government as represented by the
+# Copyright (c) 2019-2022 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -329,7 +329,7 @@ export class HomePresenter implements IHomePresenter {
                         ? Object.keys(this.theOpenFile.import)
                         : []
                 )) : {}
-        
+
             };
             if (this.theOpenFile)
                 this
@@ -367,8 +367,8 @@ export class HomePresenter implements IHomePresenter {
     // override
     didClickRunFiles = (files: string[], configPath?: string) => {
         var pythonScriptCall = this.workspace.pythonScriptPath;
-        configPath? 
-            pythonScriptCall = this.workspace.pythonScriptPath + " --config_file " + configPath 
+        configPath?
+            pythonScriptCall = this.workspace.pythonScriptPath + " --config_file " + configPath
             : this.workspace.pythonScriptPath
         console.log("Running " + pythonScriptCall + "On test scripts: ")
         console.log(files)
@@ -418,7 +418,7 @@ export class HomePresenter implements IHomePresenter {
         //does the new name end with json: if not, add .json at the end
         const stat = fs.lstatSync(oldfullname);
         const isfile = stat.isFile();
-        
+
         const newnamesplit = newname.split('.');
         if (isfile && newnamesplit[newnamesplit.length-1] != 'json' ) {
             newname += '.json';

@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2021 United States Government as represented by the
+# Copyright (c) 2019-2022 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -48,11 +48,6 @@ from plugins.cfs.pycfs.tlm_listener import TlmListener
 from plugins.ssh.ssh_plugin import SshController, SshConfig
 from plugins.cfs.pycfs.remote_cfs_interface import RemoteCfsInterface
 
-try:
-    from plugins.sp0_plugin.sp0.sp0_cfs_interface import SP0CfsInterface
-except ImportError:
-    SP0CfsInterface = None
-
 MACRO_MARKER = '#'
 
 
@@ -81,6 +76,7 @@ class CfsController:
         self.ccsds_reader = None
         self.mid_map = None
         self.macro_map = None
+        self.ccsds = None
         self.first_call_flag = True
         self.mid_pkt_count = None
         self.cfs_running = False
@@ -89,6 +85,7 @@ class CfsController:
         """
         Create mid map for CFS plugin, if map does not exist, create ccsds_reader from INIT config file.
         """
+        result = True
         if self.mid_map is None:
             log.info("Creating MID Map from CCDD Data at {}".format(self.config.ccsds_data_dir))
             self.ccsds_reader = CCDDExportReader(self.config)
@@ -96,35 +93,38 @@ class CfsController:
         else:
             log.debug("MID Map is already populated; skipping CCDD Data...")
 
+        try:
+            self.ccsds = import_ccsds_header_types()
+        except CtfTestError:
+            self.ccsds = None
+            log.warning("Error importing CCSDS header types")
+
+        if not (self.ccsds and self.ccsds.CcsdsPrimaryHeader and self.ccsds.CcsdsCommand and self.ccsds.CcsdsTelemetry):
+            log.error("Unable to load required CCSDS data types")
+            result = False
+
+        return result
+
     def initialize(self):
         """
         Initialize CfsController instance, including the followings: create mid map; import ccsds header;
         create command interface; create telemetry interface; create local CFS interface
         """
         log.debug("Initializing CfsController")
-        self.process_ccsds_files()
-
-        try:
-            ccsds = import_ccsds_header_types()
-        except CtfTestError:
-            ccsds = None
-            log.warning("Error: import_ccsds_header_types ")
-
-        if not (ccsds and ccsds.CcsdsPrimaryHeader and ccsds.CcsdsCommand and ccsds.CcsdsTelemetry):
-            log.error("Unable to import required CCSDS header types")
+        if not self.process_ccsds_files():
             return False
 
         log.info("Starting Local CFS Interface to {}:{}".format(self.config.cfs_target_ip, self.config.cmd_udp_port))
-        command = CommandInterface(ccsds, self.config.cmd_udp_port, self.config.cfs_target_ip,
+        command = CommandInterface(self.ccsds, self.config.cmd_udp_port, self.config.cfs_target_ip,
                                    self.config.endianess_of_target)
         telemetry = TlmListener(self.config.ctf_ip, self.config.tlm_udp_port)
-        self.cfs = LocalCfsInterface(self.config, telemetry, command, self.mid_map, ccsds)
+        self.cfs = LocalCfsInterface(self.config, telemetry, command, self.mid_map, self.ccsds)
         result = self.cfs.init_passed
         if not result:
             log.error("Failed to initialize LocalCfsInterface")
-
-        if result:
+        else:
             log.info("CfsController Initialized")
+
         return result
 
     def build_cfs(self):
@@ -167,135 +167,197 @@ class CfsController:
         return self.cfs.enable_output()
 
     # noinspection PyProtectedMember
-    # pylint: disable=protected-access
-    def send_cfs_command(self, mid, cc, args, header_args=None, payload_length=None, ctype_args=False):
+    def send_cfs_command(self, mid: str, cc: str, args: dict,
+                         header_args: dict = None, payload_length: dict = None, ctype_args: bool = False) -> bool:
         """
         Implementation of CFS plugin instructions send_cfs_command.  When CFS plugin instructions
-        (send_cfs_command) is executed, it calls CfsController instance's send_cfs_command function.
+        (send_cfs_command) is executed, it calls one or more CfsController instance's send_cfs_command function.
 
         @note When using CCSDS version 2 subsysId, endian and systemId will all be given a value when the function
         below is called. If using CCSDS version 1 these 3 variables are not needed and will be assigned a default
         value of 'None' to prevent any issues.
-        @note If ctype_args is true, CFS Plugin will use the "args" parameters as the raw ctype Structure to be sent
+        @note If ctype_args is true, the "args" parameter will be replaced by the raw ctype Structure to be sent
+        @note If payload_length is provided, it will modify the size of the resulting byte buffer after encoding args
+        @return True if the message was successfully sent to the target, False otherwise
         """
         # pylint: disable=invalid-name, protected-access
-        if not ctype_args:
+        if ctype_args:
+            log.info("Sending CFS Command {} with internal CTF cTypes Argument...".format(mid))
+        else:
             log.info("Sending CFS Command to target: {}, {}:{} with Args: {}".format(self.config.name, mid,
                                                                                      cc, json.dumps(args)))
-        if not isinstance(mid, str):
-            for key, value in self.mid_map.items():
-                if value.get("MID") == mid:
-                    mid = key
-                    break
-        if not self.mid_available(mid):
+
+        mid_name = self.validate_mid_value(mid)
+        if mid_name is None:
+            log.error("Could not find MID {} in MID Map".format(mid))
             return False
-        # Use the incoming 'mid' string to retrieve the int value of the mid we are looking for
-        # and all command codes associated with it.
-        cmd_message = self.mid_map[mid]
-        cmd_mid = cmd_message["MID"]
+        mid = self.mid_map[mid_name]['MID']
+
+        cc_name = self.validate_cc_value(self.mid_map[mid_name], cc)
+        if cc_name is None:
+            log.error("Could not find Command Code {} for MID {} in MID Map".format(cc, mid))
+            return False
+        cc = self.mid_map[mid_name]['CC'][cc_name]['CODE']
+
+        arg_data = self.build_command_payload(mid_name, cc_name, args, payload_length, ctype_args)
+        log.debug("Sending bytes: {}".format(arg_data))
+        result = self.cfs.send_command(mid, cc, arg_data, header_args)
+
+        if not result:
+            log.error("Failed to send command message: MID {}, CC {}, args {}".format(mid, cc, args))
+        return result
+
+    def build_command_payload(self, mid_name: str, cc_name: str, args: dict,
+                              payload_length: int = None, ctype_args: bool = False) -> bytes:
+        """
+        Implements the building of a CFS command payload by converting args into ctypes and then encoding into bytes.
+        @note mid_name and cc_name must be keys in the mid_map. Validate before calling this method.
+        @return bytes: A raw byte representation of args, resized to payload_length
+        """
+        # pylint: disable=invalid-name, protected-access
+
+        mid_dict = self.mid_map[mid_name]
+        arg_class = mid_dict['CC'][cc_name]['ARG_CLASS']
         arg_size = 0
-        arg_data = bytes()
-        # retrieve variables from appropriate dictionaries
-        if not isinstance(cc, int):
-            if cc in cmd_message["CC"]:
-                code_dict = cmd_message["CC"][cc]
-            else:
-                log.error("Could not find Command Code {}  in MID Map".format(cc))
-                return False
-            arg_class = code_dict["ARG_CLASS"]
-            cc = code_dict["CODE"]
-        else:
-            arg_class = None
 
         # If we are passing ctypes arguments from the MID map internally,
         # we don't need to construct the message...
         if ctype_args:
-            log.info("Sending Command with internal CTF cTypes Argument...")
             if isinstance(args, ctypes.Structure):
                 arg_size = ctypes.sizeof(args)
-
-        # If length does not equal None than the test is attempting to send an invalid length command
-        # for testing purposes
-        elif payload_length is not None:
-            arg_data = bytearray(payload_length)
         elif arg_class is not None:
             try:
-                # ENHANCE - Backwards compatibility with the editor output of empty args = []
-                if isinstance(args, list) and len(args) == 0:
-                    args = {}
-                if isinstance(args, dict):
-                    args = self.resolve_args_from_dict(args, arg_class)
-                else:
-                    assert len(arg_class._fields_) == 1, 'Raw values can only be used for types with a single field'
-                    args = arg_class(self.resolve_simple_type(args, arg_class._fields_[0][1]))
-            except Exception as exception:
-                log.error("Failed to build command message from args: {}".format(exception))
-                raise CtfTestError("Error in send_cfs_command") from exception
-
-            if args is not None:
-                try:
+                args = self.convert_args_to_ctypes(args, arg_class)
+                if args is not None:
                     arg_size = ctypes.sizeof(args)
-                except TypeError as exception:
-                    log.error("Failed to build command message: {}".format(exception))
-                    return False
+            except Exception as exception:
+                log.error("Failed to convert args: {}".format(exception))
+                raise CtfTestError("Error in build_cfs_command") from exception
 
-        if arg_size > 0:
-            buf = (ctypes.c_char * ctypes.sizeof(args)).from_buffer_copy(args)
-            ctypes.memset(buf, 0, len(buf))
-            buf_offset = 0
+        arg_data = self.encode_ctypes_to_bytes(args) if arg_size > 0 else bytes()
 
-            # ENHANCE - Verify that ctypes handles bit-fields. If not, add ability to handle them
-            # noinspection PyProtectedMember
-            def handle_field(arg_val, field, offset):
-                # Disable all the protected-access warnings in this function
-                # pylint: disable=protected-access
-                field_name = field[0]
-                field_type = field[1]
-                if isinstance(field_name, int):
-                    field_val = arg_val[field_name]
-                else:
-                    field_val = getattr(arg_val, field_name)
-                field_length = ctypes.sizeof(field_type)
+        if payload_length is not None:
+            if payload_length <= arg_size:
+                arg_data = arg_data[0:payload_length]
+            else:
+                arg_data = arg_data + bytes(payload_length - arg_size)
 
-                if isinstance(field_type, type(self.ccsds_reader.ctype_structure)):
-                    for field_id in field_type._fields_:
-                        offset = handle_field(field_val, field_id, offset)
+        return arg_data
 
-                # This indicates a custom array type - need to recurse using the indexed inner type
-                elif hasattr(field_type, '_length_') and not hasattr(field_type._type_, '_type_'):
-                    for type_id in range(int(field_type._length_)):
-                        offset = handle_field(field_val, (type_id, field_val._type_), offset)
+    # noinspection PyProtectedMember
+    def convert_args_to_ctypes(self, args, arg_class) -> ctypes.Structure:
+        """
+        Implements the conversion of command args into a ctypes structure
+        """
+        # pylint: disable=invalid-name, protected-access
+        try:
+            # ENHANCE - Backwards compatibility with the editor output of empty args = []
+            if isinstance(args, list) and len(args) == 0:
+                args = {}
+            if isinstance(args, dict):
+                args = self.resolve_args_from_dict(args, arg_class)
+            else:
+                assert len(arg_class._fields_) == 1, 'Raw values can only be used for types with a single field'
+                args = arg_class(self.resolve_simple_type(args, arg_class._fields_[0][1]))
+        except Exception as exception:
+            log.error("Failed to build command message from args: {}".format(exception))
+            raise CtfTestError("Error in convert_args_to_ctypes") from exception
 
-                if isinstance(field_type, type(self.ccsds_reader.ctype_structure)) or \
-                        (hasattr(field_type, '_length_') and not hasattr(field_type._type_, '_type_')):
-                    return offset
+        return args
 
-                mytype = field_type._type_
-                if isinstance(mytype, type(ctypes.c_char)):
-                    for j in range(field_length):
-                        if j < len(field_val):
-                            if not isinstance(field_val, bytes) and not isinstance(field_val, ctypes.Array):
-                                field_val = field_val.encode()
-                            buf[offset] = ctypes.c_char(field_val[j])
-                        else:
-                            buf[offset] = 0
-                        offset += 1
-                else:
-                    buf[offset:offset + field_length] = bytes(field_type(field_val))
-                    offset += field_length
-                return offset
+    # noinspection PyProtectedMember
+    def encode_ctypes_to_bytes(self, args: ctypes.Structure) -> bytes:
+        """
+        Implements the encoding of a ctypes Structure into a byte buffer.
+        @return bytes: A raw byte representation of args
+        """
+        # pylint: disable=protected-access
 
-            for i in args._fields_:  # pylint: disable=protected-access
-                buf_offset = handle_field(args, i, buf_offset)
+        # noinspection PyProtectedMember
+        def handle_field(arg_val, field, byte_offset, bit_offset=0):
+            # Disable all the protected-access warnings in this function
+            # pylint: disable=protected-access
+            field_name = field[0]
+            field_type = field[1]
+            bit_width = field[2] if len(field) > 2 else None
 
-            arg_data = buf.raw
+            if isinstance(field_name, int):
+                field_val = arg_val[field_name]
+            else:
+                field_val = getattr(arg_val, field_name)
+            field_length = ctypes.sizeof(field_type)
 
-        log.debug("Sending bytes: {}".format(arg_data))
-        result = self.cfs.send_command(cmd_mid, cc, arg_data, header_args)
+            if isinstance(field_type, type(self.ccsds_reader.ctype_structure)):
+                for field_id in field_type._fields_:
+                    byte_offset, bit_offset = handle_field(field_val, field_id, byte_offset, bit_offset)
 
-        if not result:
-            log.error("Failed to send command message: MID {}, CC {}, args {}".format(cmd_mid, cc, args))
-        return result
+            # This indicates a custom array type - need to recurse using the indexed inner type
+            elif hasattr(field_type, '_length_') and not hasattr(field_type._type_, '_type_'):
+                for type_id in range(int(field_type._length_)):
+                    byte_offset, bit_offset = handle_field(field_val, (type_id, field_val._type_), byte_offset)
+
+            if isinstance(field_type, type(self.ccsds_reader.ctype_structure)) or \
+                    (hasattr(field_type, '_length_') and not hasattr(field_type._type_, '_type_')):
+                return byte_offset, 0
+
+            mytype = field_type._type_
+            if isinstance(mytype, type(ctypes.c_char)):
+                for j in range(field_length):
+                    if j < len(field_val):
+                        if isinstance(field_val, str):
+                            field_val = field_val.encode()
+                        buf[byte_offset] = ctypes.c_char(field_val[j])
+                    else:
+                        buf[byte_offset] = 0
+                    byte_offset += 1
+                    bit_offset = 0
+            elif bit_width:
+                # NOTE - bitfields are serialized with the order of variables as they appear in arg_class
+                # corresponding to most-to-least significant bit order (big endian) regardless of target endianness
+
+                # NOTE - There is a known issue with ctypes, likely related to byte packing and alignment in C, in
+                # which placing a larger bitfield immediately after a smaller one causes arg_class to be improperly
+                # sized and incorrect offsets within the second bitfield. To avoid this problem, structures with
+                # multiple bitfields must either order them large to small, or separate them with padding or other
+                # members with no bit_width.
+
+                start_byte = byte_offset  # first byte index of bitfield
+                stop_byte = byte_offset + field_length  # byte index after bitfield
+                stop_bit = (field_length * 8) - bit_offset - bit_width  # LSB position of this field
+                bitfield_value = int.from_bytes(buf.raw[start_byte:stop_byte], byteorder="big")  # extract bitfield
+
+                mask = (1 << bit_width) - 1  # produce mask of correct width
+                mask = mask << stop_bit  # shift mask to correct offset
+
+                bits = (field_val << stop_bit) & mask  # produce new bits at the correct position in the field
+                bitfield_value |= bits  # apply new bits to previous value
+
+                # convert bitfield value back to bytes and reapply to buffer
+                buf[start_byte:stop_byte] = int.to_bytes(bitfield_value, field_length, byteorder="big")
+
+                bit_offset += bit_width
+                if bit_offset >= field_length * 8:  # reached end of this bitfield, advancing to next field
+                    if bit_offset > field_length * 8:
+                        log.error("Bit misalignment detected! Check bitfield positions for type {}"
+                                  .format(type(arg_val).__name__))
+                    byte_offset += field_length
+                    bit_offset = 0
+            else:
+                buf[byte_offset:byte_offset + field_length] = bytes(field_type(field_val))
+                byte_offset += field_length
+                bit_offset = 0
+            return byte_offset, bit_offset
+
+        # ENHANCE - Investigate the use of from_buffer_copy to construct the payload directly, similar to how we
+        #           deserialize telemetry. Bitfields in particular do not seem to map correctly- possibly related
+        #           to endianness settings and type inheritance. Refer to https://bugs.python.org/issue24859
+        buf = (ctypes.c_char * ctypes.sizeof(args)).from_buffer_copy(args)
+        ctypes.memset(buf, 0, len(buf))
+        buf_offset = (0, 0)
+        for i in args._fields_:
+            buf_offset = handle_field(args, i, *buf_offset)
+
+        return buf.raw
 
     # ENHANCE - We can move the resolve functions to the ccsds_interface/manager. Maybe those functions
     #        can be used from other plugins in the future. It could be that the mid_map and macro map
@@ -309,7 +371,7 @@ class CfsController:
             while arg.count(MACRO_MARKER) > 1:
                 macro = arg.split(MACRO_MARKER, 1)[1].split(MACRO_MARKER, 1)[0]
                 if macro in self.macro_map:
-                    arg = arg.replace("{}{}{}".format(MACRO_MARKER, macro, MACRO_MARKER), str(self.macro_map[macro]))
+                    arg = arg.replace("{0}{1}{0}".format(MACRO_MARKER, macro), str(self.macro_map[macro]))
                 else:
                     raise CtfParameterError("Unknown macro '{}' in arg {}. Use format #MACRO#".format(macro, arg), arg)
         return arg
@@ -333,6 +395,12 @@ class CfsController:
             arg = str(arg).encode()
         elif arg_type in [ctypes.c_float, ctypes.c_double, ctypes.c_longdouble]:
             arg = float(arg)
+        elif hasattr(arg_type, '_length_') and arg_type._type_ is not ctypes.c_char:  # assume this is a primitive array
+            try:
+                arg = arg_type(*bytes.fromhex(arg))
+            except (TypeError, ValueError) as ex:
+                raise CtfParameterError("Unable to convert arg {} to an array of {}"
+                                        .format(arg, arg_type._type_), arg) from ex
         else:
             arg = int(str(arg), 0)
         return arg
@@ -346,6 +414,7 @@ class CfsController:
         # pylint: disable=protected-access
         for key, value in list(args.items()):
             name = self.resolve_macros(key)
+            value = self.resolve_macros(value)
             index = None
             # indexed args of the form 'name[offset]' will be handled differently below
             if re.match(r"^[\w]+\[\d+\]$", name):
@@ -363,23 +432,16 @@ class CfsController:
                 else:
                     assert isinstance(args[name], field_class)
                 field_class = field_class._type_  # pylint: disable=protected-access
-            else:
+            elif hasattr(field_class, '_length_') and field_class._type_ is not ctypes.c_char:
                 # handle default value to the array. For example, the args element is "DataArray": 200
                 # instead of "DataArray[1]": 200. So the index is None, and field_class is array.
-                if hasattr(field_class, '_length_'):
-                    value = self.resolve_macros(value)
-                    # resolve_macros may convert macros to str,  need to convert str to element type
-                    # if it can be converted into int
-                    if isinstance(value, str) and value.isdigit():
-                        value = int(value)
-                    if not isinstance(value, str):
-                        log.debug("Assign default value '{}' for array {}".format(value, field_class))
-                        args[name] = field_class()
-                        array_element_type = field_class._type_
-                        array_element_value = self.resolve_simple_type(value, array_element_type)
-                        # dynamic initialization of ctypes array from list of ctypes value
-                        args[name] = field_class(*[array_element_type(array_element_value)] * field_class._length_)
-                        continue
+                log.debug("Assign default value '{}' for array {}".format(value, field_class))
+
+                array_element_type = field_class._type_
+                array_element_value = self.resolve_simple_type(value, array_element_type)
+                # dynamic initialization of ctypes array from list of ctypes value
+                args[name] = field_class(*[array_element_type(array_element_value)] * field_class._length_)
+                continue
 
             if isinstance(value, (list, tuple)):
                 raise CtfParameterError("Dictionary containing list is not a supported args format."
@@ -417,7 +479,8 @@ class CfsController:
         Implementation of CFS plugin instructions check_tlm_value. When CFS plugin instructions (check_tlm_value)
         is executed, it calls CfsController instance's check_tlm_value function.
         """
-        if not self.mid_available(mid):
+        mid = self.validate_mid_value(mid)
+        if mid is None:
             if Global.current_verification_stage == CtfVerificationStage.first_ver:
                 log.error("MID {} not in the mid_map.".format(mid))
             return False
@@ -443,7 +506,8 @@ class CfsController:
         Implementation of CFS plugin instructions get_tlm_value. When CFS plugin method (get_tlm_value)
         is executed, it calls CfsController instance's get_tlm_value function.
         """
-        if not self.mid_available(mid):
+        mid = self.validate_mid_value(mid)
+        if mid is None:
             log.error("MID {} not in the mid_map.".format(mid))
             return None
 
@@ -463,7 +527,8 @@ class CfsController:
         (check_tlm_continuous) is executed, it calls CfsController instance's check_tlm_continuous function.
         """
         log.info("Adding continuous telemetry check {} on {}".format(v_id, self.config.name))
-        if not self.mid_available(mid):
+        mid = self.validate_mid_value(mid)
+        if mid is None:
             log.error("MID {} not in the mid_map.".format(mid))
             return False
 
@@ -483,13 +548,14 @@ class CfsController:
         Convert telemetry data args with "value" to a list
         """
         for i, arg in enumerate(args):
-            arg["variable"] = self.resolve_macros(arg["variable"])
-            if isinstance(arg["value"], list):
-                for j in range(len(arg["value"])):
-                    arg["value"][j] = self.resolve_macros(arg["value"][j])
-                    args[i] = arg
-            else:
-                args[i]["value"] = self.resolve_macros(arg["value"])
+            if isinstance(arg, dict):
+                arg["variable"] = self.resolve_macros(arg["variable"])
+                if isinstance(arg["value"], list):
+                    for j in range(len(arg["value"])):
+                        arg["value"][j] = self.resolve_macros(arg["value"][j])
+                        args[i] = arg
+                else:
+                    args[i]["value"] = self.resolve_macros(arg["value"])
 
         return [args] if isinstance(args, dict) else args
 
@@ -501,7 +567,7 @@ class CfsController:
         log.info("Removing continuous telemetry check {} on {}".format(v_id, self.config.name))
         return self.cfs.remove_tlm_condition(v_id)
 
-    def check_event(self, app, id, msg=None, is_regex=False, msg_args=None):
+    def check_event(self, app_name, event_id, event_str=None, is_regex=False, event_str_args=None):
         """
         Checks for an EVS event message in the telemetry packet history,
         assuming a particular structure for CFE_EVS_LongEventTlm_t.
@@ -509,36 +575,37 @@ class CfsController:
         """
         # pylint: disable=invalid-name,redefined-builtin
         log.info("Checking event on {}".format(self.config.name))
-        if msg_args is not None and len(msg_args) > 0:
+        if event_str_args is not None and len(event_str_args) > 0:
             try:
-                msg = msg % literal_eval(msg_args)
+                event_str = event_str % literal_eval(event_str_args)
             except (ValueError, SyntaxError):
                 log.error("Failed to check Event ID {} in App {} with message: '{}' with msg_args = {}".format(
-                    id, app, msg, msg_args))
+                    event_id, app_name, event_str, event_str_args))
                 log.debug(traceback.format_exc())
                 return False
 
-        if not str(id).isnumeric():
-            id = self.resolve_macros(id)
+        if not str(event_id).isnumeric():
+            event_id = self.resolve_macros(event_id)
 
         # ENHANCE - Should use the mid_map and EVS event name to determine these...
         # These are the values that will be used to look through the telemetry packets
         # for the expected packet
         args = [
-            {"compare": "streq", "variable": "Payload.PacketID.AppName", "value": app},
-            {"compare": "==", "variable": "Payload.PacketID.EventID", "value": id}
+            {"compare": "streq", "variable": "Payload.PacketID.AppName", "value": app_name},
+            {"compare": "==", "variable": "Payload.PacketID.EventID", "value": event_id}
         ]
 
         result = self.cfs.check_tlm_value(self.cfs.evs_short_event_msg_mid, args, discard_old_packets=False)
         if result:
             log.info("Received EVS_ShortEventTlm_t. Ignoring 'Message' field...")
         else:
-            if msg:
+            if event_str:
                 compare = "regex" if is_regex else "streq"
-                args.append({"compare": compare, "variable": "Payload.Message", "value": msg})
+                args.append({"compare": compare, "variable": "Payload.Message", "value": event_str})
                 result = self.cfs.check_tlm_value(self.cfs.evs_long_event_msg_mid, args, discard_old_packets=False)
             else:
-                log.warning("No msg provided; any message for App {} and Event ID {} will be matched.".format(app, id))
+                log.warning("No msg provided; any message for App {} and Event ID {} will be matched.".format(
+                    app_name, event_id))
                 result = self.cfs.check_tlm_value(self.cfs.evs_long_event_msg_mid, args, discard_old_packets=False)
 
         return result
@@ -606,14 +673,32 @@ class CfsController:
 
             self.cfs = None
 
-    def mid_available(self, mid_name):
+    def validate_mid_value(self, mid):
         """
-        Implementation of helper function mid_available.
-        Check whether mid_name is in mid_map dictionary.
+        Implementation of helper function validate_mid_value.
+        Attempt to convert a value to a MID name and check that it is in the mid_map
+        @return str: A valid MID name if found, else None
         """
         available = False
         try:
-            available = mid_name in self.mid_map
+            available = mid in self.mid_map
+            if not available:
+                # mid may be provided as a macro and/or stringified number
+                if isinstance(mid, str):
+                    mid = self.resolve_macros(mid)
+                    try:
+                        mid = int(mid, 0)
+                    except (TypeError, ValueError):
+                        pass
+
+                # mid may be provided or evaluated as a number
+                if isinstance(mid, int):
+                    for key, value in self.mid_map.items():
+                        if value.get("MID") == mid:
+                            mid = key
+                            break
+
+                available = mid in self.mid_map
         except TypeError as exception:
             log.error("Failed to query the CFS Plugin MID Map.")
             if self.mid_map is None:
@@ -621,9 +706,44 @@ class CfsController:
             log.debug(exception)
 
         if not available:
-            log.error("{0} not in MID Map. Ensure {0} is defined in CCSDS Exports.".format(mid_name))
+            log.error("{0} not in MID Map. Ensure {0} is defined in CCSDS Exports.".format(mid))
 
-        return available
+        return mid if available else None
+
+    def validate_cc_value(self, mid_dict, cc):
+        """
+        Implementation of helper function validate_cc_value.
+        Attempt to convert a value to a CC name and check that it is in the provided mid_dict
+        @return str: A valid CC name if found, else None
+        """
+        # pylint: disable=invalid-name
+        # cc may be provided as a literal value, stringified value, or macro. Attempt to find the string of its name.
+        available = False
+        try:
+            available = cc in mid_dict['CC']
+            if not available:
+                if isinstance(cc, str):
+                    cc = self.resolve_macros(cc)
+                    try:
+                        cc = int(cc, 0)
+                    except (TypeError, ValueError):
+                        pass
+
+                if isinstance(cc, int):
+                    for key, value in mid_dict['CC'].items():
+                        if value['CODE'] == cc:
+                            cc = key
+                            break
+
+                available = cc in mid_dict['CC']
+        except TypeError as exception:
+            log.error("Failed to query the MID dictionary.")
+            log.debug(exception)
+
+        if not available:
+            log.error("{0} not in MID object. Ensure {0} is defined in CCSDS Exports.".format(cc))
+
+        return cc if available else None
 
 
 class RemoteCfsController(CfsController):
@@ -632,7 +752,7 @@ class RemoteCfsController(CfsController):
 
     @note RemoteCfsController class is inherited from CfsController class. It only redefines a few functions,
           including __init__, initialize, archive_cfs_files, shutdown_cfs, shutdown.
-    @note SP0CfsController is initiated when INI config file uses 'ssh' protocol.
+    @note RemoteCfsController is initiated when INI config file uses 'ssh' protocol.
     """
 
     def __init__(self, config):
@@ -648,16 +768,7 @@ class RemoteCfsController(CfsController):
         create ssh CFS command interface; create telemetry interface;
         """
         log.debug("Initializing RemoteCfsController")
-        self.process_ccsds_files()
-
-        try:
-            ccsds = import_ccsds_header_types()
-        except CtfTestError:
-            ccsds = None
-            log.warning("Error: import_ccsds_header_types")
-
-        if not (ccsds and ccsds.CcsdsPrimaryHeader and ccsds.CcsdsCommand and ccsds.CcsdsTelemetry):
-            log.error("Unable to import required CCSDS header types")
+        if not self.process_ccsds_files():
             return False
 
         log.info("Starting Remote CFS Interface to {}:{}".format(self.config.cfs_target_ip, self.config.cmd_udp_port))
@@ -666,9 +777,9 @@ class RemoteCfsController(CfsController):
         if not result:
             log.error("Failed to initialize SshController")
         else:
-            command = CommandInterface(ccsds, self.config.cmd_udp_port, self.config.cfs_target_ip)
+            command = CommandInterface(self.ccsds, self.config.cmd_udp_port, self.config.cfs_target_ip)
             telemetry = TlmListener(self.config.ctf_ip, self.config.tlm_udp_port)
-            self.cfs = RemoteCfsInterface(self.config, telemetry, command, self.mid_map, ccsds, self.execution)
+            self.cfs = RemoteCfsInterface(self.config, telemetry, command, self.mid_map, self.ccsds, self.execution)
             result = self.cfs.init_passed
             if not result:
                 log.error("Failed to initialize RemoteCfsInterface")
@@ -752,112 +863,3 @@ class RemoteCfsController(CfsController):
                     self.execution.run_command("rm {}".format(self.cfs.cfs_std_out_path))
 
             self.cfs = None
-
-
-if SP0CfsInterface:
-    class SP0CfsController(CfsController):
-        """
-        SP0CfsController class Definition: CFS Controller Implementation for SP0CfsController.
-
-        @note SP0CfsController class is inherited from CfsController class. It only redefines a few functions,
-              including __init__, initialize, archive_cfs_files, shutdown_cfs, shutdown.
-        @note SP0CfsController is initiated when INI config file uses 'sp0' protocol.
-        """
-
-        def __init__(self, config):
-            """
-            Constructor implementation for SP0CfsController class.
-            """
-            super().__init__(config)
-            self.sp0_plugin = None
-
-        def initialize(self):
-            """
-            Initialize CfsController instance, including the followings: create mid map; import ccsds header;
-            create sp0 CFS command interface; create telemetry interface;
-            """
-            log.debug("Initializing SP0CfsController")
-            self.process_ccsds_files()
-
-            try:
-                ccsds = import_ccsds_header_types()
-            except CtfTestError:
-                ccsds = None
-                log.warning("Error: import_ccsds_header_types ")
-
-            if not (ccsds and ccsds.CcsdsPrimaryHeader and ccsds.CcsdsCommand and ccsds.CcsdsTelemetry):
-                log.error("Unable to import required CCSDS header types")
-                return False
-
-            log.info("Starting SP0 CFS Interface to {}:{}".format(self.config.cfs_target_ip, self.config.cmd_udp_port))
-            result = self.sp0_plugin = Global.plugin_manager.find_plugin_for_command("SP0_Register")
-            if not result:
-                log.error("Failed to connect to SP0 plugin.")
-            else:
-                result = self.sp0_plugin.sp0_register_from_config(self.config.name, self.config)
-                if not result:
-                    log.error("Failed SP0 Configuration.")
-                else:
-                    command = CommandInterface(ccsds, self.config.cmd_udp_port, self.config.cfs_target_ip)
-                    telemetry = TlmListener(self.config.ctf_ip, self.config.tlm_udp_port)
-                    self.cfs = SP0CfsInterface(self.config, telemetry, command, self.mid_map, ccsds, self.sp0_plugin)
-                    result = self.cfs.init_passed
-                    if not result:
-                        log.error("Failed to initialize SP0CfsInterface")
-                    else:
-                        log.warning("Not starting CFS executable... Expecting \"StartCfs\" in test script...")
-
-            if result:
-                log.info("SP0CfsController Initialized")
-            return result
-
-        # ENHANCE - need a mechanism to find only files that have been modified since test start
-        def archive_cfs_files(self, source_path):
-            """
-            Implementation of CFS plugin instructions archive_cfs_files. When CFS plugin instructions
-            (archive_cfs_files) is executed, it calls SP0CfsController instance's archive_cfs_files function.
-            """
-            artifacts_path = os.path.join(Global.current_script_log_dir, "artifacts")
-
-            if not os.path.exists(artifacts_path):
-                os.makedirs(artifacts_path)
-
-            return self.sp0_plugin.get_files(source_path, artifacts_path, self.config.name)
-
-        def shutdown_cfs(self):
-            """
-            Implementation of CFS plugin instructions shutdown_cfs. When CFS plugin instructions
-            (shutdown_cfs) is executed, it calls SP0CfsController instance's shutdown_cfs function.
-            """
-            log.info("Shutting down CFS on {}".format(self.config.name))
-
-            # ENHANCE - Pull CFS stdout from SP0. Requires run_application to pipe output of process...
-            # stdout_final_path = os.path.join(Global.current_script_log_dir,
-            #                                  os.path.basename(self.cfs.cfs_std_out_path))
-            #
-            # if not os.path.exists(stdout_final_path):
-            #     if not self.sp0_plugin.get_file(self.cfs.cfs_std_out_path, stdout_final_path):
-            #         log.info("Cannot move CFS stdout file to script log directory.")
-            #         if self.sp0_plugin.last_result[self.config.name]:
-            #             log.debug(self.sp0_plugin.last_result[self.config.name].stdout.strip())
-
-            if self.cfs and self.cfs_running:
-                if self.config.stop_command:
-                    log.info("Sending Stop Command '{}'...".format(self.config.stop_command))
-                    self.sp0_plugin.send_command(self.config.stop_command + "\n", timeout=2, name=self.config.name)
-                self.cfs.stop_cfs()
-                self.cfs_running = False
-
-                # Wait 2 time units for shutdown to complete
-                Global.time_manager.wait_seconds(2)
-
-        def shutdown(self):
-            """
-            This function will shut down the CFS application being tested even if the JSON test file does not
-            include the shutdown test command
-            """
-            log.info("Shutting down controller for {}".format(self.config.name))
-            if self.cfs:
-                if self.cfs_running:
-                    self.shutdown_cfs()
-                self.cfs = None

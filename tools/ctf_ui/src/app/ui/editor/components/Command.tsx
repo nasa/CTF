@@ -1,7 +1,7 @@
 /*
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2021 United States Government as represented by the
+# Copyright (c) 2019-2022 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -23,6 +23,7 @@ import {
     CtfInstructionArg,
     CtfInstructionData,
     CtfComparisonType,
+    CtfEventType,
     CtfTlmArgType,
 } from '../../../../model/ctf-file';
 import {
@@ -32,7 +33,7 @@ import {
 import { EditingContext } from '../../../../model/editing-context';
 import { VehicleData } from '../../../../model/vehicle-data';
 import { AutoCompleteField } from './AutoCompleteField';
-import { Comparison, Condition } from './Comparison';
+import { Comparison, Condition, Event } from './Comparison';
 import { ParamArray } from './ctf-file-editor-utils';
 import { CascaderOptionType } from 'antd/lib/cascader';
 
@@ -172,9 +173,12 @@ export class Command extends React.Component<CommandState, CommandState> {
         // tell any listeners about the new command
         if (param.type === 'cmd_mid') this.cmdMidChanged(value as string);
         else if (param.type === 'tlm_mid') this.tlmMidChanged(value as string);
-        else if (param.type === 'cmd_code' && !param.isArray)
+        else if (param.type === 'cmd_code' && !param.isArray) {
             this.ccChanged(value as string);
-
+            // ccChanged method has updated this.state.ctfCommand
+            // if not return, ctfCommand will be overridden by newCommand
+            return
+        }
         if (this.state.onChange) this.state.onChange(newCommand);
     };
 
@@ -227,13 +231,13 @@ export class Command extends React.Component<CommandState, CommandState> {
                 }).map(e => '');
             }
         });
-        console.log(this.state.ctfCommand)
+
         Object.assign(this.state.ctfCommand.data, {cc: newCc})
-        console.log(this.state.ctfCommand)
+        console.log(JSON.stringify(this.state.ctfCommand))
         const newCommand = Object.assign({}, this.state.ctfCommand, {
             data: Object.assign({}, this.state.ctfCommand.data, resetArgs)
         });
-        console.log(newCommand)
+        console.log(JSON.stringify(newCommand))
         if (this.state.onChange) this.state.onChange(newCommand);
         this.setState({ ccFilter: newCc });
     };
@@ -424,6 +428,17 @@ export class Command extends React.Component<CommandState, CommandState> {
                 <Condition
                     style={style}
                     comparison={value as CtfComparisonType}
+                    context={context}
+                    onChange={value => {
+                        onChange(param, value, index);
+                    }}
+                />
+            );
+        } else if (param.type === 'event') {
+             return (
+                <Event
+                    style={style}
+                    event={value as CtfEventType}
                     context={context}
                     onChange={value => {
                         onChange(param, value, index);
@@ -806,10 +821,14 @@ export class Command extends React.Component<CommandState, CommandState> {
                                     }
                 } else {
                     // normal editable length array
+                    let button_caption = 'ADD ARGUMENT';
+                    
                     return (
                         <ParamArray name={paramName} key = {index}>
                             {(data[paramName] as CtfInstructionArg[]).map(
-                                (arrayElem, i) => (
+                                (arrayElem, i) => {
+
+                                   return (
                                     <div key={ `${i} : ${JSON.stringify(arrayElem)}` }>
                                         {this.renderArgument(
                                             param,
@@ -825,15 +844,20 @@ export class Command extends React.Component<CommandState, CommandState> {
                                         >
                                             <Icon type="delete" />
                                         </Button>
+
+                                        <div style={{ lineHeight: 1, fontSize:5}}>
+                                          <br/>
+                                        </div>
                                     </div>
                                 )
+                              }
                             )}
                             <Button
                                 type="dashed"
                                 onClick={e => {  this.addArrayArgument(param);   }}
                                 block
                             >
-                                ADD ARGUMENT
+                                {button_caption}
                                 <Icon type="plus" />
                             </Button>
                         </ParamArray>

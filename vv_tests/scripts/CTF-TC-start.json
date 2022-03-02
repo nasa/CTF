@@ -1,0 +1,34 @@
+{
+    "test_number": "CTF-Test-Case-Start",
+    "test_name": "CTF Test Case Start",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "description": "",
+    "owner": "CTF",
+    "test_setup": "",
+    "ctf_options": {},
+    "import": {},
+    "tests": [
+        {
+            "case_number": "CTF Test Case Start",
+            "description": "Start cFS instance, enable TO output",
+            "instructions": [
+                {
+                    "instruction": "StartCfs",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "EnableCfsOutput",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1
+                }
+            ]
+        }
+    ]
+}

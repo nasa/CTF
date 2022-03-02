@@ -1,0 +1,77 @@
+{
+    "test_number": "CTF-Test-Case-10",
+    "test_name": "CTF Test Case 10",
+    "requirements": {
+        "CTF-14": "Full",
+        "CTF-17": "Full",
+		"CTF-19": "Full",
+        "CTF-22": "Full"
+    },
+    "description": "",
+    "owner": "CTF",
+    "test_setup": "Need to run start script first to start cFS instance",
+    "ctf_options": {},
+    "import": {},
+    "tests": [
+        {
+            "case_number": "CTF Test Case 10",
+            "description": "Continuous verification with periodic telemetry with updated verification items during run-time - failed case",
+            "instructions": [
+                 {
+                    "instruction": "SendCfsCommand",
+                     "data": {
+                                "target": "",
+                                "mid": "TO_CMD_MID",
+                                "cc": "TO_RESET_CC",
+                                "args": {}
+                        },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_NOOP_CC",
+                        "args": {}
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmContinuous",
+                    "data": {
+                        "target": "",
+                        "verification_id": "usCmdCnt",
+                        "mid": "TO_HK_TLM_MID",
+                        "args": [
+                            {
+                                "compare": "==",
+                                "variable": "usCmdCnt",
+                                "value": 1
+                            }
+                        ]
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_NOOP_CC",
+                        "args": {}
+                    },
+                    "wait": 30
+                },
+                {
+                    "instruction": "RemoveCheckTlmContinuous",
+                    "data": {
+                        "target": "",
+                        "verification_id": "usCmdCnt"
+                    },
+                    "wait": 30
+                }
+            ]
+        }
+    ]
+}

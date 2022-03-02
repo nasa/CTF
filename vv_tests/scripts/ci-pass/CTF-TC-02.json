@@ -1,0 +1,65 @@
+{
+    "test_number": "CTF-Test-Case-02",
+    "test_name": "CTF Test Case 02",
+    "requirements": {
+        "CTF-03": "Full"
+    },
+    "description": "",
+    "owner": "CTF",
+    "test_setup": "Need to run start script first to start cFS instance",
+    "ctf_options": {},
+    "import": {},
+    "tests": [
+        {
+            "case_number": "CTF Test Case 02",
+            "description": "Comparison of string values",
+            "instructions": [
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_LONG_EVENT_MSG_MID",
+                        "args": [
+                            {
+                                "compare": "streq",
+                                "variable": "Payload.PacketID.AppName",
+                                "value": "SCH"
+                            }
+                        ]
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_LONG_EVENT_MSG_MID",
+                        "args": [
+                            {
+                                "compare": "strneq",
+                                "variable": "Payload.PacketID.AppName",
+                                "value": "SCHNO"
+                            }
+                        ]
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_LONG_EVENT_MSG_MID",
+                        "args": [
+                            {
+                                "compare": "regex",
+                                "variable": "Payload.PacketID.AppName",
+                                "value": "S[CK]H"
+                            }
+                        ]
+                    },
+                    "wait": 1
+                }
+            ]
+        }
+    ]
+}

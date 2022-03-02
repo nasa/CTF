@@ -1,0 +1,45 @@
+{
+    "test_number": "CTF-VV-Enable-Cfs-Output",
+    "test_name": "CTF VV Enable Cfs Output",
+    "requirements": {
+        "CTF-27":  "Full",
+        "CTF-28":  "Full",
+        "CTF-29":  "Full",
+        "CTF-30":  "Full",
+        "CTF-31":  "Full",
+        "CTF-33":  "Full",
+        "CTF-34":  "Full",
+        "CTF-35":  "Full",
+        "CTF-36":  "Full",
+        "CTF-37":  "Full",
+        "CTF-39":  "Full",
+        "CTF-40":  "Full",
+        "CTF-41":  "Full",
+        "CTF-44":  "Full"
+    },
+    "description": "",
+    "owner": "CTF",
+    "test_setup": "Pair with config file ../configs/vv_lx1_config.ini for CTF-TC-14 or ../configs/vv_lx1_lx2_remote_config.ini for CTF-TC-16 or ../configs/vv_vx_es2_es3_config.ini for CTF-TC-17 or ../configs/vv_lx1_lx2_config.ini for CTF-TC-18",
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "import": {},
+    "tests": [
+        {
+            "case_number": "CTF-TC-14, CTF-TC-16, CTF-TC-17, CTF-TC-18",
+            "description": "Establish communication with cFS",
+            "instructions": [
+                {
+                    "instruction": "StartCfs",
+                    "data": {},
+                    "wait": 0
+                },
+                {
+                    "instruction": "EnableCfsOutput",
+                    "data": {},
+                    "wait": 0
+                }
+            ]
+        }
+    ]
+}

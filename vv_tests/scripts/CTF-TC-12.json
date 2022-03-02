@@ -1,0 +1,37 @@
+{
+    "test_number": "CTF-Test-Case-12",
+    "test_name": "CTF Test Case 12",
+    "requirements": {
+        "CTF-23": "Full",
+		"CTF-24": "Inspection"
+    },
+    "description": "",
+    "owner": "CTF",
+    "test_setup": "N/A",
+    "ctf_options": {},
+    "import": {},
+    "tests": [
+        {
+            "case_number": "CTF Test Case 12",
+            "description": "Wait for user input to decide whether to continue the execution of a test case with 'disable' attribute",
+            "instructions": [
+                {
+                    "instruction": "WaitForUserInput",
+                    "disabled": true,
+                    "data": {
+                      "prompt": "  "
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "WaitForUserInput",
+                    "disabled": false,
+                    "data": {
+                      "prompt": "  "
+                    },
+                    "wait": 1
+                }
+            ]
+        }
+    ]
+}

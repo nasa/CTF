@@ -1,0 +1,81 @@
+{
+    "test_number": "CTF-Test-Case-03",
+    "test_name": "CTF Test Case 03",
+    "requirements": {
+        "CTF-04": "Full",
+        "CTF-05": "Full",
+        "CTF-06": "Full",
+        "CTF-07": "Full"
+    },
+    "description": "",
+    "owner": "CTF",
+    "test_setup": "Need to run start script first to start cFS instance",
+    "ctf_options": {},
+    "import": {},
+    "tests": [
+        {
+            "case_number": "CTF Test Case 03",
+            "description": "Comparison with floating minus/plus tolerance values",
+            "instructions": [
+               {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "DUMMY_IO_CMD_MID",
+                        "cc": "DUMMY_IO_SEND_DATA_CC",
+                        "args": {
+                            "myData[0]": { "myFloat": 45.50}
+                        }
+                    },
+                    "wait": 1
+                },
+				{
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "DUMMY_IO_OUT_DATA_MID",
+                        "args": [
+                            {  "compare": "==",
+                                "variable": "myData[0].myFloat",
+                                "value": 45.50,
+                                "tolerance_plus": 0.01
+                            }
+                        ]
+                    },
+                    "wait": 1
+                },
+				{
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "DUMMY_IO_OUT_DATA_MID",
+                        "args": [
+                            {  "compare": "==",
+                                "variable": "myData[0].myFloat",
+                                "value": 45.50,
+                                "tolerance_minus": 0.01
+                            }
+                        ]
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "DUMMY_IO_OUT_DATA_MID",
+                        "args": [
+                            {  "compare": "==",
+                                "variable": "myData[0].myFloat",
+                                "value": 45.50,
+                                "tolerance_minus": 0.01,
+                                "tolerance_plus": 0.01
+                            }
+                        ]
+                    },
+                    "wait": 1
+                }
+            ]
+        }
+    ]
+}

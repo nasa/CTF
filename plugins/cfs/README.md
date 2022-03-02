@@ -86,9 +86,9 @@ Example:
     "instruction": "RegisterCfs",
     "data": {
         "target": "cfs_workstation"
-    }
+    },
     "wait": 1,
-},
+}
 ```
 Config:
 ```
@@ -107,9 +107,9 @@ Example:
     "instruction": "BuildCfs",
     "data": {
         "target": "cfs_workstation"
-    }
+    },
     "wait": 1,
-},
+}
 ```
 
 ### StartCfs
@@ -125,9 +125,9 @@ Example:
     "data": {
         "target": "cfs_workstation",
         "run_args": "-R PO"
-    }
+    },
     "wait": 1
-},
+}
 ```
 
 ### EnableCfsOutput
@@ -140,17 +140,18 @@ Example:
     "instruction": "EnableCfsOutput",
     "data": {
         "target": "cfs_workstation"
-    }
+    },
     "wait": 1,
-},
+}
 ```
 
-### SendCfsCommand & SendInvalidLengthCfsCommand
-
+### SendCfsCommand & SendCfsCommandWithPayloadLength
+Constructs and sends a command message to CFS with the specified MID, command code, and payload arguments.
+**Note:** `SendCfsCommandWithPayloadLength` was named `SendInvalidLengthCfsCommand` prior to CTF v1.4
 - **target:** (Optional) A previously registered target name. If no name is given, applies to all registered targets.
 - **mid:** The message ID of the command (i.e. "BEX_CMD_MID") (string)
 - **cc:** The command code for the command (i.e. "BEX_NOOP_CC") (string)
-- **payload_length:** (Optional) The size of the payload in bytes for an invalid length command. Do not specify for valid commands. The actual length of the sent message will be plus the header size.
+- **payload_length:** (Optional) The size of the payload in bytes for a manually sized command. Do not specify for valid fixed-size commands. The actual length of the message will include the header size.
 - **args:** An object where the key is the argument name, and the value is the argument value.
   Because `args` is a dictionary, the order does not matter. (i.e. `{"field_b": 1, "field_a": 0}` is equivalent to `{"field_a": 0, "field_b": 1}`)
 - **header:** (Optional) An object where the key is the header field name, and the value is the field value.
@@ -173,14 +174,40 @@ Example:
 }
 ```
 
+### SendCfsCommandWithRawPayload
+Constructs and sends a command message to CFS with the specified MID, command code, and payload bytes. The payload type for this command must be a byte array.
+- **target:** (Optional) A previously registered target name. If no name is given, applies to all registered targets.
+- **mid:** The message ID of the command (i.e. "BEX_CMD_MID") (string)
+- **cc:** The command code for the command (i.e. "BEX_NOOP_CC") (string)
+- **hex_buffer:** A hexadecimal string representing the command payload. The string must be an even length (2 characters per byte) no larger than the command payload size and contain only hex numerals 0-F.
+- **header:** (Optional) An object where the key is the header field name, and the value is the field value.
+  This object is passed into to the `CcsdsCommand` type (as determined by the config field [`ccsds:CCSDS_header_path`](../ccsds_plugin/README.md)) and is not handled by CTF directly. It is made available for custom CCSDS header implementations to allow specification of the packet header.
+
+Example:
+```javascript
+{
+    "instruction": "SendCfsCommandWithRawPayload",
+    "data":{
+        "target": "cfs_workstation",
+        "mid": "DUMMY_IO_CMD_MID",
+        "cc": "DUMMY_IO_RAW_BYTE_CC",
+        "hex_buffer": "0123456789ABCDEF"
+    },
+    "wait": 1
+}
+```
+
 ### CheckEvent
 Checks that an event message matching the given parameters has been received from the CFS target.
+**Note:** This instruction's syntax changed in CTF v1.4
 - **target:** (Optional) A previously registered target name. If no name is given, applies to all registered targets.
-- **app**: The app that sent the event message.
-- **id**: The Event ID, taken from an EVS enum, to represent the criticality level of a message.  13 is information, 14 is error, and anything else should be updated into this wiki as you find it.
-- **msg**: (Optional) The expected message of the event. If blank, the msg field is not verified.
-- **is_regex**: (Optional) True if `msg` is to be used for a regex match instead of string comparison
-- **msg_args**: (optional) arguments that will be inserted into `msg`, similar to printf() functions
+- **args**: an array of argument objects that describe the events to be checked. Multiple arguments 
+can be listed here to check multiple events at once.
+    - **app_name**: The app that sent the event message.
+    - **event_id**: The Event ID, taken from an EVS enum, to represent the criticality level of a message.  13 is information, 14 is error, and anything else should be updated into this wiki as you find it.
+    - **event_str**: (Optional) The expected message of the event. If blank, the event_str field is not verified.
+    - **is_regex**: (Optional) True if `event_str` is to be used for a regex match instead of string comparison
+    - **event_str_args**: (optional) arguments that will be inserted into `event_str`, similar to printf() functions
 
 Example:
 ```javascript
@@ -188,35 +215,51 @@ Example:
     "instruction":"CheckEvent",
     "data":{
         "target": "cfs_workstation",
-        "app":"BEX",
-        "id":13,
-        "msg":"Processed MODE(%d) Command Successfully Received",
-        "is_regex": false,
-        "msg_args":"(1,)"
+        "args": [
+          {
+            "app_name":"BEX",
+            "event_id":13,
+            "event_str":"Processed MODE(%d) Command Successfully Received",
+            "is_regex": false,
+            "event_str_args":"(1,)"
+          },
+          {
+            "app_name": "TO",
+            "event_id": "3",
+            "event_str": "TO - ENABLE_OUTPUT cmd succesful for routeMask:0x00000001"
+           },
+        ]
     },
     "wait": 1
 }
 ```
 ### CheckNoEvent
 Checks that an event message matching the given parameters is no longer valid in received messages from the CFS target.
+**Note:** This instruction's syntax changed in CTF v1.4
 - **target:** (Optional) A previously registered target name. If no name is given, applies to all registered targets.
-- **app**: The app that sent the event message.
-- **id**: The Event ID, taken from an EVS enum, to represent the criticality level of a message.  13 is information, 14 is error, and anything else should be updated into this wiki as you find it.
-- **msg**: (Optional) The expected message of the event. If blank, the msg field is not verified.
-- **is_regex**: (Optional) True if `msg` is to be used for a regex match instead of string comparison
-- **msg_args**: (optional) arguments that will be inserted into `msg`, similar to printf() functions
+- **args**: an array of argument objects that describe the events to be checked. Multiple arguments 
+can be listed here to check multiple events at once.
+    - **app_name**: The app that sent the event message.
+    - **event_id**: The Event ID, taken from an EVS enum, to represent the criticality level of a message.  13 is information, 14 is error, and anything else should be updated into this wiki as you find it.
+    - **event_str**: (Optional) The expected message of the event. If blank, the event_str field is not verified.
+    - **is_regex**: (Optional) True if `event_str` is to be used for a regex match instead of string comparison
+    - **event_str_args**: (optional) arguments that will be inserted into `event_str`, similar to printf() functions
 
 Example:
 ```javascript
 {
   "instruction": "CheckNoEvent",
   "data": {
-          "app": "TO",
-          "id": "3",
-          "msg": "TO - ENABLE_OUTPUT cmd succesful for routeMask:0x00000001",
-          "msg_args": "",
-          "target": "cfs_workstation"
-           },
+          "target": "cfs_workstation",
+          "args": [
+            {
+              "app_name": "TO",
+              "event_id": "3",
+              "event_str": "TO - ENABLE_OUTPUT cmd succesful for routeMask:0x00000001",
+              "event_str_args": "",
+             }
+           ]
+   },
   "wait": 4,
   "description": "ENABLE_OUTPUT cmd message is no longer valid in received messages"
 }
@@ -351,9 +394,9 @@ Example:
     "instruction": "RemoveCheckTlmContinuous",
     "data": {
         "verification_id": "TO_no_errors"
-    }
+    },
     "wait": 1,
-},
+}
 ```
 
 ### ArchiveCfsFiles
@@ -385,7 +428,7 @@ Example:
     "instruction": "ShutdownCfs",
     "data": {
         "target": "cfs_workstation"
-    }
+    },
     "wait": 1,
-},
+}
 ```

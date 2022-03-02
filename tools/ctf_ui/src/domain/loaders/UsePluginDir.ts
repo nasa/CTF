@@ -1,7 +1,7 @@
 /*
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2021 United States Government as represented by the
+# Copyright (c) 2019-2022 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -22,6 +22,19 @@ export class UsePluginDir {
     static async use(dir: string): Promise<CtfPlugin[]> {
         return LoadPluginInstructions.load(path.resolve(dir), '.*.json').then((pluginCommandGroups) => {
             return pluginCommandGroups;
+        });
+    }
+}
+
+export class UsePluginDirArray {
+    static async use(dirArray): Promise<CtfPlugin[]> {
+        let pluginInfo = [];
+        let promiseArray = dirArray.map(dir => {
+            return LoadPluginInstructions.load(path.resolve(dir), '.*.json');
+         });
+
+        return Promise.all(promiseArray).then( (infoArray) => {
+           return infoArray;
         });
     }
 }

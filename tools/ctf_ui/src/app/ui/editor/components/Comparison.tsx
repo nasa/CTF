@@ -1,7 +1,7 @@
 /*
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2021 United States Government as represented by the
+# Copyright (c) 2019-2022 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -14,7 +14,7 @@
 # either expressed or implied.
 */
 
-import { Input, Select } from "antd";
+import { Input, Select, Button, Tag, Checkbox} from "antd";
 import { CascaderOptionType, CascaderExpandTrigger } from "antd/lib/cascader";
 import * as React from "react";
 import {useRef, useEffect, useState} from "react";
@@ -202,7 +202,7 @@ export const Comparison = ({
                     dataSource={[]}
                     placeholder=""
                     defaultValue={comparison.value !== undefined ? comparison.value[0]: ""}
-                    onChange={value => changeHandler({ value: [(+value? +value: value)] })}
+                    onChange={value => changeHandler({ value: [(isNaN(+value)? value: +value)] })}
                 />
 
             </Input.Group>
@@ -256,8 +256,105 @@ export const Condition = ({
                     style={{ width: 80, height: 24 }}
                     defaultValue={comparison.value}
                     autoFocus={false}
-                    onBlur={ e => changeHandler({ value: (+e.target.value? +e.target.value: e.target.value) } )}
+                    onBlur={ e => {
+                      let num_converted = Number(e.target.value)
+                      let update = {value : num_converted}
+                      if (isNaN(num_converted)) update.value = e.target.value
+
+                      // could not use { value: (+e.target.value? +e.target.value: e.target.value) }
+                      // if the input is "0", convert to 0, but 0? is false, so value is set to "0" instead of 0 (number)
+                      changeHandler(update)
+                    }}
                 />
+
+            </Input.Group>
+        </div>
+    );
+};
+
+
+export const Event = ( {
+    className,
+    style,
+    event,
+    context,
+    tlmMid,
+    onChange
+}: {
+    className?: string;
+    style?: object;
+    event: CtfComparisonType;
+    context: EditingContext;
+    onChange?: (next: CtfComparisonType) => void;
+}) => {
+    const changeHandler = (update: object ) => {
+        const newCompare = Object.assign({}, event, update);
+        if (onChange) onChange(newCompare);
+    };
+
+
+    return (
+        <div style={style}>
+            <Input.Group compact>
+                <Tag style={{ width: 85, height: 24 }} >  app_name  </Tag>
+                <Input
+                    style={{ width: 60, height: 24 }}
+                    defaultValue={event.app_name}
+                    autoFocus={false}
+
+                    onBlur={ e => {
+                      let update = {app_name: e.target.value};
+                      if ( !event.hasOwnProperty('event_str_args') )  update['event_str_args'] = '';
+                      if ( !event.hasOwnProperty('is_regex') )  update['is_regex'] = false;
+                      changeHandler(update)
+                    }}
+                />
+
+                <Tag style={{ width: 70, height: 24 }} >  event_id  </Tag>
+                <Input
+                    style={{ width: 60, height: 24 }}
+                    defaultValue={event.event_id}
+                    autoFocus={false}
+                    onBlur={ e => {
+                      let num_converted = Number(e.target.value)
+                      let update = {event_id : num_converted}
+                      if (isNaN(num_converted)) update.value = e.target.value
+                      // could not use { value: (+e.target.value? +e.target.value: e.target.value) }
+                      // if the input is "0", convert to 0, but 0? is false, so value is set to "0" instead of 0 (number)
+                      changeHandler(update)
+                    }}
+                 />
+
+                 <Tag style={{ width: 100, height: 24 }} >  event_str_args  </Tag>
+                 <Input
+                     style={{ width: 60, height: 24 }}
+                     defaultValue={event.event_str_args}
+                     autoFocus={false}
+                     onBlur={ e => changeHandler({ event_str_args: e.target.value }) }
+                 />
+
+                 <Tag style={{ width: 70, height: 24 }} >  is_regex  </Tag>
+                 <Checkbox style={{ width: 40, height: 24, paddingLeft: 10, paddingTop:2 }}
+                     className={"ant-input"}
+                     defaultChecked = {event.is_regex? true: false}
+                     checked = {event.is_regex? true: false}
+                     onChange={e => {
+                         let new_value = e.target.checked;
+                         let update = {is_regex : new_value};
+                         changeHandler(update);
+                     }}
+                 >
+                 </Checkbox>
+
+                  <br />
+
+                 <Tag style={{ width: 70, height: 24 }} >  event_str  </Tag>
+                 <Input
+                     style={{ width: 470, height: 24 }}
+                     defaultValue={event.event_str}
+                     autoFocus={false}
+                     onBlur={ e => changeHandler({ event_str: e.target.value }) }
+                 />
 
             </Input.Group>
         </div>

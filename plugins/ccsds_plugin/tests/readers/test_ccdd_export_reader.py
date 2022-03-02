@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2021 United States Government as represented by the
+# Copyright (c) 2019-2022 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -443,6 +443,47 @@ def test_ccdd_export_reader_process_types_debug(ccdd_export_reader):
                  {'alias_name': 'FM_FreeSpaceTblPtr', 'actual_name': 'c_voidp'}]
     assert ccdd_export_reader.process_types(json_list) is None
     assert len(ccdd_export_reader.type_dict) == 4
+
+
+def test_ccdd_export_reader_process_types_duplicated_mid_name(ccdd_export_reader, utils):
+    """
+    Test CCDDExportReader class method: process_types
+    Parses the contents of a JSON dictionary for type macros, and inserts any aliases, constants, or MID
+    mapping into the appropriate dictionaries.
+    """
+    assert len(ccdd_export_reader.type_dict) == 0
+    json_list = [{'target': 'set1', 'mids': [{'mid_name': 'CFE_ES_CMD_MID', 'mid_value': '0x2081'},
+                                             {'mid_name': 'CFE_ES_SEND_HK_MID', 'mid_value': '0x2082'},
+                                             {'mid_name': 'CFE_EVS_CMD_MID', 'mid_value': '0x2083'},
+                                             {'mid_name': 'CFE_EVS_SEND_HK_MID', 'mid_value': '0x2084'},
+                                             {'mid_name': 'CFE_SB_CMD_MID', 'mid_value': '0x2085'},
+                                             {'mid_name': 'CFE_SB_CMD_MID', 'mid_value': '0x20859'},
+                                             {'mid_name': 'CFE_ES_SHELL_TLM_MID', 'mid_value': '0x2002'},
+                                             {'mid_name': 'CFE_ES_MEMSTATS_TLM_MID', 'mid_value': '0x2003'},
+                                             ]}]
+    utils.clear_log()
+    ccdd_export_reader.process_types(json_list)
+    assert utils.has_log_level("ERROR")
+
+
+def test_ccdd_export_reader_process_types_duplicated_mid_value(ccdd_export_reader, utils):
+    """
+    Test CCDDExportReader class method: process_types
+    Parses the contents of a JSON dictionary for type macros, and inserts any aliases, constants, or MID
+    mapping into the appropriate dictionaries.
+    """
+    assert len(ccdd_export_reader.type_dict) == 0
+    json_list = [{'target': 'set1', 'mids': [{'mid_name': 'CFE_ES_CMD_MID', 'mid_value': '0x2081'},
+                                             {'mid_name': 'CFE_ES_SEND_HK_MID', 'mid_value': '0x2082'},
+                                             {'mid_name': 'CFE_EVS_CMD_MID', 'mid_value': '0x2083'},
+                                             {'mid_name': 'CFE_EVS_SEND_HK_MID', 'mid_value': '0x2084'},
+                                             {'mid_name': 'CFE_SB_CMD_MID', 'mid_value': '0x2085'},
+                                             {'mid_name': 'CFE_ES_SHELL_TLM_MID', 'mid_value': '0x2085'},
+                                             {'mid_name': 'CFE_ES_MEMSTATS_TLM_MID', 'mid_value': '0x2003'},
+                                             ]}]
+    utils.clear_log()
+    ccdd_export_reader.process_types(json_list)
+    assert utils.has_log_level("ERROR")
 
 
 def test_ccdd_export_reader_process_types_exception(ccdd_export_reader, utils):

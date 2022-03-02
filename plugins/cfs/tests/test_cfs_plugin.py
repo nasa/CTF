@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2021 United States Government as represented by the
+# Copyright (c) 2019-2022 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -26,6 +26,12 @@ def init_global():
     Global.load_config("./configs/default_config.ini")
 
 
+@pytest.fixture
+def event_args():
+    return [{"app": "my_app1", "id": "my_id1", "msg": "my_msg1", "msg_args": "my_msg_args1"},
+            {"app": "my_app2", "id": "my_id2", "msg": "my_msg2", "is_regex": True}]
+
+
 def test_cfs_plugin_init(cfs_plugin):
     assert cfs_plugin.name == "CFS Plugin"
     assert cfs_plugin.description == "Provide CFS command/telemetry support for CTF"
@@ -37,13 +43,14 @@ def test_cfs_plugin_init(cfs_plugin):
 
 
 def test_cfs_plugin_instruction_sets(cfs_plugin):
-    assert len(cfs_plugin.command_map) == 15
+    assert len(cfs_plugin.command_map) == 16
     assert "RegisterCfs" in cfs_plugin.command_map
     assert "BuildCfs" in cfs_plugin.command_map
     assert "StartCfs" in cfs_plugin.command_map
     assert "EnableCfsOutput" in cfs_plugin.command_map
     assert "SendCfsCommand" in cfs_plugin.command_map
-    assert "SendInvalidLengthCfsCommand" in cfs_plugin.command_map
+    assert "SendCfsCommandWithPayloadLength" in cfs_plugin.command_map
+    assert "SendCfsCommandWithRawPayload" in cfs_plugin.command_map
     assert "CheckTlmValue" in cfs_plugin.command_map
     assert "CheckTlmPacket" in cfs_plugin.command_map
     assert "CheckNoTlmPacket" in cfs_plugin.command_map
@@ -147,17 +154,6 @@ def test_cfs_plugin_register_cfs_remote(cfs_plugin):
     assert cfs_plugin.targets['local_ssh'].name == "RemoteCfsController"
     assert cfs_plugin.has_attempted_register
     assert not cfs_plugin.register_cfs('local_ssh')
-
-
-@pytest.mark.skip("SP0Config will not validate in the development environment. Needs portable test implementation.")
-def test_cfs_plugin_register_cfs_sp0(cfs_plugin):
-    assert not cfs_plugin.targets
-    with patch('lib.args_validation.ArgsValidation.verify_symbol'):
-        cfs_plugin.register_cfs('cfs_SP01')
-    assert 'cfs_SP01' in cfs_plugin.targets
-    assert cfs_plugin.targets['cfs_SP01'].name == "SP0CfsController"
-    assert cfs_plugin.has_attempted_register
-    assert not cfs_plugin.register_cfs('cfs_SP01')
 
 
 def test_cfs_plugin_get_cfs_targets(cfs_plugin, utils):
@@ -324,9 +320,16 @@ def test_cfs_plugin_send_cfs_command_pass(cfs_plugin):
     mock_controller.send_cfs_command.return_value = True
     cfs_plugin.targets = {i: mock_controller for i in range(num_controllers)}
     cfs_plugin.has_attempted_register = True
-    assert cfs_plugin.send_cfs_command("mid", 1, {'args': True}, None, 0, False)
+    assert cfs_plugin.send_cfs_command("mid", 1, {'args': True})
     assert mock_controller.send_cfs_command.call_count == num_controllers
-    mock_controller.send_cfs_command.assert_called_with("mid", 1, {'args': True}, None, 0, False)
+    mock_controller.send_cfs_command.assert_called_with("mid", 1, {'args': True}, None, None, False)
+    assert cfs_plugin.send_cfs_command("mid", 1, {'args': True},
+                                       target=None, payload_length=2, header={}, ctype_args=True)
+    mock_controller.send_cfs_command.assert_called_with("mid", 1, {'args': True}, {}, 2, True)
+    assert cfs_plugin.send_cfs_command('CFE_ES_CMD_MID', 'CFE_ES_SHELL_CC',
+                                       {'Payload': {'CmdString': 'hostname', 'OutputFilename': '/cf/test_output.txt'}})
+    assert cfs_plugin.send_cfs_command('CFE_ES_CMD_MID', 'CFE_ES_SHELL_CC',
+                                       {'Payload': [{'CmdString': 'hostname'}]})
 
 
 def test_cfs_plugin_send_cfs_command_fail(cfs_plugin):
@@ -350,6 +353,29 @@ def test_cfs_plugin_send_cfs_command_single_target(cfs_plugin):
     cfs_plugin.targets['0'].send_cfs_command.assert_not_called()
     cfs_plugin.targets['1'].send_cfs_command.assert_called_once()
     cfs_plugin.targets['2'].send_cfs_command.assert_not_called()
+
+
+def test_cfs_plugin_send_raw_cfs_command_pass(cfs_plugin):
+    num_controllers = 3
+    mock_controller = MagicMock()
+    mock_controller.send_cfs_command.return_value = True
+    cfs_plugin.targets = {i: mock_controller for i in range(num_controllers)}
+    cfs_plugin.has_attempted_register = True
+    assert cfs_plugin.send_raw_cfs_command("mid", 1, "0123456789ABCDEF")
+    assert mock_controller.send_cfs_command.call_count == num_controllers
+    mock_controller.send_cfs_command.assert_called_with("mid", 1, "0123456789ABCDEF", None, 8, False)
+    assert cfs_plugin.send_raw_cfs_command("mid", 1, "", target=None, header={})
+    mock_controller.send_cfs_command.assert_called_with("mid", 1, "", {}, 0, False)
+
+
+def test_cfs_plugin_send_raw_cfs_command_fail(cfs_plugin):
+    num_controllers = 3
+    mock_controller = MagicMock()
+    mock_controller.send_cfs_command.side_effect = [True, False, True]
+    cfs_plugin.targets = {i: mock_controller for i in range(num_controllers)}
+    cfs_plugin.has_attempted_register = True
+    assert not cfs_plugin.send_raw_cfs_command("mid", 1, "00")
+    assert mock_controller.send_cfs_command.call_count == num_controllers
 
 
 def test_cfs_plugin_check_tlm_value_no_target(cfs_plugin):
@@ -377,6 +403,8 @@ def test_cfs_plugin_check_tlm_value_pass(cfs_plugin):
     assert cfs_plugin.check_tlm_value("mid", {'args': True}, None)
     assert mock_controller.check_tlm_value.call_count == num_controllers
     mock_controller.check_tlm_value.assert_called_with("mid", {'args': True})
+    assert cfs_plugin.check_tlm_value("CFE_EVS_HK_TLM_MID", [{'variable': 'Payload.CommandCounter', 'value': [0],
+                                                              'compare': '=='}], None)
 
 
 def test_cfs_plugin_check_tlm_value_fail(cfs_plugin):
@@ -467,6 +495,7 @@ def test_cfs_plugin_check_tlm_continuous_pass(cfs_plugin):
     assert cfs_plugin.check_tlm_continuous("id", "mid", {'args': True}, None)
     assert mock_controller.check_tlm_continuous.call_count == num_controllers
     mock_controller.check_tlm_continuous.assert_called_with("id", "mid", {'args': True})
+    assert cfs_plugin.check_tlm_continuous("id", "TO_HK_TLM_MID", [{'compare': '==', 'variable': 'usCmdErrCnt', 'value': 0}], None)
 
 
 def test_cfs_plugin_check_tlm_continuous_fail(cfs_plugin):
@@ -532,95 +561,99 @@ def test_cfs_plugin_remove_check_tlm_continuous_single_target(cfs_plugin):
     cfs_plugin.targets['2'].remove_check_tlm_continuous.assert_not_called()
 
 
-def test_cfs_plugin_check_event_no_target(cfs_plugin):
+def test_cfs_plugin_check_event_no_target(cfs_plugin, event_args):
     assert not cfs_plugin.targets
-    assert not cfs_plugin.check_event("", "")
+    assert not cfs_plugin.check_event(event_args, "")
     assert not cfs_plugin.targets
 
 
-def test_cfs_plugin_check_event_pass(cfs_plugin):
+def test_cfs_plugin_check_event_pass(cfs_plugin, event_args):
     num_controllers = 3
     mock_controller = MagicMock()
     mock_controller.check_event.return_value = True
     cfs_plugin.targets = {i: mock_controller for i in range(num_controllers)}
     cfs_plugin.has_attempted_register = True
-    assert cfs_plugin.check_event("app", "id", "msg", False, "msg_args", None)
-    assert mock_controller.check_event.call_count == num_controllers
-    mock_controller.check_event.assert_called_with("app", "id", "msg", False, "msg_args")
+    assert cfs_plugin.check_event(event_args, None)
+    assert mock_controller.check_event.call_count == num_controllers * len(event_args)
+    mock_controller.check_event.assert_called_with(**event_args[-1])
 
 
-def test_cfs_plugin_check_event_fail(cfs_plugin):
+def test_cfs_plugin_check_event_fail(cfs_plugin, event_args):
     num_controllers = 3
     mock_controller = MagicMock()
-    mock_controller.check_event.side_effect = [True, False, True]
+    mock_controller.check_event.side_effect = [True, False, True] * len(event_args)
     cfs_plugin.targets = {i: mock_controller for i in range(num_controllers)}
     cfs_plugin.has_attempted_register = True
-    assert not cfs_plugin.check_event("app", "id", "msg", False, "msg_args", None)
-    assert mock_controller.check_event.call_count == num_controllers
+    assert not cfs_plugin.check_event(event_args, None)
+    assert mock_controller.check_event.call_count == num_controllers * len(event_args)
 
 
-def test_cfs_plugin_check_event_single_target(cfs_plugin):
+def test_cfs_plugin_check_event_single_target(cfs_plugin, event_args):
     num_controllers = 3
     for i in range(num_controllers):
         mock_controller = MagicMock()
         mock_controller.check_event.return_value = True
         cfs_plugin.targets[str(i)] = mock_controller
     cfs_plugin.has_attempted_register = True
-    assert cfs_plugin.check_event("app", "id", target='1')
+    assert cfs_plugin.check_event(event_args, target='1')
     cfs_plugin.targets['0'].check_event.assert_not_called()
-    cfs_plugin.targets['1'].check_event.assert_called_once()
+    assert cfs_plugin.targets['1'].check_event.call_count == len(event_args)
+    cfs_plugin.targets['1'].check_event.assert_any_call(**event_args[0])
+    cfs_plugin.targets['1'].check_event.assert_called_with(**event_args[-1])
     cfs_plugin.targets['2'].check_event.assert_not_called()
 
 
-def test_cfs_plugin_check_noevent_no_target(cfs_plugin):
+def test_cfs_plugin_check_noevent_no_target(cfs_plugin, event_args):
     assert not cfs_plugin.targets
-    assert not cfs_plugin.check_noevent("", "", "")
+    assert not cfs_plugin.check_noevent(event_args, "")
     assert not cfs_plugin.targets
 
 
-def test_cfs_plugin_check_noevent_pass(cfs_plugin):
+def test_cfs_plugin_check_noevent_pass(cfs_plugin, event_args):
     num_controllers = 3
     mock_controller = MagicMock()
     mock_controller.check_event.return_value = False
     cfs_plugin.targets = {i: mock_controller for i in range(num_controllers)}
     cfs_plugin.has_attempted_register = True
-    assert not cfs_plugin.check_noevent("app", "id", "msg", False, "msg_args", None)
-    assert mock_controller.check_event.call_count == num_controllers
+    assert not cfs_plugin.check_noevent(event_args, None)
+    assert mock_controller.check_event.call_count == num_controllers * len(event_args)
     with patch.object(Global, 'current_verification_stage', CtfVerificationStage.last_ver):
-        assert cfs_plugin.check_noevent("app", "id", "msg", False, "msg_args", None)
-    assert mock_controller.check_event.call_count == num_controllers * 2
-    mock_controller.check_event.assert_called_with("app", "id", "msg", False, "msg_args")
+        assert cfs_plugin.check_noevent(event_args, None)
+    assert mock_controller.check_event.call_count == num_controllers * 2 * len(event_args)
+    mock_controller.check_event.assert_called_with(**event_args[-1])
 
 
-def test_cfs_plugin_check_noevent_fail(cfs_plugin):
+def test_cfs_plugin_check_noevent_fail(cfs_plugin, event_args):
     num_controllers = 3
     mock_controller = MagicMock()
-    mock_controller.check_event.side_effect = [False, False, False, False, True, False]
+    mock_controller.check_event.side_effect = [False, False, False, False, True, False] * len(event_args)
     cfs_plugin.targets = {i: mock_controller for i in range(num_controllers)}
     cfs_plugin.has_attempted_register = True
-    assert not cfs_plugin.check_noevent("app", "id", "msg", False, "msg_args", None)
-    assert mock_controller.check_event.call_count == num_controllers
+    assert not cfs_plugin.check_noevent(event_args, None)
+    assert mock_controller.check_event.call_count == num_controllers * len(event_args)
     with patch.object(Global, 'current_verification_stage', CtfVerificationStage.last_ver):
-        assert not cfs_plugin.check_noevent("app", "id", "msg", False, "msg_args", None)
-    assert mock_controller.check_event.call_count == num_controllers * 2
-    mock_controller.check_event.assert_called_with("app", "id", "msg", False, "msg_args")
+        assert not cfs_plugin.check_noevent(event_args, None)
+    assert mock_controller.check_event.call_count == num_controllers * 2 * len(event_args)
+    mock_controller.check_event.assert_called_with(**event_args[-1])
 
 
-def test_cfs_plugin_check_noevent_single_target(cfs_plugin):
+def test_cfs_plugin_check_noevent_single_target(cfs_plugin, event_args):
     num_controllers = 3
     for i in range(num_controllers):
         mock_controller = MagicMock()
         mock_controller.check_event.return_value = False
         cfs_plugin.targets[str(i)] = mock_controller
     cfs_plugin.has_attempted_register = True
-    assert not cfs_plugin.check_noevent("app", "id", "msg", False, "msg_args", target='1')
+    assert not cfs_plugin.check_noevent(event_args, target='1')
     cfs_plugin.targets['0'].check_event.assert_not_called()
-    cfs_plugin.targets['1'].check_event.assert_called_once()
+    assert cfs_plugin.targets['1'].check_event.call_count == len(event_args)
+    cfs_plugin.targets['1'].check_event.assert_any_call(**event_args[0])
+    cfs_plugin.targets['1'].check_event.assert_called_with(**event_args[-1])
     cfs_plugin.targets['2'].check_event.assert_not_called()
     with patch.object(Global, 'current_verification_stage', CtfVerificationStage.last_ver):
-        assert cfs_plugin.check_noevent("app", "id", "msg", False, "msg_args", target='1')
+        assert cfs_plugin.check_noevent(event_args, target='1')
     cfs_plugin.targets['0'].check_event.assert_not_called()
-    assert cfs_plugin.targets['1'].check_event.call_count == 2
+    assert cfs_plugin.targets['1'].check_event.call_count == 2 * len(event_args)
     cfs_plugin.targets['2'].check_event.assert_not_called()
 
 

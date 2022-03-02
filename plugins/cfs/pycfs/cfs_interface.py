@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2021 United States Government as represented by the
+# Copyright (c) 2019-2022 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -158,13 +158,21 @@ class CfsInterface:
         self.command.cleanup()
         self.telemetry.cleanup()
 
+        # Close files
+        if self.tlm_log_file is not None and not self.tlm_log_file.closed:
+            log.debug("Closing tlm log file")
+            self.tlm_log_file.close()
+        if self.evs_log_file is not None and not self.evs_log_file.closed:
+            log.debug("Closing evs log file")
+            self.evs_log_file.close()
+
         for v_ids in self.tlm_verifications_by_mid_and_vid.values():
             for v_id, verification in v_ids.items():
                 log.info("Continuous Telemetry Check {} on {}:".format(v_id, self.output_manager.name))
                 log.info("Number times Passed:                {}".format(verification.pass_count))
                 log.info("Number times Failed:                {}".format(verification.fail_count))
 
-    def write_tlm_log(self, payload, mid):
+    def write_tlm_log(self, payload, buf, mid):
         """
         Write payload and mid to telemetry log file. if log file does not exist, create one.
         """
@@ -175,6 +183,10 @@ class CfsInterface:
         try:
             self.tlm_log_file.write("{}: {}\n\t{}\n".format(Global.get_time_manager().exec_time, hex(mid),
                                                             str(payload).replace("\n", "\n\t")))
+            if self.config.telemetry_debug:
+                self.tlm_log_file.write("        For mid {} Payload length: {} hex values: 0X{}\n".format(hex(mid),
+                                                                                                          len(buf),
+                                                                                                          buf.hex()))
         except IOError:
             log.error("Failed to write telemetry packet received for {}".format(hex(mid)))
             traceback.format_exc()
@@ -283,7 +295,7 @@ class CfsInterface:
         offset = self.tlm_header_offset if self.should_skip_header else 0
         try:
             payload = param_class.from_buffer(buffer[offset:])
-            self.write_tlm_log(payload, mid)
+            self.write_tlm_log(payload, buffer[offset:], mid)
         except (ValueError, IOError):
             self.log_invalid_packet(mid)
             return
@@ -575,7 +587,7 @@ class CfsInterface:
             if payload is None:
                 log.error("Failed to extract packet from received MID: {}. Continuing...".format(hex(mid)))
                 continue
-            latest_tlm_value = getattr(payload, tlm_variable, None)
+            latest_tlm_value = ctf_utility.rgetattr(payload, tlm_variable, None)
             if latest_tlm_value is not None:
                 break
 

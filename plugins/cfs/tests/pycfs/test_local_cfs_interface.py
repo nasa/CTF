@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2021 United States Government as represented by the
+# Copyright (c) 2019-2022 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -136,6 +136,20 @@ def test_local_cfs_interface_start_cfs_pass(localcfs):
         assert start['pid'] == 42
 
 
+def test_local_cfs_interface_start_cfs_pid_exist(localcfs,utils):
+    with patch('plugins.cfs.pycfs.local_cfs_interface.time'), \
+         patch('os.path.exists', return_value=True), \
+         patch('plugins.cfs.pycfs.local_cfs_interface.run') as mock_run, \
+         patch('plugins.cfs.pycfs.local_cfs_interface.Popen') as mock_popen:
+        mock_stdout = MagicMock(name='mock_stdout')
+        mock_run.return_value.stdout = mock_stdout
+        mock_stdout.decode.return_value = '1234'
+        utils.clear_log()
+        start = localcfs.start_cfs('args')
+        assert not start['result']
+        assert utils.has_log_level('ERROR')
+
+
 def test_local_cfs_interface_start_cfs_exist_cfs(localcfs, utils):
     with patch('plugins.cfs.pycfs.local_cfs_interface.time'), \
          patch('os.path.exists', return_value=False), \
@@ -143,6 +157,7 @@ def test_local_cfs_interface_start_cfs_exist_cfs(localcfs, utils):
         mock_popen.return_value.pid = 42
         mock_popen.return_value.returncode = 0
         mock_popen.return_value.poll.return_value = False
+        utils.clear_log()
         start = localcfs.start_cfs('args')
         mock_popen.assert_not_called()
         assert start['result'] is False
@@ -161,6 +176,7 @@ def test_local_cfs_interface_start_cfs_invalid_path(localcfs, utils):
         mock_popen.return_value.pid = 42
         mock_popen.return_value.returncode = 0
         mock_popen.return_value.poll.return_value = False
+        utils.clear_log()
         start = localcfs.start_cfs('args')
         mock_popen.assert_not_called()
         assert start['result'] is False
@@ -179,6 +195,7 @@ def test_local_cfs_interface_start_cfs_fail(localcfs, utils):
         mock_popen.return_value.pid = 42
         mock_popen.return_value.returncode = 0
         mock_popen.return_value.poll.return_value = False
+        utils.clear_log()
         start = localcfs.start_cfs('args')
         mock_popen.assert_called_once()
         assert start['result'] is False
@@ -195,6 +212,7 @@ def test_local_cfs_interface_start_cfs_errors(localcfs, utils):
         mock_run.return_value.stdout = mock_stdout
         mock_stdout.decode.return_value = ''
         mock_popen.side_effect = Exception('mock exception')
+        utils.clear_log()
         with pytest.raises(Exception):
             localcfs.start_cfs('args')
         assert utils.has_log_level('ERROR')

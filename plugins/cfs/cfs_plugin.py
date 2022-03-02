@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2021 United States Government as represented by the
+# Copyright (c) 2019-2022 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -30,17 +30,31 @@ import json
 from copy import deepcopy
 
 from lib.ctf_global import Global, CtfVerificationStage
+from lib.ctf_utility import resolve_variable
 from lib.exceptions import CtfTestError
 from lib.logger import logger as log
 from lib.plugin_manager import Plugin, ArgTypes
+from plugins.cfs.cfs_config import CfsConfig, RemoteCfsConfig
 from plugins.cfs.cfs_time_manager import CfsTimeManager
 from plugins.cfs.pycfs.cfs_controllers import CfsController, RemoteCfsController
-from plugins.cfs.cfs_config import CfsConfig, RemoteCfsConfig, SP0CfsConfig
 
-try:
-    from plugins.cfs.pycfs.cfs_controllers import SP0CfsController
-except ImportError:
-    SP0CfsController = None
+
+def _resolve_tlm_args_values(event_args):
+    # args will be modified during parameter evaluation, keep the original args for re-evaluation during loop
+    copied_args = deepcopy(event_args)
+
+    if isinstance(copied_args, dict):
+        for key, value in copied_args.items():
+            copied_args[key] = resolve_variable(value)
+    elif isinstance(copied_args, list):
+        for arg in copied_args:
+            for key, value in arg.items():
+                # corner case : arg['value'] is a single element list
+                if isinstance(value, list) and len(value) == 1:
+                    arg[key] = value[0]
+                arg[key] = resolve_variable(arg[key])
+
+    return copied_args
 
 
 class CfsPlugin(Plugin):
@@ -78,8 +92,6 @@ class CfsPlugin(Plugin):
             "local": (CfsConfig, CfsController),
             "ssh": (RemoteCfsConfig, RemoteCfsController)
         }
-        if SP0CfsController:
-            self.protocols["sp0"] = (SP0CfsConfig, SP0CfsController)
 
         # ENHANCE - instruction parameters are duplicated here and in function signatures
         # See the CFS Plugin README for full documentation of the test instructions
@@ -105,18 +117,30 @@ class CfsPlugin(Plugin):
             # - cc: The command code for the command
             # - args: Either an array or dictionary object containing the command arguments
             # - target: (Optional) A previously registered target name, or empty for all registered targets
+            # - header: (Optional) An object where the key is the header field name, and the value is the field value.
             "SendCfsCommand":
                 (self.send_cfs_command,
-                 [ArgTypes.cmd_mid, ArgTypes.cmd_code, ArgTypes.cmd_arg, ArgTypes.string]),
-            # SendCfsCommand: Sends a CFS command with an invalid length to induce an error
+                 [ArgTypes.cmd_mid, ArgTypes.cmd_code, ArgTypes.cmd_arg, ArgTypes.string, ArgTypes.string]),
+            # SendCfsCommandWithPayloadLength: Sends a CFS command with a user-specified payload length
             # - mid: The message ID of the command
             # - cc: The command code for the command
             # - args: Either an array or dictionary object containing the command arguments
-            # - payload_length: The length in bytes of the command message to send
             # - target: (Optional) A previously registered target name, or empty for all registered targets
-            "SendInvalidLengthCfsCommand":
+            # - header: (Optional) An object where the key is the header field name, and the value is the field value.
+            # - payload_length: The length in bytes of the command payload to send (truncated or padded as needed)
+            "SendCfsCommandWithPayloadLength":
                 (self.send_cfs_command,
-                 [ArgTypes.cmd_mid, ArgTypes.cmd_code, ArgTypes.cmd_arg, ArgTypes.number, ArgTypes.string]),
+                 [ArgTypes.cmd_mid, ArgTypes.cmd_code, ArgTypes.cmd_arg,
+                  ArgTypes.string, ArgTypes.string, ArgTypes.number]),
+            # SendCfsCommandWithRawPayload: Sends a CFS command truncated to the size of a single hexadecimal value
+            # - mid: The message ID of the command
+            # - cc: The command code for the command
+            # - hex_buffer: A string of hexadecimal characters representing the raw byte value of the command payload
+            # - target: (Optional) A previously registered target name, or empty for all registered targets
+            # - header: (Optional) An object where the key is the header field name, and the value is the field value.
+            "SendCfsCommandWithRawPayload":
+                (self.send_raw_cfs_command,
+                 [ArgTypes.cmd_mid, ArgTypes.cmd_code, ArgTypes.string, ArgTypes.string, ArgTypes.string]),
             # CheckTlmValue: Checks that a telemetry message matching the given parameters has been received
             # - mid: The telemetry message ID to check
             # - args: an array of argument objects that describe the values to be checked
@@ -147,28 +171,28 @@ class CfsPlugin(Plugin):
             "RemoveCheckTlmContinuous":
                 (self.remove_check_tlm_continuous, [ArgTypes.string, ArgTypes.string]),
             # CheckEvent: Checks that an event message matching the given parameters has been received
-            # - app: The app that sent the event message
-            # - id: The Event ID, taken from an EVS enum, to represent the criticality level of a message
-            # - msg: The expected message of the event
-            # - is_regex: (Optional) True if msg is to be used for a regex match instead of string comparison
-            # - msg_args: (Optional) Arguments that will be inserted into msg, similar to printf() functions
+            # - args: an array of argument objects that describe the events to be checked
+            #   - app: The app that sent the event message
+            #   - id: The Event ID, taken from an EVS enum, to represent the criticality level of a message
+            #   - msg: The expected message of the event
+            #   - is_regex: (Optional) True if msg is to be used for a regex match instead of string comparison
+            #   - msg_args: (Optional) Arguments that will be inserted into msg, similar to printf() functions
             # - target: (Optional) A previously registered target name, or empty for all registered targets
             "CheckEvent":
                 (self.check_event,
-                 [ArgTypes.string, ArgTypes.string, ArgTypes.string, ArgTypes.boolean, ArgTypes.cmd_arg,
-                  ArgTypes.string]),
+                 [ArgTypes.event, ArgTypes.string]),
             # CheckNoEvent: Checks that an event message matching the given parameters is not received
             # user needs to ensure the previous messages are cleared from buffer before calling CheckNoEvent instruction
-            # - app: The app that sent the event message
-            # - id: The Event ID, taken from an EVS enum, to represent the criticality level of a message
-            # - msg: The expected message of the event
-            # - is_regex: (Optional) True if msg is to be used for a regex match instead of string comparison
-            # - msg_args: (Optional) Arguments that will be inserted into msg, similar to printf() functions
+            # - args: an array of argument objects that describe the events to be checked
+            #   - app: The app that sent the event message
+            #   - id: The Event ID, taken from an EVS enum, to represent the criticality level of a message
+            #   - msg: The expected message of the event
+            #   - is_regex: (Optional) True if msg is to be used for a regex match instead of string comparison
+            #   - msg_args: (Optional) Arguments that will be inserted into msg, similar to printf() functions
             # - target: (Optional) A previously registered target name, or empty for all registered targets
             "CheckNoEvent":
                 (self.check_noevent,
-                 [ArgTypes.string, ArgTypes.string, ArgTypes.string, ArgTypes.boolean, ArgTypes.cmd_arg,
-                  ArgTypes.string]),
+                 [ArgTypes.event, ArgTypes.string]),
 
             # ArchiveCfsFiles: Copies files from a directory that have been modified
             # during the current test run into the test run's log directory
@@ -250,7 +274,7 @@ class CfsPlugin(Plugin):
             else:
                 log.error("Register for {} failed.".format(target))
 
-        log.info("Register for {} finished.".format(target))
+        log.info("Register for {} finished with status {}.".format(target, status))
         return status
 
     def load_configured_targets(self, target: str = None) -> bool:
@@ -327,7 +351,7 @@ class CfsPlugin(Plugin):
         status = [t.enable_cfs_output() for t in self.get_cfs_targets(target)]
         return all(status) if status else False
 
-    def send_cfs_command(self, mid: str, cc: int, args: dict, header: dict = None, target: str = None,
+    def send_cfs_command(self, mid: str, cc: int, args: any, target: str = None, header: dict = None,
                          payload_length: int = None, ctype_args: bool = False) -> bool:
         """Implements the instruction SendCfsCommand
         ctype_args is a flag to zero out the message structure for internal validation,
@@ -337,20 +361,47 @@ class CfsPlugin(Plugin):
             log.debug("SendCfsCommand - Target: {}, MID: {}, CC: {}, Args: {}, Set Length: {}, CType Args: {}"
                       .format(target, mid, cc, json.dumps(args), payload_length, ctype_args))
 
+        copied_args = deepcopy(args)
+
+        def _resolve_cfs_args_value(cmd_args):
+            # corner case: empty list, dic, str ...
+            # ValidateCfsCcsdsData instruction constructs arguments by code, args generated by it is not dict type
+            if not cmd_args or not isinstance(cmd_args, dict):
+                return
+
+            for key, value in cmd_args.items():
+                if isinstance(value, list):
+                    for sub_arg in value:
+                        _resolve_cfs_args_value(sub_arg)
+                elif isinstance(value, dict):
+                    _resolve_cfs_args_value(value)
+                else:
+                    cmd_args[key] = resolve_variable(value)
+
+        _resolve_cfs_args_value(copied_args)
+
         # Collect the results of send_cfs_command on each specified target, and check that all passed
         # Make a copy of arguments since send_cfs_command may change arguments structure
-        status = [t.send_cfs_command(mid, cc, deepcopy(args), header, payload_length, ctype_args)
+        status = [t.send_cfs_command(mid, cc, deepcopy(copied_args), header, payload_length, ctype_args)
                   for t in self.get_cfs_targets(target)]
 
         return all(status) if status else False
 
-    def check_tlm_value(self, mid: str, args: dict, target: str = None) -> bool:
+    def send_raw_cfs_command(self, mid: str, cc: int, hex_buffer: str, target: str = None, header: dict = None) -> bool:
+        """Implements the instruction SendCfsCommandWithRawPayload."""
+        # pylint: disable=invalid-name
+        payload_length = int(len(hex_buffer)/2)
+        return self.send_cfs_command(mid, cc, hex_buffer, header=header, target=target, payload_length=payload_length)
+
+    def check_tlm_value(self, mid: str, args: list, target: str = None) -> bool:
         """Implements the instruction CheckTlmValue."""
         if Global.current_verification_stage == CtfVerificationStage.first_ver:
             log.info("CheckTlmValue: CFS Target: {}, MID {}, Args {}".format(target, mid, json.dumps(args)))
 
         # Collect the results of check_tlm_value on each specified target, and check that all passed
-        status = [t.check_tlm_value(mid, args) for t in self.get_cfs_targets(target)]
+        copied_args = _resolve_tlm_args_values(args)
+        status = [t.check_tlm_value(mid, copied_args) for t in self.get_cfs_targets(target)]
+
         return all(status) if status else False
 
     def check_tlm_packet(self, mid: str, target: str = None) -> bool:
@@ -396,8 +447,15 @@ class CfsPlugin(Plugin):
         log.info("CheckTlmContinuous for target: {}, Verification ID: {}, MID: {}, Args: {}"
                  .format(target, verification_id, mid, json.dumps(args)))
 
+        # args will be modified during parameter evaluation, keep the original args for re-evaluation during loop
+        copied_args = deepcopy(args)
+
+        for arg in copied_args:
+            if 'value' in arg:
+                arg['value'] = resolve_variable(arg['value'])
+
         # Collect the results of check_tlm_continuous on each specified target, and check that all passed
-        status = [t.check_tlm_continuous(verification_id, mid, args) for t in self.get_cfs_targets(target)]
+        status = [t.check_tlm_continuous(verification_id, mid, copied_args) for t in self.get_cfs_targets(target)]
         return all(status) if status else False
 
     def remove_check_tlm_continuous(self, verification_id: str, target: str = None) -> bool:
@@ -408,39 +466,37 @@ class CfsPlugin(Plugin):
         status = [t.remove_check_tlm_continuous(verification_id) for t in self.get_cfs_targets(target)]
         return all(status) if status else False
 
-    def check_event(self, app: str, id: str, msg: str = None, is_regex: bool = False,
-                    msg_args: str = None, target: str = None) -> bool:
+    def check_event(self, args: list, target: str = None) -> bool:
         """Implements the instruction CheckEvent.
         'id' shadows the built-in function target but is kept because it exists in legacy test scripts."""
-        # pylint: disable=invalid-name,redefined-builtin
-        log.info("CheckEvent for target - {}, APP {}, ID {}, MSG {}, Msg Args {}"
-                 .format(target, app, id, msg, json.dumps(msg_args)))
+        log.info("CheckEvent: CFS Target {}, Args {}"
+                 .format(target, json.dumps(args)))
 
         # Collect the results of check_event on each specified target, and check that all passed
-        status = [t.check_event(app, id, msg, is_regex, msg_args) for t in self.get_cfs_targets(target)]
+        copied_args = _resolve_tlm_args_values(args)
+        status = [t.check_event(**event) for event in copied_args for t in self.get_cfs_targets(target)]
         return all(status) if status else False
 
-    def check_noevent(self, app: str, id: str, msg: str, is_regex: bool = False,
-                      msg_args: str = None, target: str = None) -> bool:
+    def check_noevent(self, args: list, target: str = None) -> bool:
         """Implements the instruction CheckNoEvent.
         'id' shadows the built-in function target but is kept because it exists in legacy test scripts."""
-        # pylint: disable=invalid-name,redefined-builtin
-        log.info("CheckNoEvent for target - {}, APP {}, ID {}, MSG {}, Msg Args {}"
-                 .format(target, app, id, msg, json.dumps(msg_args)))
+        log.info("CheckNoEvent: CFS Target {}, Args {}"
+                 .format(target, json.dumps(args)))
 
         # Collect the results of check_event on each specified target, and check that all passed
-        status = [t.check_event(app, id, msg, is_regex, msg_args) for t in self.get_cfs_targets(target)]
-        returners = False
+        copied_args = _resolve_tlm_args_values(args)
+        status = [t.check_event(**event) for event in copied_args for t in self.get_cfs_targets(target)]
+        result = False
         if any(status):
-            log.info("CheckNoEvent found the event with status = {} !".format(status))
+            log.info("CheckNoEvent found the event!")
         else:
             # Check_noevent is to verify No event happens during the CtfVerificationStage.
             # This function will be called a few times by test.py, it only returns True at the end of verification stage
             if Global.current_verification_stage == CtfVerificationStage.last_ver:
-                log.info("CheckNoEvent did not find event")
-                returners = True
+                log.info("CheckNoEvent did not find the event")
+                result = True
 
-        return returners
+        return result
 
     def shutdown_cfs(self, target: str = None) -> bool:
         """Implements the instruction ShutdownCfs.

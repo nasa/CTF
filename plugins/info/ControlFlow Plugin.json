@@ -2,6 +2,45 @@
   "group_name": "ControlFlow Plugin",
   "instructions": [
     {
+      "name": "IfCondition",
+      "description": "",
+      "parameters": [
+        {
+          "name": "label",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "conditions",
+          "description": "",
+          "type": "loop_condition",
+          "isArray": true
+        }
+      ]
+    },
+    {
+      "name": "ElseCondition",
+      "description": "",
+      "parameters": [
+        {
+          "name": "label",
+          "description": "",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "EndCondition",
+      "description": "",
+      "parameters": [
+        {
+          "name": "label",
+          "description": "",
+          "type": "string"
+        }
+      ]
+    },
+    {
       "name": "BeginLoop",
       "description": "",
       "parameters": [

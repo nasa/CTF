@@ -38,7 +38,7 @@
       "description": "",
       "parameters": [
         {
-          "name": "user_variable",
+          "name": "variable_name",
           "description": "",
           "type": "string"
         },

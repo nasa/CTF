@@ -8,7 +8,7 @@ and generate test reports.
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2021 United States Government as represented by the
+# Copyright (c) 2019-2022 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -33,8 +33,8 @@ from lib.ctf_utility import expand_path
 from lib.logger import logger as log, set_logger_options_from_config, change_log_file
 from lib.exceptions import CtfTestError
 
-CTF_VERSION = "v1.3.1"
-CTF_RELEASE_DATE = "Oct 19 2021"
+CTF_VERSION = "v1.4"
+CTF_RELEASE_DATE = "Feb 28 2022"
 
 
 def main():
@@ -59,11 +59,16 @@ def main():
 
         # Load plugins and determine list of commands they support.
         log.info("cFS Test Framework ({}) Starting...".format(CTF_VERSION))
-        log.info("Loading Plugins...")
         plugin_paths = ['plugins']
-        additional_plugin_path = expand_path(Global.config.get("core", "additional_plugins_path", fallback=""))
-        if additional_plugin_path:
-            plugin_paths.append(additional_plugin_path)
+        additional_plugins_path_str = Global.config.get("core", "additional_plugins_path", fallback="")
+        additional_plugins_path_list = additional_plugins_path_str.split(',')
+        for path in additional_plugins_path_list:
+            path = path.replace('\'', '')
+            path = path.replace('\"', '')
+            additional_plugin_path = expand_path(path.strip())
+            if additional_plugin_path:
+                plugin_paths.append(additional_plugin_path)
+        log.info("Loading Plugins... with path: {}".format(plugin_paths))
         plugins = PluginManager(plugin_paths)
 
         if args.pluginInfo is not None:

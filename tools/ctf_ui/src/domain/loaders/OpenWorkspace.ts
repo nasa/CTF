@@ -1,7 +1,7 @@
 /*
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2021 United States Government as represented by the
+# Copyright (c) 2019-2022 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -18,7 +18,7 @@ import { CtfPlugin } from '../../model/ctf-plugin';
 import { FileTree } from '../../model/tree';
 import { VehicleData } from '../../model/vehicle-data';
 import { LoadJsonFile } from '../file-util/LoadJsonFile';
-import { UsePluginDir } from './UsePluginDir';
+import { UsePluginDirArray } from './UsePluginDir';
 import { UseProjectDir } from './UseProjectDir';
 import { UseVehicleDataDir } from './UseVehicleDataDir';
 import * as path from 'path';
@@ -43,24 +43,36 @@ export class OpenWorkspace {
     static async open(workspaceFilePath: string): Promise<Workspace> {
         return LoadJsonFile.load<WorkspaceFile>(workspaceFilePath).then(async (data) => {
                 let projectDir = path.join(path.dirname(workspaceFilePath), data.projectDir);
-                
+
                 let scriptsDir = path.join(path.dirname(workspaceFilePath), data.scriptsDir);
 
                 let ccddJsonDir = path.join(path.dirname(workspaceFilePath), data.ccddJsonDir);
-    
+
                 let pluginDir = path.join(path.dirname(workspaceFilePath), data.pluginDir);
-                
+
                 let ctfExecutable = path.join(path.dirname(workspaceFilePath), data.ctfExecutable);
-    
+
+                let pluginInfoArray = data.pluginDir.split(',')
+                const pluginInfoPath = pluginInfoArray.map( pluginInfo => {
+                    return  path.join(path.dirname(workspaceFilePath), pluginInfo.trim());
+                });
+
                 return Promise.all([
                     UseProjectDir.use(scriptsDir),
                     UseVehicleDataDir.use(ccddJsonDir),
-                    UsePluginDir.use(pluginDir)
+                    UsePluginDirArray.use(pluginInfoPath)
                 ]).then((workspaceData) => {
+
+                    let plugins_info = [] ;
+
+                    workspaceData[2].forEach(info => {
+                         plugins_info = plugins_info.concat(info);
+                    });
+
                     return {
                         projectTree: workspaceData[0],
                         vehicleData: workspaceData[1],
-                        plugins: workspaceData[2],
+                        plugins: plugins_info,
                         pythonScriptPath: ctfExecutable,
                         projectDir: projectDir,
                         scriptsDir: scriptsDir

@@ -1,0 +1,55 @@
+{
+    "test_number": "CTF-Test-Case-04",
+    "test_name": "CTF Test Case 04",
+    "requirements": {
+        "CTF-08": "Full",
+        "CTF-09": "Full",
+		"CTF-27": "Full",
+		"CTF-28": "Full",
+		"CTF-29": "Full"
+    },
+    "description": "",
+    "owner": "CTF",
+    "test_setup": "",
+    "ctf_options": {},
+    "import": {},
+    "tests": [
+        {
+            "case_number": "CTF Test Case 04",
+            "description": "Build and start a cFS instance",
+            "instructions": [
+                {
+                    "instruction": "BuildCfs",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "StartCfs",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_NOOP_CC",
+                        "args": {}
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "ShutdownCfs",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 30
+                }
+            ]
+        }
+    ]
+}

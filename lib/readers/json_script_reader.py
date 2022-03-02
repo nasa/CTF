@@ -5,7 +5,7 @@ Loads and validates input CTF test scripts. Manages execution of loaded test scr
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2021 United States Government as represented by the
+# Copyright (c) 2019-2022 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -261,7 +261,7 @@ class JSONScriptReader:
                         return None
                     commands = commands[:index] + resolved_cmds + commands[index + 1:]
                 else:
-                    command["data"] = self.resolve_command_data(params, command["data"])
+                    command["data"] = self.resolve_function_params(params, command["data"])
         except KeyError as exception:
             log.error("Exception: Invalid Json Script file: {} does not contain {}"
                       .format(self.input_script_path, exception))
@@ -269,21 +269,23 @@ class JSONScriptReader:
             raise exception
         return commands
 
-    def resolve_command_data(self, params, data):
+    def resolve_function_params(self, params: dict, data: dict) -> dict:
         """
         Perform in-line replacement of arguments passed into a function
+        @param params: dict mapping function parameter names to values provided in function call
+        @param data: dict mapping instruction parameter names to scripted values which may be function parameters
         """
         field = copy.deepcopy(data)
         if isinstance(field, dict):
             for key, value in field.items():
-                if not isinstance(value, dict) and not isinstance(value, list) and value in params.keys():
+                if isinstance(value, (dict, list)):
+                    field[key] = self.resolve_function_params(params, value)
+                elif value in params.keys():
                     field[key] = params[value]
-                else:
-                    field[key] = self.resolve_command_data(params, value)
         elif isinstance(field, list):
             for index, item in enumerate(field):
-                if not isinstance(item, dict) and item in params.keys():
+                if isinstance(item, (dict, list)):
+                    field[index] = self.resolve_function_params(params, item)
+                elif item in params.keys():
                     field[index] = params[item]
-                else:
-                    field[index] = self.resolve_command_data(params, item)
         return field

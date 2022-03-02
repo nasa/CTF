@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2021 United States Government as represented by the
+# Copyright (c) 2019-2022 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -307,7 +307,7 @@ class CCDDExportReader(CCSDSInterface):
             data_type = None
             log.error("Failed to create type class {}!".format(data_type_name))
 
-        primary_type_name = ('int8', 'int16', 'int32', 'int64','uint8', 'uint16', 'uint32', 'uint64','float',
+        primary_type_name = ('int8', 'int16', 'int32', 'int64', 'uint8', 'uint16', 'uint32', 'uint64', 'float',
                              'double', 'char', 'string', 'bool', 'boolean', 'address', 'cpuaddr')
         if data_type_name in primary_type_name and data_type_name in self.type_dict:
             log.error("Override primary data type {}, it may be a potential issue".format(data_type_name))
@@ -399,7 +399,17 @@ class CCDDExportReader(CCSDSInterface):
                     if typedef['target'] == self.config.ccsds_target:
                         if self.config.log_ccsds_imports:
                             log.info("Found {} MIDs for {}".format(len(typedef['mids']), self.config.ccsds_target))
-                        self.mids.update({mid['mid_name']: int(mid['mid_value'], 0) for mid in typedef['mids']})
+                        for mid in typedef['mids']:
+                            if mid['mid_name'] in self.mids.keys():
+                                log.error("Found duplicate MID key in mids dict, key:{} value:{} ".format(
+                                    mid['mid_name'], self.mids[mid['mid_name']]))
+                                # raise CtfTestError("Found duplicate MID key")
+                            if int(mid['mid_value'], 0) in self.mids.values():
+                                log.error("Found duplicate MID value {} for mid_map".format(mid['mid_value']))
+                                # raise CtfTestError("Found duplicate MID value")
+                            log.debug("Update mids dict with key:{} value:{} ".format(mid['mid_name'],
+                                                                                      int(mid['mid_value'], 0)))
+                            self.mids.update({mid['mid_name']: int(mid['mid_value'], 0)})
                 else:
                     log.error("Invalid type definition in {}".format(self.current_file_name))
             except Exception as exception:

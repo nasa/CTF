@@ -1,7 +1,7 @@
 /*
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2021 United States Government as represented by the
+# Copyright (c) 2019-2022 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -69,13 +69,7 @@ export class SaveProjectFile {
         vehicleData: VehicleData,
         importedFunctions: EditingContextFunction[]
     ): Promise<boolean> {
-        // make sure the telemetry and command watch lists are up to date
-        const command_watch_list: {
-            [mid: string]: string[];
-        } = {};
-        const telemetry_watch_list: {
-            [mid: string]: string[];
-        } = {};
+
         const testInstructions = file.tests.flatMap(t => t.instructions);
         const functionInstructions = file.functions ? Object.keys(file.functions).flatMap(
             f => file.functions[f].instructions
@@ -117,12 +111,6 @@ export class SaveProjectFile {
                         } else {
                             codes = [instruction.data[param.name] as string];
                         }
-                        codes.forEach(it => {
-                            if (!command_watch_list[cmdMid])
-                                command_watch_list[cmdMid] = [];
-                            if (command_watch_list[cmdMid].indexOf(it) < 0)
-                                command_watch_list[cmdMid].push(it);
-                        });
                     } else if (param.type === 'tlm_field') {
                         let fields = [];
                         if (param.isArray) {
@@ -130,15 +118,7 @@ export class SaveProjectFile {
                         } else {
                             fields = [instruction.data[param.name] as string];
                         }
-                        if (!telemetry_watch_list[tlmMid])
-                            telemetry_watch_list[tlmMid] = [];
-                        fields.forEach(f => {
-                            if (
-                                isTlmField(tlmMid, f, vehicleData) &&
-                                telemetry_watch_list[tlmMid].indexOf(f) === -1
-                            )
-                                telemetry_watch_list[tlmMid].push(f);
-                        });
+
                     } else if (param.type === 'comparison') {
                         let comparisons = [];
                         if (param.isArray) {
@@ -150,30 +130,6 @@ export class SaveProjectFile {
                                 instruction.data[param.name] as CtfComparisonType
                             ];
                         }
-                        comparisons.forEach(comp => {
-                            const field1 = comp.variable;
-                            const field2 = comp.value[0];
-                            if (!telemetry_watch_list[tlmMid])
-                                telemetry_watch_list[tlmMid] = [];
-                            if (isTlmField(tlmMid, field1, vehicleData)) {
-                                // field1 is a telemetry parameter
-                                if (
-                                    telemetry_watch_list[tlmMid].indexOf(
-                                        field1
-                                    ) === -1
-                                )
-                                    telemetry_watch_list[tlmMid].push(field1);
-                            }
-                            if (isTlmField(tlmMid, field2, vehicleData)) {
-                                // field2 is a telemetry parameter
-                                if (
-                                    telemetry_watch_list[tlmMid].indexOf(
-                                        field2
-                                    ) === -1
-                                )
-                                    telemetry_watch_list[tlmMid].push(field2);
-                            }
-                        });
                     }
                     else if (param.type === 'tlm_arg') {
                         let tlm_args = [];
@@ -194,6 +150,8 @@ export class SaveProjectFile {
                         if (Array.isArray(args) && args.length > 0) {
                             args = args.filter((arg)=> {
                                 let argKey = Object.keys(arg)[0];
+                                // in case the arg is not defined, for example args = ["", {key: value}, "", ""]
+                                if (typeof (argKey) === "undefined") return false;
                                 if (argKey.indexOf('[...]') != -1) return false;
                                 return true;
                              });
@@ -214,10 +172,13 @@ export class SaveProjectFile {
             }
         }
 
-        const withLists = Object.assign({}, jsonclone(file), {
-            telemetry_watch_list,
-            command_watch_list
-        });
+        const withLists = Object.assign({}, jsonclone(file));
+
+        // telemetry_watch_list and command_watch_list are no longer needed
+        if ('telemetry_watch_list' in withLists)
+            delete withLists.telemetry_watch_list;
+        if ('command_watch_list' in withLists)
+                delete withLists.command_watch_list;        
 
         withLists.tests.forEach((t) => {
             delete t.id;

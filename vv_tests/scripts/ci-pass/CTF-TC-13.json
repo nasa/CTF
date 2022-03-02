@@ -1,0 +1,75 @@
+{
+    "test_number": "CTF-Test-Case-13",
+    "test_name": "CTF Test Case 13",
+    "requirements": {
+        "CTF-25": "Full",
+        "CTF-26": "Full"
+    },
+    "description": "",
+    "owner": "CTF",
+    "test_setup": "Need to run start script first to start cFS instance",
+    "ctf_options": {},
+    "import": {},
+    "tests": [
+        {
+            "case_number": "CTF Test Case 13",
+            "description": "Execute conditional looping using local variables",
+            "instructions": [
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "=",
+                        "value": 0
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "BeginLoop",
+                    "data": {
+                        "label": "LOOP_1",
+                        "conditions": [
+                            {"variable": "my_var", "compare": "<", "value": 3}
+                        ]
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "+",
+                        "value": 1
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_NOOP_CC",
+                        "args": {}
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "EndLoop",
+                    "data": {
+                        "label": "LOOP_1"
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "==",
+                        "value": 3
+                    },
+                    "wait": 1
+                }
+            ]
+        }
+    ]
+}

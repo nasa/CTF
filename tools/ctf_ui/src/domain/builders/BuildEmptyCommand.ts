@@ -1,7 +1,7 @@
 /*
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2021 United States Government as represented by the
+# Copyright (c) 2019-2022 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -32,7 +32,7 @@ export class BuildEmptyCommand {
                         defaultValue = {
                             variable: "",
                             compare: "",
-                            value: [""],                        
+                            value: [""],
                         };
                     }
                     else if (param.type === 'boolean'){
@@ -42,7 +42,7 @@ export class BuildEmptyCommand {
                 }
                 return prevArgs;
             }, {}),
-            wait: 1.0
+            wait: 0
         };
         return cmd;
     }

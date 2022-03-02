@@ -5,7 +5,7 @@ The Plugin Manager is a CTF core component that manages CTF plugins.
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2021 United States Government as represented by the
+# Copyright (c) 2019-2022 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -51,8 +51,8 @@ import json
 import sys
 from inspect import signature
 
-
 from lib.ctf_global import Global
+from lib.ctf_utility import switch_to_cft_directory
 from lib.exceptions import CtfTestError
 from lib.logger import logger as log
 
@@ -77,8 +77,9 @@ class ArgTypes:
     number = "number"
     ignore = "ignore"
     condition = "loop_condition"
+    event = "event"
     other = "other"
-    array_types = [cmd_arg, comparison,condition]
+    array_types = [cmd_arg, comparison, condition, event]
 
 
 class Plugin():
@@ -244,12 +245,13 @@ class PluginManager:
         self.plugin_name_list = []
         self.disabled_plugins = Global.config.get("core", "disabled_plugins").split(',') \
             if Global.config.has_option("core", "disabled_plugins") else []
+
         for plugin_package in self.plugin_packages:
-            log.info("Looking for plugins under package: {}".format(plugin_package))
+            cwd = os.getcwd()
+            log.info("Looking for plugins under package: {} ".format(plugin_package))
             if not os.path.exists(plugin_package) and plugin_package != "plugins":
                 log.error("Invalid plugin path: {}. Skipping... ".format(plugin_package))
                 continue
-            cwd = os.getcwd()
             if os.path.dirname(plugin_package) != "":
                 sys.path.insert(1, os.path.dirname(plugin_package))
             self.walk_package(plugin_package)

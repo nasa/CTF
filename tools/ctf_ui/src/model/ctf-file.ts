@@ -1,7 +1,7 @@
 /*
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2021 United States Government as represented by the
+# Copyright (c) 2019-2022 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -18,6 +18,14 @@ export interface CtfComparisonType {
     variable: string;
     compare: string;
     value: string[];
+}
+
+export interface CtfEventType {
+    app_name: string;
+    event_id: string;
+    event_str: string;
+    event_str_args: string;
+    is_regex:boolean;
 }
 
 export interface CtfTlmArgType {
@@ -43,7 +51,7 @@ export interface CtfInstruction {
     wait: number;
     comment: string;
     description: string;
-    disabled: boolean;   
+    disabled: boolean;
 }
 
 export interface CtfFunctionCall {
@@ -55,7 +63,7 @@ export interface CtfFunctionCall {
     wait: number;
     comment: string;
     description: string;
-    disabled: boolean;     
+    disabled: boolean;
 }
 
 export interface CtfFunction {

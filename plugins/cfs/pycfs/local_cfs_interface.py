@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2021 United States Government as represented by the
+# Copyright (c) 2019-2022 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -22,6 +22,8 @@ local_cfs_interface.py: Lower-level interface to communicate with cFS locally (l
 
 import os
 from io import StringIO
+from pathlib import Path
+from shutil import rmtree
 from subprocess import run, Popen, PIPE, STDOUT
 from distutils.spawn import find_executable
 import time
@@ -131,6 +133,13 @@ class LocalCfsInterface(CfsInterface):
         @return dictionary: the return result_values is a dictionary, including 'results': True if cfs instance
                 starts successfully, otherwise False;  and 'pid': the pid of cfs instance process.
         """
+
+        # Remove ram drive if not a processor reset
+        if "RPR" not in self.config.cfs_run_args:
+            ram_drive_path = self.config.cfs_ram_drive_path
+            if ram_drive_path:
+                log.info("Removing ram drive {} before startup since -RPR arg was not included".format(ram_drive_path))
+                rmtree(Path(ram_drive_path), ignore_errors=True)
 
         start_string = self.get_start_string(run_args)
         # Did CFS startup and if so what is the pid?

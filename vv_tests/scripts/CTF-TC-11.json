@@ -1,0 +1,50 @@
+{
+    "test_number": "CTF-Test-Case-11",
+    "test_name": "CTF Test Case 11",
+    "requirements": {
+        "CTF-21": "Inspection"
+    },
+    "description": "",
+    "owner": "CTF",
+    "test_setup": "Need to run start script first to start cFS instance",
+    "ctf_options": {},
+    "import": {},
+    "tests": [
+        {
+            "case_number": "CTF Test Case 11",
+            "description": "End test run upon the first instruction failure",
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_NOOP_CC",
+                        "args": {}
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "BAD_DATA",
+                        "cc": "BAD_DATA",
+                        "args": {}
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_NOOP_CC",
+                        "args": {}
+                    },
+                    "wait": 1
+                }
+            ]
+        }
+    ]
+}
