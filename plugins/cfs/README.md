@@ -54,7 +54,7 @@ A number of configuration fields relate to the CCDD files and formats, which wil
 CTF supports resolving macros from the ccsds_data_dir and replacing macros in the test script with the actual "c_value". Ensure a `#` precedes the macro in the test script in order for CTF to do macro replacement.
 
 ###### Example 
-```                
+<pre><code>               
 {
                     "instruction": "CheckTlmValue",
                     "data": {
@@ -72,7 +72,7 @@ CTF supports resolving macros from the ccsds_data_dir and replacing macros in th
                     },
                     "wait": 1
                 }
-```
+</code></pre>
 
 ### RegisterCfs
 Declares a CFS target to be loaded according to the config file section of the same name. Any fields not provided in the named
@@ -81,7 +81,7 @@ override any value specified in the `[cfs]` section.
 - **target:** (string) A unique name to identify the target in later instructions. The name must match a section name in the config file.
 
 Example:
-```javascript
+<pre><code>
 {
     "instruction": "RegisterCfs",
     "data": {
@@ -89,20 +89,21 @@ Example:
     },
     "wait": 1,
 }
-```
+</code></pre>
+
 Config:
-```
+<pre><code>
 [cfs_workstation]
 cfs_protocol="local"
 ...
-```
+</code></pre>
 
 ### BuildCfs
 Builds a CFS target.
 - **target:** (Optional) A previously registered target name. If no name is given, applies to all registered targets.
 
 Example:
-```javascript
+<pre><code>
 {
     "instruction": "BuildCfs",
     "data": {
@@ -110,7 +111,7 @@ Example:
     },
     "wait": 1,
 }
-```
+</code></pre>
 
 ### StartCfs
 Starts a CFS target.
@@ -119,7 +120,7 @@ Starts a CFS target.
                 defined in the configuration INI file.
                 
 Example:
-```javascript
+<pre><code>
 {
     "instruction": "StartCfs",
     "data": {
@@ -128,14 +129,14 @@ Example:
     },
     "wait": 1
 }
-```
+</code></pre>
 
 ### EnableCfsOutput
 Enables CFS output. No parameters.
 - **target:** (Optional) A previously registered target name. If no name is given, applies to all registered target.
 
 Example:
-```javascript
+<pre><code>
 {
     "instruction": "EnableCfsOutput",
     "data": {
@@ -143,7 +144,7 @@ Example:
     },
     "wait": 1,
 }
-```
+</code></pre>
 
 ### SendCfsCommand & SendCfsCommandWithPayloadLength
 Constructs and sends a command message to CFS with the specified MID, command code, and payload arguments.
@@ -158,7 +159,7 @@ Constructs and sends a command message to CFS with the specified MID, command co
   This object is passed into to the `CcsdsCommand` type (as determined by the config field [`ccsds:CCSDS_header_path`](../ccsds_plugin/README.md)) and is not handled by CTF directly. It is made available for custom CCSDS header implementations to allow specification of the packet header.
 
 Example:
-```javascript
+<pre><code>
 {
     "instruction":"SendCfsCommand",
     "data":{
@@ -172,7 +173,7 @@ Example:
         },
     "wait": 1
 }
-```
+</code></pre>
 
 ### SendCfsCommandWithRawPayload
 Constructs and sends a command message to CFS with the specified MID, command code, and payload bytes. The payload type for this command must be a byte array.
@@ -184,7 +185,7 @@ Constructs and sends a command message to CFS with the specified MID, command co
   This object is passed into to the `CcsdsCommand` type (as determined by the config field [`ccsds:CCSDS_header_path`](../ccsds_plugin/README.md)) and is not handled by CTF directly. It is made available for custom CCSDS header implementations to allow specification of the packet header.
 
 Example:
-```javascript
+<pre><code>
 {
     "instruction": "SendCfsCommandWithRawPayload",
     "data":{
@@ -195,7 +196,7 @@ Example:
     },
     "wait": 1
 }
-```
+</code></pre>
 
 ### CheckEvent
 Checks that an event message matching the given parameters has been received from the CFS target.
@@ -210,7 +211,7 @@ can be listed here to check multiple events at once.
     - **event_str_args**: (optional) arguments that will be inserted into `event_str`, similar to printf() functions
 
 Example:
-```javascript
+<pre><code>
 {
     "instruction":"CheckEvent",
     "data":{
@@ -232,7 +233,8 @@ Example:
     },
     "wait": 1
 }
-```
+</code></pre>
+
 ### CheckNoEvent
 Checks that an event message matching the given parameters is no longer valid in received messages from the CFS target.
 **Note:** This instruction's syntax changed in CTF v1.4
@@ -246,7 +248,7 @@ can be listed here to check multiple events at once.
     - **event_str_args**: (optional) arguments that will be inserted into `event_str`, similar to printf() functions
 
 Example:
-```javascript
+<pre><code>
 {
   "instruction": "CheckNoEvent",
   "data": {
@@ -263,7 +265,8 @@ Example:
   "wait": 4,
   "description": "ENABLE_OUTPUT cmd message is no longer valid in received messages"
 }
-```
+</code></pre>
+
 ### CheckTlmValue
 Checks that a telemetry message matching the given parameters has been received from the CFS target.
 - **target:** (Optional) A previously registered target name. If no name is given, applies to all registered targets.
@@ -281,7 +284,7 @@ can be listed here to check multiple attributes of a given packet at once.
 
 
 Example:
-```javascript
+<pre><code>
 {
     "instruction": "CheckTlmValue",
     "data": {
@@ -308,7 +311,7 @@ Example:
     },
     "wait": 1
 }
-```
+</code></pre>
 
 ### CheckTlmPacket
 Checks that a telemetry message with the given MID has been received from the CFS target. This is equivalent to
@@ -317,7 +320,7 @@ Checks that a telemetry message with the given MID has been received from the CF
 - **mid**: The telemetry message ID to check.
 
 Example:
-```javascript
+<pre><code>
 {
     "instruction": "CheckTlmPacket",
     "data": {
@@ -326,7 +329,7 @@ Example:
     },
     "wait": 1
 }
-```
+</code></pre>
 
 ### CheckNoTlmPacket
 Checks that a telemetry message with the given MID is no longer valid in received messages from the CFS target.
@@ -334,7 +337,7 @@ Checks that a telemetry message with the given MID is no longer valid in receive
 - **mid**: The telemetry message ID to check.
 
 Example:
-```javascript
+<pre><code>
 {
     "instruction": "CheckNoTlmPacket",
     "data": {
@@ -343,7 +346,7 @@ Example:
     },
     "wait": 1
 }
-```
+</code></pre>
 
 ### CheckTlmContinuous
 Similar to `CheckTlmValue` except the check is performed each time telemetry is received, until the test ends or the check is removed by `RemoveCheckTlmContinuous`.
@@ -363,7 +366,7 @@ can be listed here to check multiple attributes of a given packet at once.
 
 
 Example:
-```javascript
+<pre><code>
 {
     "instruction": "CheckTlmContinuous",
     "data": {
@@ -382,22 +385,26 @@ Example:
     },
     "wait": 1
 }
-```
+</code></pre>
 
 ### RemoveCheckTlmContinuous
 Cancels a continuous telemetry check by ID so that it is no longer performed.
+- **target:** (Optional) A previously registered target name. If no name is given, applies to all registered targets.
+Note that the target must match with the target specified in `CheckTlmContinuous`, otherwise the instruction will fail
+ as it tries to remove the ID on the wrong target. 
 - **verification_id:** The ID of a check previously added by `CheckTlmContinuous`
 
 Example:
-```javascript
+<pre><code>
 {
     "instruction": "RemoveCheckTlmContinuous",
     "data": {
+        "target": "cfs_workstation",
         "verification_id": "TO_no_errors"
     },
     "wait": 1,
 }
-```
+</code></pre>
 
 ### ArchiveCfsFiles
 Copies files from a directory that have been modified during the current test run into the test run's log directory.
@@ -405,7 +412,7 @@ Copies files from a directory that have been modified during the current test ru
 - **source_path:** A directory path, absolute or relative to the location of CTF, from which to copy files
 
 Example:
-```javascript
+<pre><code>
 {
     "instruction": "ArchiveCfsFiles",
     "data":{
@@ -414,7 +421,7 @@ Example:
     },
     "wait": 1
 }
-```
+</code></pre>
 
 ### ShutdownCfs
 Shuts down a CFS target explicitly within the test script. 
@@ -423,7 +430,7 @@ Note, the CFS plugin will automatically shutdown all CFS targets on test complet
 - **target:** (Optional) A previously registered target name. If no name is given, applies to all registered targets.
 
 Example:
-```javascript
+<pre><code>
 {
     "instruction": "ShutdownCfs",
     "data": {
@@ -431,4 +438,4 @@ Example:
     },
     "wait": 1,
 }
-```
+</code></pre>

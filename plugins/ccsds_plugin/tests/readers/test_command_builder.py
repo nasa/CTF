@@ -113,7 +113,7 @@ def test_populate_arg():
     assert cmd_arg.name is None
     assert cmd_arg.data_type is None
 
-    arg_dict ={'name': 'Param', 'description': 'fake args', 'enumeration': ['a','b', 'c']}
+    arg_dict = {'name': 'Param', 'description': 'fake args', 'enumeration': ['a', 'b', 'c']}
     cmd_arg = populate_arg(arg_dict)
     assert cmd_arg.name == 'Param'
 
@@ -150,7 +150,6 @@ def test_populate_message():
     Helper function to construct a CommandMessage object, populating the message
     with the respective command codes and arguments.
     """
-
     msg_dict = {'cmd_mid_name': 'CF_WAKE_UP_REQ_CMD_MID', 'cmd_description': '', 'cmd_data_type': 'CF_NoArgsCmd_t',
                 'cmd_parameters': [{"name": "Trans", "description": "", "array_size": "64",
                                     "data_type": "char", "bit_length": "0", "parameters": []
@@ -166,3 +165,16 @@ def test_populate_message():
     assert msg['cmd_description'] == ''
     assert msg['cmd_data_type'] == 'CF_NoArgsCmd_t'
     assert msg['command_codes'][0]['args'][0]['name'] == 'Trans'
+
+
+def test_populate_message_cmd_codes():
+    msg_dict = {"cmd_mid_name": "CF_CMD_MID", "cmd_description": "",
+                "cmd_codes": [{"cc_name": "CF_NOOP_CC", "cc_value": "0", "cc_description": "",
+                               "cc_data_type": "CF_NoArgsCmd_t", "cc_parameters": []
+                               }]}
+
+    msg = populate_message(msg_dict)
+
+    assert msg['cmd_mid_name'] == 'CF_CMD_MID'
+    assert msg['cmd_description'] == ''
+    assert msg['command_codes'][0]['cc_name'] == 'CF_NOOP_CC'

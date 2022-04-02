@@ -14,7 +14,7 @@
     "tests": [
         {
             "case_number": "CFE-6-7-Control-Flow-Test-1",
-            "description": "Start CFS, Loop with condition from tlm value",
+            "description": "Start CFS, Loop with condition from tlm payload value",
             "instructions": [
                 {
                     "instruction": "StartCfs",
@@ -109,6 +109,75 @@
                         "label": "LOOP_1"
                     },
                     "wait": 1
+                },
+                {
+                    "instruction": "ShutdownCfs",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1
+                }
+            ]
+        },
+        {
+            "case_number": "CFE-6-7-Control-Flow-Test-2",
+            "description": "Start CFS, Loop with condition from tlm header value",
+            "instructions": [
+                {
+                    "instruction": "StartCfs",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "EnableCfsOutput",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1,
+                    "description": "Need this to enable the telemetry thread. Enable Output counts as 1 TO cmd"
+                },
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "to_seq_cnt",
+                        "operator": "=",
+                        "value": 0
+                    }
+                },
+                {
+                    "instruction": "BeginLoop",
+                    "data": {
+                        "label": "LOOP_1",
+                        "conditions": [
+                            {"variable": "to_seq_cnt", "compare": "<", "value": 50}
+                        ]
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SetUserVariableFromTlmHeader",
+                    "data": {
+                        "variable_name": "to_seq_cnt",
+                        "mid": "TO_HK_TLM_MID",
+                        "header_variable": "pheader.sequence_count"
+                    }
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "TO_SEND_HK_MID",
+                        "cc": "",
+                        "args": {}
+                    }
+                },
+                {
+                    "instruction": "EndLoop",
+                    "data": {
+                        "label": "LOOP_1"
+                    }
                 },
                 {
                     "instruction": "ShutdownCfs",

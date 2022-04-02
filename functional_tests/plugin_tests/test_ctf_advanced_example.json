@@ -135,7 +135,7 @@
                             },
                             {
                                 "app_name": "TO",
-                                "event_id": "12",
+                                "event_id": "0xC",
                                 "event_str": "TO_VerifyPtrAndCmdLength\\(\\) - Rcvd invalid msgLen for MID:*",
                                 "is_regex": true
                             }
@@ -143,7 +143,7 @@
                         "target": ""
                     },
                     "wait": 0,
-                    "timeout": 2.0
+                    "verify_timeout": 2.0
                 },
                 {
                     "instruction": "CheckTlmValue",

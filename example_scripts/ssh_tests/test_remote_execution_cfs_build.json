@@ -4,7 +4,7 @@
     "test_setup": "No setup",
     "description": "No description",
     "owner": "CTF (Aly Shehata)",
-    "ctf_options": {    "verif_timeout": 2.0},
+    "ctf_options": {    "verify_timeout": 2.0},
     "environment": {},
     "requirements": {},
     "functions": {},

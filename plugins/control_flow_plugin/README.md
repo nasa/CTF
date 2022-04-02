@@ -17,7 +17,7 @@ if all comparison operations are True.
 - **value**: numerical number (example: 20)
 
 Example:
-```javascript
+<pre><code>
 {
     "instruction":"BeginLoop",
     "data": {
@@ -28,7 +28,7 @@ Example:
        ]
       }
  }
-```
+</code></pre>
 
 ### EndLoop
 
@@ -39,14 +39,14 @@ and exits the loop.
 - **label**: a user defined label (example: "LOOP_1")
 
 Example:
-```javascript
+<pre><code>
 {
      "instruction": "EndLoop",
      "data": { 
         "label": "LOOP_1" 
      }
 }
-```
+</code></pre>
 
 ### IfCondition
 
@@ -62,7 +62,7 @@ The condition is True, only if all comparison operations are True.
 - **value**: numerical number (example: 7)
 
 Example:
-```javascript
+<pre><code>
 {
     "instruction":"IfCondition",
     "data": {
@@ -73,7 +73,7 @@ Example:
        ]
       }
 }
-```
+</code></pre>
 
 ### ElseCondition
 
@@ -86,14 +86,14 @@ the control flow jumps to the end of conditional branch block defined by a EndCo
 - **label**: a user defined label (example: "If_Label_1")
 
 Example:
-```javascript
+<pre><code>
 {
      "instruction": "ElseCondition",
      "data": { 
         "label": "If_Label_1" 
      }
 }
-```
+</code></pre>
 
 ### EndCondition
 
@@ -103,11 +103,11 @@ When the control flow reaches EndCondition instruction, it exits the conditional
 - **label**: a user defined label (example: "If_Label_1")
 
 Example:
-```javascript
+<pre><code>
 {
      "instruction": "EndCondition",
      "data": { 
         "label": "If_Label_1" 
      }
 }
-```
+</code></pre>

@@ -66,12 +66,18 @@ class CCSDSPlugin(Plugin):
             log.error("CFS Plugin Not Initialized... Cannot validate CFS CCSDS Data Integrity.")
             return False
 
-        target = target or self.cfs_plugin.FALLBACK_TARGET_NAME
+        if not self.cfs_plugin.targets:
+            log.error("CFS Plugin has no targets registered... Cannot validate CFS CCSDS Data Integrity.")
 
-        if not self.cfs_plugin.targets.get(target):
+        if target and target not in self.cfs_plugin.targets:
             log.error("Target {} is not registered with CfsPlugin".format(target))
             return False
 
+        cfs_targets = [target] if target else self.cfs_plugin.targets.keys()
+        status = [self._send_commands_to_target(t) for t in cfs_targets]
+        return all(status) if status else False
+
+    def _send_commands_to_target(self, target):
         mid_map = self.cfs_plugin.targets[target].mid_map
         result = []
         for mid_name, data in mid_map.items():

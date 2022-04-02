@@ -75,6 +75,12 @@ def test_ccsds_plugin_validate_cfs_ccsds_data_fail(ccsds_plugin_instance, utils,
     assert not ccsds_plugin_instance.validate_cfs_ccsds_data()
     assert utils.has_log_level("ERROR")
 
+    # cfs target is not defined
+    utils.clear_log()
+    cfs_plugin_instance.initialize()
+    assert not ccsds_plugin_instance.validate_cfs_ccsds_data("target1")
+    assert utils.has_log_level("ERROR")
+
 
 def test_ccsds_plugin_validate_cfs_ccsds_data(ccsds_plugin_instance, cfs_plugin_instance):
     """

@@ -37,7 +37,7 @@
                         "args": [
                             {
                                 "app_name": "TO",
-                                "event_id": "3",
+                                "event_id": "0x3",
                                 "event_str": "TO - ENABLE_OUTPUT cmd succesful for  routeMask:0x00000001",
                                 "event_str_args": ""
                             }

@@ -102,6 +102,13 @@ def test_cfs_plugin_register_cfs(cfs_plugin):
     assert not cfs_plugin.register_cfs(target_name)
 
 
+def test_cfs_plugin_register_cfs_variable(cfs_plugin):
+    assert not cfs_plugin.targets
+    Global.variable_store['user_defined_cfs'] = 'cfs'
+    target_name = '$user_defined_cfs$'
+    assert cfs_plugin.register_cfs(target_name)
+
+
 def test_cfs_plugin_register_cfs_default(cfs_plugin):
     assert not cfs_plugin.targets
     assert cfs_plugin.register_cfs('')
@@ -388,9 +395,9 @@ def test_cfs_plugin_get_tlm_value(cfs_plugin):
     assert not cfs_plugin.targets
     mock_controller = MagicMock()
     cfs_plugin.targets = {i: mock_controller for i in range(1)}
-    assert cfs_plugin.get_tlm_value("mid", {'args': True}, None)
+    assert cfs_plugin.get_tlm_value("mid", 'var.name', target=None)
     assert mock_controller.get_tlm_value.call_count == 1
-    mock_controller.get_tlm_value.assert_called_with("mid", {'args': True})
+    mock_controller.get_tlm_value.assert_called_with("mid", 'var.name', False)
 
 
 def test_cfs_plugin_check_tlm_value_pass(cfs_plugin):

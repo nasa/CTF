@@ -42,7 +42,7 @@ def cfs_interface(cfs_config, mid_map, ccsdsv2):
         return CfsInterface(cfs_config, mock_tlm, mock_cmd, mid_map, ccsdsv2)
 
 
-def test_cfs_interface_init(cfs, mid_map):
+def test_cfs_interface_init(cfs):
     assert cfs.config
     assert cfs.evs_long_event_msg_mid == 8198
     assert cfs.evs_short_event_msg_mid == 8199
@@ -103,6 +103,14 @@ def test_cfs_interface_start_cfs(cfs):
         cfs.start_cfs('run_args')
 
 
+def test_cfs_interface_stop_cfs_close_file(cfs, mid_map):
+    cfs.tlm_log_file = open('temp_tlm_file.txt', "a+")
+    cfs.evs_log_file = open('temp_evs_file.txt', "a+")
+    cfs.stop_cfs()
+    cfs.command.cleanup.assert_called_once()
+    cfs.telemetry.cleanup.assert_called_once()
+
+
 def test_cfs_interface_stop_cfs(cfs, mid_map):
     cfs.add_tlm_condition('v_id1', mid_map['MOCK_TLM_MID'], 'args1')
     cfs.stop_cfs()
@@ -114,16 +122,17 @@ def test_cfs_interface_write_tlm_log(cfs, utils):
     assert cfs.tlm_log_file is None
     assert not utils.has_log_level('ERROR')
     with patch('builtins.open', new_callable=mock_open()) as mock_file:
-        cfs.write_tlm_log('payload1', bytearray('payload1','utf-8'), 100)
+        cfs.config.telemetry_debug = True
+        cfs.write_tlm_log('payload1', bytearray('payload1', 'utf-8'), 100)
         assert cfs.tlm_log_file is mock_file.return_value
-        mock_file.assert_called_once_with('./cfs_tlm_msgs.log', 'w+')
+        mock_file.assert_called_once_with('./cfs_tlm_msgs.log', 'a+')
+        assert mock_file.return_value.write.call_count == 3
+        mock_file.return_value.write.reset_mock()
+        cfs.write_tlm_log('payload2', bytearray('payload2', 'utf-8'), 200)
         assert mock_file.return_value.write.call_count == 2
         mock_file.return_value.write.reset_mock()
-        cfs.write_tlm_log('payload2', bytearray('payload2','utf-8'), 200)
-        mock_file.return_value.write.assert_called_once()
-        mock_file.return_value.write.reset_mock()
         mock_file.return_value.write.side_effect = IOError('mock error')
-        cfs.write_tlm_log('payload3', bytearray('payload3','utf-8'), 300)
+        cfs.write_tlm_log('payload3', bytearray('payload3', 'utf-8'), 300)
         assert utils.has_log_level('ERROR')
 
 
@@ -133,7 +142,7 @@ def test_cfs_interface_write_evs_log(cfs, utils):
     with patch('builtins.open', new_callable=mock_open()) as mock_file:
         cfs.write_evs_log(MagicMock())
         assert cfs.evs_log_file is mock_file.return_value
-        mock_file.assert_called_once_with('./cfs_evs_msgs.log', 'w')
+        mock_file.assert_called_once_with('./cfs_evs_msgs.log', 'a+')
         assert mock_file.return_value.write.call_count == 1
         cfs.write_evs_log(MagicMock())
         assert mock_file.return_value.write.call_count == 2
@@ -142,7 +151,7 @@ def test_cfs_interface_write_evs_log(cfs, utils):
         assert utils.has_log_level('ERROR')
 
 
-def test_cfs_interface_parse_command_packet(cfs,utils):
+def test_cfs_interface_parse_command_packet(cfs, utils):
     buff = bytearray(b'\x8b\xc0\x00\x00\x1d\x00\x00\x1d\x00\x00\x1d\x00\x00\x1d\x00*\x00\x00\x02\x021')
     cfs.md_header_offset = 10
     # mid not in mid_payload_map:
@@ -338,14 +347,14 @@ def test_cfs_check_tlm_conditions(cfs, mid_map):
         # test placeholder only
         cfs.unchecked_packet_mids.append(8198)
         cfs.add_tlm_condition('v_id1', mid_map['CFE_EVS_LONG_EVENT_MSG_MID'], 'v_id1 args')
-        cfs.received_mid_packets_dic[8198].append(Packet(8198, MagicMock(), 1, 0.0))
+        cfs.received_mid_packets_dic[8198].append(Packet(8198, None, MagicMock(), 1, 0.0))
         cfs.check_tlm_conditions()
         assert not cfs.unchecked_packet_mids
         mock_check.assert_not_called()
 
         # test check pass
         cfs.unchecked_packet_mids.append(8198)
-        cfs.received_mid_packets_dic[8198].append(Packet(8198, MagicMock(), 1, 1.0))
+        cfs.received_mid_packets_dic[8198].append(Packet(8198, None, MagicMock(), 1, 1.0))
         mock_check.return_value = True
         cfs.check_tlm_conditions()
         assert not cfs.unchecked_packet_mids
@@ -359,7 +368,7 @@ def test_cfs_check_tlm_conditions(cfs, mid_map):
         # test check fail
         mock_check.return_value = False
         cfs.unchecked_packet_mids.append(8198)
-        cfs.received_mid_packets_dic[8198].append(Packet(8198, MagicMock(), 1, 1.0))
+        cfs.received_mid_packets_dic[8198].append(Packet(8198, None, MagicMock(), 1, 1.0))
         with pytest.raises(CtfConditionError):
             cfs.check_tlm_conditions()
         # assert condition was removed
@@ -463,7 +472,7 @@ def test_cfs_check_value_mask(cfs, utils):
     assert not utils.has_log_level('ERROR')
 
     # & invalid expected
-    assert cfs.check_value(0x1, '0x9', '==', '&', 0x3) is False
+    assert cfs.check_value(0x1, '0xv9', '==', '&', 0x3) is False
     assert utils.has_log_level('ERROR')
     utils.clear_log()
 
@@ -479,8 +488,6 @@ def test_cfs_check_value_mask(cfs, utils):
 
     # | invalid expected
     assert cfs.check_value(0xb, '0x9', '==', '&', 0x3) is False
-    assert utils.has_log_level('ERROR')
-    utils.clear_log()
 
     # | invalid actual
     utils.clear_log()
@@ -509,11 +516,11 @@ def test_clear_received_msgs_before_verification_start(cfs, utils):
     assert utils.has_log_level('ERROR')
     utils.clear_log()
 
-    cfs.received_mid_packets_dic[8198].append(Packet(8198, MagicMock(), 1, 4.0))
-    cfs.received_mid_packets_dic[8198].append(Packet(8198, MagicMock(), 2, 5.0))
-    cfs.received_mid_packets_dic[8199].append(Packet(8199, MagicMock(), 1, 4.0))
-    cfs.received_mid_packets_dic[1337].append(Packet(1337, MagicMock(), 1, 2.0))
-    cfs.received_mid_packets_dic[1337].append(Packet(1337, MagicMock(), 2, 3.0))
+    cfs.received_mid_packets_dic[8198].append(Packet(8198, None, MagicMock(), 1, 4.0))
+    cfs.received_mid_packets_dic[8198].append(Packet(8198, None, MagicMock(), 2, 5.0))
+    cfs.received_mid_packets_dic[8199].append(Packet(8199, None, MagicMock(), 1, 4.0))
+    cfs.received_mid_packets_dic[1337].append(Packet(1337, None, MagicMock(), 1, 2.0))
+    cfs.received_mid_packets_dic[1337].append(Packet(1337, None, MagicMock(), 2, 3.0))
 
     cfs.clear_received_msgs_before_verification_start(8198)
     assert len(cfs.received_mid_packets_dic[8198]) == 1
@@ -531,7 +538,7 @@ def test_clear_received_msgs_before_verification_start(cfs, utils):
     assert len(cfs.received_mid_packets_dic[1337]) == 1
 
 
-def test_cfs_get_tlm_value_invalid_MID(cfs, utils):
+def test_cfs_get_tlm_value_invalid_mid(cfs, utils):
     mid = {'INVALID_MID': 8193, 'name': 'CFE_ES_HousekeepingTlm_t', 'PARAM_CLASS': None}
     tlm_variable = 'Payload.CommandCounter'
     utils.clear_log()
@@ -555,7 +562,7 @@ def test_cfs_get_tlm_value_no_packet(cfs, utils):
 def test_cfs_get_tlm_value_no_payload(cfs, utils):
     mid = {'MID': 8198, 'name': 'CFE_ES_HousekeepingTlm_t', 'PARAM_CLASS': None}
     tlm_variable = 'Payload.CommandCounter'
-    cfs.received_mid_packets_dic[8198].append(Packet(8198, None, 1, 4.0))
+    cfs.received_mid_packets_dic[8198].append(Packet(8198, None, None, 1, 4.0))
     utils.clear_log()
     assert cfs.get_tlm_value(mid, tlm_variable) is None
     assert utils.has_log_level('ERROR')
@@ -564,7 +571,7 @@ def test_cfs_get_tlm_value_no_payload(cfs, utils):
 def test_cfs_get_tlm_value(cfs):
     mid = {'MID': 8198, 'name': 'CFE_ES_HousekeepingTlm_t', 'PARAM_CLASS': None}
     tlm_variable = 'Payload.CommandCounter'
-    cfs.received_mid_packets_dic[8198].append(Packet(8198, MagicMock(), 1, 4.0))
+    cfs.received_mid_packets_dic[8198].append(Packet(8198, None, MagicMock(), 1, 4.0))
     assert cfs.get_tlm_value(mid, tlm_variable)
 
 
@@ -579,7 +586,7 @@ def test_cfs_check_tlm_value(cfs, mid_map, utils):
 
     # first verification check
     Global.current_verification_stage = CtfVerificationStage.first_ver
-    cfs.received_mid_packets_dic[mid].append(Packet(mid, mock_tlm, 1, 1.0))
+    cfs.received_mid_packets_dic[mid].append(Packet(mid, None, mock_tlm, 1, 1.0))
     assert not cfs.check_tlm_value(mid_map['MOCK_TLM_MID'],
                                    [{'compare': '==', 'variable': 'foo', 'value': '42'}],
                                    discard_old_packets=True)
@@ -587,7 +594,7 @@ def test_cfs_check_tlm_value(cfs, mid_map, utils):
 
     # polling check
     Global.current_verification_stage = CtfVerificationStage.polling
-    cfs.received_mid_packets_dic[mid].append(Packet(mid, mock_tlm, 1, 1.0))
+    cfs.received_mid_packets_dic[mid].append(Packet(mid, None, mock_tlm, 1, 1.0))
     assert cfs.check_tlm_value(mid,
                                [{'compare': '==', 'variable': 'Payload.foo', 'value': '42'}],
                                discard_old_packets=True)
@@ -612,7 +619,7 @@ def test_cfs_check_tlm_value(cfs, mid_map, utils):
     utils.clear_log()
 
     # invalid payload
-    cfs.received_mid_packets_dic[mid] = [Packet(mid, mock_tlm, 1, 1.0), (Packet(mid, None, 2, 3.0))]
+    cfs.received_mid_packets_dic[mid] = [Packet(mid, None, mock_tlm, 1, 1.0), (Packet(mid, None, None, 2, 3.0))]
     assert not cfs.check_tlm_value(mid,
                                    [{'compare': '!=', 'variable': 'Payload.foo', 'value': '42'}],
                                    discard_old_packets=True)
@@ -620,7 +627,7 @@ def test_cfs_check_tlm_value(cfs, mid_map, utils):
     utils.clear_log()
 
 
-def test_cfs_check_tlm_packet(cfs, utils):
+def test_cfs_check_tlm_packet(cfs):
     Global.current_verification_stage = CtfVerificationStage.first_ver
     payload = MagicMock()
     payload.nested.bool = True
@@ -669,7 +676,8 @@ def test_cfs_check_tlm_packet(cfs, utils):
                                     [{'compare': '==', 'variable': 'myfloat', 'value': 2, 'tolerance_plus': .14}])
 
     # with tol_minus, pass and fail
-    assert cfs.check_tlm_packet(payload, [{'compare': '==', 'variable': 'myfloat', 'value': 3.2, 'tolerance_minus': .1}])
+    assert cfs.check_tlm_packet(payload,
+                                [{'compare': '==', 'variable': 'myfloat', 'value': 3.2, 'tolerance_minus': .1}])
     assert not cfs.check_tlm_packet(payload,
                                     [{'compare': '==', 'variable': 'myfloat', 'value': 3.1, 'tolerance_minus': .1}])
 

@@ -13,7 +13,7 @@ Set / update the value of user defined variable.
 - **value**: numerical number (example: 0)
 
 Example:
-```javascript
+<pre><code>
 {
     "instruction": "SetUserVariable",
     "data": {
@@ -22,7 +22,7 @@ Example:
           "value": 0
     }
 }
-```
+</code></pre>
 
 ### SetUserVariableFromTlm
 
@@ -33,7 +33,7 @@ Set the user defined variable to the latest telemetry value.
 - **tlm_variable**: the parameter of telemetry packet (example: "usCmdCnt")
 
 Example:
-```javascript
+<pre><code>
 {
     "instruction": "SetUserVariableFromTlm",
     "data": {
@@ -42,7 +42,27 @@ Example:
           "tlm_variable": "usCmdCnt"
     }
 }
-```
+</code></pre>
+
+### SetUserVariableFromTlmHeader
+
+Same as `SetUserVariableFromTlm` except the variable references the packet header.
+
+- **variable_name**: the user-defined variable name (example: "my_var")
+- **mid**: the mid of telemetry packet (example: "TO_HK_TLM_MID")
+- **header_variable**: the parameter of telemetry packet (example: "pheader.length")
+
+Example:
+<pre><code> 
+{
+    "instruction": "SetUserVariableFromTlmHeader",
+    "data": {
+         "variable_name": "my_var",
+          "mid": "TO_HK_TLM_MID",
+          "tlm_variable": "pheader.length"
+    }
+}
+</code></pre>
 
 ### CheckUserVariable
 Compare the user-defined variable with the value using the operator. 
@@ -53,7 +73,7 @@ Return the bool outcome of the operation performed on the variables and values.
 - **value**: numerical number (example: 4)
 
 Example:
-```javascript
+<pre><code>
 {
     "instruction": "CheckUserVariable",
     "data": {
@@ -62,18 +82,6 @@ Example:
           "value": 4
     }
 }
-```
+</code></pre>
 
-### SetLabel
 
-Set the a test-script scope label for control flow instructions. 
-- **label_name**: the label name (example: "label_1")
-Example:
-```javascript
-{
-    "instruction": "SetLabel",
-    "data": {
-         "label_name": "label_1"
-    }
-}
-```

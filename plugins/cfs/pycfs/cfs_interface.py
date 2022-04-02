@@ -40,7 +40,7 @@ OPERATION_DIC = {
 }
 
 # This is defining a tuple with 3 fields. mid, payload and packetCount
-Packet = namedtuple('Packet', 'mid payload packetCount timestamp')
+Packet = namedtuple('Packet', 'mid header payload packetCount timestamp')
 TlmCondition = namedtuple('TlmCondition', 'mid args')
 
 
@@ -162,9 +162,11 @@ class CfsInterface:
         if self.tlm_log_file is not None and not self.tlm_log_file.closed:
             log.debug("Closing tlm log file")
             self.tlm_log_file.close()
+            self.tlm_log_file = None
         if self.evs_log_file is not None and not self.evs_log_file.closed:
             log.debug("Closing evs log file")
             self.evs_log_file.close()
+            self.evs_log_file = None
 
         for v_ids in self.tlm_verifications_by_mid_and_vid.values():
             for v_id, verification in v_ids.items():
@@ -176,20 +178,20 @@ class CfsInterface:
         """
         Write payload and mid to telemetry log file. if log file does not exist, create one.
         """
-        if self.tlm_log_file is None:
-            tlm_log_file_path = os.path.join(Global.current_script_log_dir, self.config.name + "_tlm_msgs.log")
-            self.tlm_log_file = open(tlm_log_file_path, "w+")
-            self.tlm_log_file.write("Time: MID, Data\n")
         try:
+            if self.tlm_log_file is None:
+                tlm_log_file_path = os.path.join(Global.current_script_log_dir, self.config.name + "_tlm_msgs.log")
+                self.tlm_log_file = open(tlm_log_file_path, "a+")
+                self.tlm_log_file.write("Time: MID, Data\n")
             self.tlm_log_file.write("{}: {}\n\t{}\n".format(Global.get_time_manager().exec_time, hex(mid),
                                                             str(payload).replace("\n", "\n\t")))
             if self.config.telemetry_debug:
-                self.tlm_log_file.write("        For mid {} Payload length: {} hex values: 0X{}\n".format(hex(mid),
+                self.tlm_log_file.write("        For MID {} Payload length: {} hex values: 0x{}\n".format(hex(mid),
                                                                                                           len(buf),
                                                                                                           buf.hex()))
-        except IOError:
+        except (IOError, ValueError):
             log.error("Failed to write telemetry packet received for {}".format(hex(mid)))
-            traceback.format_exc()
+            log.debug(traceback.format_exc())
 
     def write_evs_log(self, payload):
         """
@@ -197,19 +199,19 @@ class CfsInterface:
         """
         # If this is the first call then the file will need to be opened
         payload = payload.Payload
-        if self.evs_log_file is None:
-            evs_log_file_path = os.path.join(Global.current_script_log_dir, self.config.name + "_evs_msgs.log")
-            self.evs_log_file = open(evs_log_file_path, "w")
         try:
+            if self.evs_log_file is None:
+                evs_log_file_path = os.path.join(Global.current_script_log_dir, self.config.name + "_evs_msgs.log")
+                self.evs_log_file = open(evs_log_file_path, "a+")
             self.evs_log_file.write("%s/%s/%s %s: %s\n" %
                                     (payload.PacketID.SpacecraftID,
                                      payload.PacketID.ProcessorID,
                                      payload.PacketID.AppName.decode(),
                                      payload.PacketID.EventID,
                                      payload.Message.decode() if hasattr(payload, "Message") else ""))
-        except UnicodeDecodeError:
+        except (UnicodeDecodeError, IOError, ValueError):
             log.error("Failed to write event packet to EVS Log file for Event Payload: {}".format(str(payload)))
-            traceback.format_exc()
+            log.debug(traceback.format_exc())
 
     def read_sb_packets(self):
         """
@@ -274,7 +276,7 @@ class CfsInterface:
             self.log_invalid_packet(mid)
             return
 
-        self.on_packet_received(mid, payload)
+        self.on_packet_received(mid, header, payload)
 
     def parse_telemetry_packet(self, buffer):
         """
@@ -295,12 +297,12 @@ class CfsInterface:
         offset = self.tlm_header_offset if self.should_skip_header else 0
         try:
             payload = param_class.from_buffer(buffer[offset:])
-            self.write_tlm_log(payload, buffer[offset:], mid)
-        except (ValueError, IOError):
+        except ValueError:
             self.log_invalid_packet(mid)
             return
 
-        self.on_packet_received(mid, payload)
+        self.write_tlm_log(payload, buffer[offset:], mid)
+        self.on_packet_received(mid, header, payload)
         if mid in [self.evs_long_event_msg_mid, self.evs_short_event_msg_mid]:
             # Write this packet to the CFS EVS Log File
             self.write_evs_log(payload)
@@ -326,7 +328,7 @@ class CfsInterface:
             self.has_received_mid[mid] = True
             log.debug(traceback.format_exc())
 
-    def on_packet_received(self, mid: int, payload: any) -> None:
+    def on_packet_received(self, mid: int, header: any, payload: any) -> None:
         """
         If this is the first time receiving a packet with the given mid then print the value of the mid.
         """
@@ -338,7 +340,7 @@ class CfsInterface:
 
         payload_count = len(self.received_mid_packets_dic[mid]) + 1
         # Add the received packet to the dictionary under the correct mid
-        packet = Packet(mid, payload, payload_count, Global.get_time_manager().exec_time)
+        packet = Packet(mid, header, payload, payload_count, Global.get_time_manager().exec_time)
         self.received_mid_packets_dic[mid].append(packet)
         self.tlm_has_been_received = True
         self.unchecked_packet_mids.append(mid)
@@ -456,6 +458,10 @@ class CfsInterface:
         if compare in OPERATION_DIC:
             try:
                 actual = float(actual)
+                # the expected is a numerical type. However, if it is a hex string like 0x12' or '0X12',
+                # need to convert it to int first, before converting to float
+                if isinstance(expected, str) and ('0x' in expected or '0X' in expected):
+                    expected = int(expected, 0)
                 expected = float(expected)
             except ValueError as exception:
                 log.error("Failed to convert args: {}".format(exception))
@@ -558,7 +564,7 @@ class CfsInterface:
             self.received_mid_packets_dic[mid] = []
         return check_tlm_result
 
-    def get_tlm_value(self, mid: dict, tlm_variable: str):
+    def get_tlm_value(self, mid: dict, tlm_variable: str, is_header: bool = False):
         """
         Given a mid and a tlm_variable, iterate over all received packets, and return the latest tlm value.
         """
@@ -581,13 +587,14 @@ class CfsInterface:
         log.debug("There are {} packets with mid {}".format(len(self.received_mid_packets_dic[mid]), mid_name))
         for i in range(len(self.received_mid_packets_dic[mid]) - 1, -1, -1):
             # Get current packet for the selected MID
-            payload = self.received_mid_packets_dic[mid][i].payload
-            log.debug("payload = {} ".format(payload))
+            packet = self.received_mid_packets_dic[mid][i]
+            data = packet.header if is_header else packet.payload
+            log.debug("packet data = {} ".format(data))
             # Check that a payload exists, otherwise proceed to the next packet
-            if payload is None:
+            if data is None:
                 log.error("Failed to extract packet from received MID: {}. Continuing...".format(hex(mid)))
                 continue
-            latest_tlm_value = ctf_utility.rgetattr(payload, tlm_variable, None)
+            latest_tlm_value = ctf_utility.rgetattr(data, tlm_variable, None)
             if latest_tlm_value is not None:
                 break
 

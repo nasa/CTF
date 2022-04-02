@@ -1,5 +1,5 @@
 {
-    "test_number": "CTF-Test-Case-8",
+    "test_number": "CTF-Test-Case-08",
     "test_name": "CTF Test Case 8",
     "requirements": {
         "CTF-16": "Full"
@@ -57,7 +57,7 @@
                         ],
                         "target": ""
                     },
-                    "timeout": 10,
+                    "verify_timeout": 10,
                     "wait": 4,
                     "description": "ENABLE_OUTPUT cmd message is no longer valid in received messages"
                 }

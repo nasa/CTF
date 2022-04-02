@@ -81,7 +81,7 @@
                         "args": {
                             "myData[0]": {
                                "myByte": "42",
-                               "myShort": "55555",
+                               "myShort": "0XD903",
                                "myInt": "111111",
                                "myLong": "0xF0F0F0F0F0F0",
                                "myFloat": "1.56",
@@ -116,12 +116,12 @@
                             {
                                 "compare": "==",
                                 "variable": "myData[0].myShort",
-                                "value": 55555
+                                "value": "0xD903"
                             },
                             {
                                 "compare": "==",
                                 "variable": "myData[0].myInt",
-                                "value": 111111
+                                "value": "0X1B207"
                             },
                             {
                                 "compare": "==",

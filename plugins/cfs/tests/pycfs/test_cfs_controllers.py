@@ -122,6 +122,7 @@ def test_cfs_controller_initialize_fail(cfs_controller, utils):
     # cfs init fails
     with patch('plugins.cfs.pycfs.cfs_controllers.LocalCfsInterface') as mock_localcfsinterface:
         mock_localcfsinterface.return_value.init_passed = False
+        utils.clear_log()
         assert not cfs_controller.initialize()
         assert utils.has_log_level("ERROR")
 
@@ -134,6 +135,7 @@ def test_cfs_controller_initialize_exception(cfs_controller, utils):
     """
     with patch('plugins.cfs.pycfs.cfs_controllers.import_ccsds_header_types') as mock_import:
         mock_import.side_effect = CtfTestError("Raise Exception for import_ccsds_header_types")
+        utils.clear_log()
         assert not cfs_controller.initialize()
         mock_import.assert_called_once()
         assert utils.has_log_level("ERROR")
@@ -164,6 +166,7 @@ def test_cfs_controller_start_cfs_exception(cfs_controller_inited, utils):
     """
     with patch("plugins.cfs.pycfs.local_cfs_interface.LocalCfsInterface.start_cfs") as mock_start_cfs:
         mock_start_cfs.side_effect = CtfTestError('Mock start_cfs')
+        utils.clear_log()
         cfs_controller_inited.start_cfs('')
         assert utils.has_log_level("ERROR")
 
@@ -363,7 +366,7 @@ def test_cfs_controller_send_cfs_command_args_bitfield(cfs_controller):
         cfs_controller.initialize()
 
         # bitfields populated
-        bytes_io = bytes(52) + b'\x11\x00\x00\x00\x00\x00\x80\x21'
+        bytes_io = bytes(52) + b'\x11\x00\x00\x00\x00\x00\x21\x80'
         cfs_controller.cfs.send_command.reset_mock()
         assert cfs_controller.send_cfs_command('DUMMY_IO_CMD_MID',
                                                'DUMMY_IO_SEND_DATA_CC',
@@ -472,6 +475,18 @@ def test_cfs_controller_resolve_simple_type(cfs_controller_inited):
         cfs_controller_inited.resolve_simple_type(None, arg_type)
 
 
+def test_cfs_controller_resolve_simple_type_exception(cfs_controller_inited, utils):
+    """
+    Test CfsController class resolve_simple_type method:
+    Implementation of helper function resolve_simple_type, if arg is macro, call resolve_macros to convert args
+    """
+    arg_type = ctypes.c_int * 2
+    with pytest.raises(CtfParameterError):
+        utils.clear_log()
+        cfs_controller_inited.resolve_simple_type('4', arg_type)
+        assert utils.has_log_level("ERROR")
+
+
 def test_cfs_controller_resolve_args_from_dict(cfs_controller_inited):
     """
     Test CfsController class resolve_args_from_dict method:
@@ -533,6 +548,7 @@ def test_cfs_controller_check_tlm_continuous_no_mid(cfs_controller_inited, utils
     mid = 'TO_HK_TLM_MID_invalid'
     args = [{'compare': '==', 'variable': 'usCmdErrCnt', 'value': [0.0]}]
     # with invalid mid
+    utils.clear_log()
     assert not cfs_controller_inited.check_tlm_continuous(v_id, mid, args)
     assert utils.has_log_level("ERROR")
 
@@ -548,6 +564,7 @@ def test_cfs_controller_check_tlm_continuous_not_in_packet(cfs_controller_inited
     args = [{'compare': '==', 'variable': 'usCmdErrCnt', 'value': [0.0]}]
 
     # remove messages into received_mid_packets_dic. should return False
+    utils.clear_log()
     cfs_controller_inited.cfs.received_mid_packets_dic.pop(10765)
     assert not cfs_controller_inited.check_tlm_continuous(v_id, mid, args)
     assert utils.has_log_level("ERROR")
@@ -565,6 +582,7 @@ def test_cfs_controller_check_tlm_value_no_mid(cfs_controller_inited, utils):
 
     # mid not available
     with patch.object(Global, 'current_verification_stage', CtfVerificationStage.first_ver):
+        utils.clear_log()
         assert not cfs_controller_inited.check_tlm_value(mid, args)
         assert utils.has_log_level("ERROR")
 
@@ -584,6 +602,7 @@ def test_cfs_controller_check_tlm_value(cfs_controller_inited, utils):
 
     # remove messages into received_mid_packets_dic. should return False
     with patch.object(Global, 'current_verification_stage', CtfVerificationStage.first_ver):
+        utils.clear_log()
         cfs_controller_inited.cfs.received_mid_packets_dic.pop(8193)
         assert not cfs_controller_inited.check_tlm_value(mid, args)
         assert utils.has_log_level("ERROR")
@@ -665,6 +684,7 @@ def test_cfs_controller_check_event_exception(cfs_controller_inited, utils):
     event_id = 3
     is_regex = False
 
+    utils.clear_log()
     assert not cfs_controller_inited.check_event(app, event_id, None, is_regex, 'exception')
     assert utils.has_log_level("ERROR")
 
@@ -712,6 +732,7 @@ def test_cfs_controller_convert_archive_cfs_files_exception(cfs_controller_inite
     (archive_cfs_files) is executed, it calls CfsController instance's archive_cfs_files function.
     """
     source_path = '~/sample_cfs_workspace/ctf_tests/test_scripts/sample_test_suite/app_tests'
+    utils.clear_log()
     assert not cfs_controller_inited.archive_cfs_files(source_path)
     assert utils.has_log_level("ERROR")
 
@@ -792,6 +813,7 @@ def test_cfs_controller_shutdown_exception(cfs_controller_inited, utils):
     include the shutdown test command
     """
     with patch('plugins.cfs.pycfs.cfs_controllers.CfsController.shutdown_cfs') as mock_shutdown_cfs:
+        utils.clear_log()
         mock_shutdown_cfs.side_effect = CtfTestError("Raise Exception for shutdown_cfs")
         cfs_controller_inited.cfs_running = True
         assert cfs_controller_inited.shutdown() is None
@@ -816,6 +838,7 @@ def test_cfs_controller_validate_mid_value_invalid(cfs_controller_inited, utils)
     Test CfsController class validate_mid_value method: return None for invalid input
     Implementation of helper function validate_mid_value. Check whether mid_name is in mid_map dictionary.
     """
+    utils.clear_log()
     assert cfs_controller_inited.validate_mid_value(0) is None
     assert cfs_controller_inited.validate_mid_value('INVALID_MID') is None
     assert utils.has_log_level("ERROR")
@@ -826,6 +849,7 @@ def test_cfs_controller_validate_mid_value_uninitialized(cfs_controller, utils):
     Test CfsController class validate_mid_value method: return None when MID map is not available
     Implementation of helper function validate_mid_value. Check whether mid_name is in mid_map dictionary.
     """
+    utils.clear_log()
     assert cfs_controller.validate_mid_value('TO_CMD_MID') is None
     assert utils.has_log_level("ERROR")
 
@@ -854,6 +878,7 @@ def test_cfs_controller_validate_cc_value_invalid(cfs_controller_inited, utils):
     """
     # invalid CC
     to_mid = cfs_controller_inited.mid_map['TO_CMD_MID']
+    utils.clear_log()
     assert cfs_controller_inited.validate_cc_value(to_mid, -1) is None
     assert cfs_controller_inited.validate_cc_value(to_mid, 'INVALID_CC') is None
     assert utils.has_log_level("ERROR")
@@ -886,6 +911,7 @@ def test_remote_cfs_controller_initialize_fail(remote_controller, utils):
         assert not remote_controller.initialize()
 
     with patch('plugins.ssh.ssh_plugin.SshController.init_connection', return_value=True):
+        utils.clear_log()
         assert not remote_controller.initialize()
         assert utils.has_log_level("ERROR")
 
@@ -917,6 +943,7 @@ def test_remote_cfs_controller_initialize_exception(remote_controller, utils):
     create ssh CFS command interface; create telemetry interface;
     """
     with patch('plugins.cfs.pycfs.cfs_controllers.import_ccsds_header_types') as mock_import:
+        utils.clear_log()
         mock_import.side_effect = CtfTestError("Raise Exception for import_ccsds_header_types")
         assert not remote_controller.initialize()
         mock_import.assert_called_once()
@@ -943,6 +970,7 @@ def test_remote_cfs_controller_shutdown_cfs_exception(remote_controller_inited, 
     (shutdown_cfs) is executed, it calls RemoteCfsController instance's shutdown_cfs function.
     """
     with patch('plugins.ssh.ssh_plugin.SshController.run_command') as mock_run_command:
+        utils.clear_log()
         mock_run_command.side_effect = CtfTestError("Raise Exception for run_command")
         remote_controller_inited.cfs_process_list.append(-100)
         with pytest.raises(CtfTestError):
@@ -979,6 +1007,7 @@ def test_remote_cfs_controller_shutdown_exception(remote_controller_inited, util
     """
     with patch('plugins.cfs.pycfs.cfs_controllers.RemoteCfsController.shutdown_cfs') as mock_shutdown:
         mock_shutdown.side_effect = CtfTestError("Raise Exception for shutdown_cfs")
+        utils.clear_log()
         temp_dir = Global.current_script_log_dir
         Global.current_script_log_dir = '~/sample_cfs_workspace/ctf_tests/results/'
         remote_controller_inited.cfs.cfs_std_out_path = 'local_ssh_output.txt'

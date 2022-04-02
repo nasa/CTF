@@ -10,7 +10,7 @@ Simply logs that the test command was executed with the provided arguments.
 - **arg2**: any value (example: "World")
 
 Example:
-```javascript
+<pre><code>
 {
     "instruction":"TestCommand",
     "data":{
@@ -18,27 +18,27 @@ Example:
         "arg2": 42
     }
  }
-```
+</code></pre>
 
 ### TestVerifyCommand
 
 Increments the plugin's example_counter value and checks if it is greater than `5`. CTF will poll run that instructions until the verification is successful, or a timeout occurs.
 
 Example:
-```javascript
+<pre><code>
 {
     "instruction":"TestVerifyCommand",
     "data":{}
 }
-```
+</code></pre>
 
 ### TestSharedLibraryCommand
 
 Uses libc to get the system time and log it to system output. Verifies that the expected number of bytes were printed.
 Example:
-```javascript
+<pre><code>
 {
     "instruction":"TestSharedLibraryCommand",
     "data":{}
 }
-```
+</code></pre>

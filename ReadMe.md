@@ -20,6 +20,44 @@ For more detailed information on CTF usage, see the [CTF Software User's Guide](
 
 ## Release Notes
 
+### v1.5 
+03/31/2022
+
+* CTF Core Changes
+    * Consolidate `CheckEvent` verification timeout configuration using the name `verify_timeout` in test scripts.  
+
+    * Minor improvements and bug fixes.
+    
+* CTF Plugins Changes
+    * Add a new plugin: Validation Plugin. 
+        * Provide instructions to allow CTF users to copy / delete files / folders, search a string in a text file, 
+        and save CFS evs binary file to a text file. See plugin docs for more information.
+    
+    * Updates to CFS Plugin
+        * Fix a bug that caused missing logs and telemetry after the first test cases of a run. 
+
+        * Support hex value arguments (of the form `"0x1F`) in `SendCfsCommand`, `CheckTlmValue`, `CheckEvent` instructions. 
+    
+        * Change `SendCfsCommand` to use the configured target's endianness for bitfield values.
+
+    * Add new instruction `SetUserVariableFromTlmHeader` to Variable Plugin.
+
+    * Add support in CCSDS Plugin for data structures defined in their own files independently of MIDs.
+
+    * Remove the outdated instruction `SetLabel`. 
+  
+    * Minor improvements and bug fixes.
+ 
+ * CTF Tool and Scripts Changes
+    * Integrate jsonlint tool to scan json test scripts before executing tests.
+    
+    * Modify the upgrade script in `ctf/tools` to automatically update CTF config files and test scripts for v1.4 / v1.5 compatibility.
+
+    * Update CTF documents and FAQ.
+    
+    * Update CTF unit tests.
+      
+    
 ### v1.4
 02/28/2022
 * CTF Core Changes
@@ -38,8 +76,8 @@ For more detailed information on CTF usage, see the [CTF Software User's Guide](
         * `SendCfsCommandWithPayloadLength` now includes any serialized `args` in the payload, up to the length specified.
         * Change the syntax of `CheckEvent` and `CheckNoEvent` to allow a list of events to be checked simultaneously.
         * Add support for bitfield values in `SendCfsCommand` instruction.
-        * CFS Plugin instructions handle MID and CC values as names, decimal or hexadecimal integers, stringified integers, or macros.         
-      
+        * CFS Plugin instructions handle MID and CC values as names, decimal or hexadecimal integers, stringified integers, or macros. 
+       
     * Add conditional branching if and else instructions in Control-Flow Plugin. See plugin README for more information.  
        
     * Clear ram drive on Linux target if cFS instance is starting without `-RPR` argument.
@@ -75,9 +113,9 @@ For more detailed information on CTF usage, see the [CTF Software User's Guide](
 * CTF Plugins Changes
 
     * CFS shutdown on Linux logs an error, but does not fail, if no such process is found.
-    
+     
     * CFS Plugin macros now require the format `#MACRO#` instead of `#MACRO`.
-    
+       
     * Fix the 'disable' attribute in function definition.
 
 * CTF Documentation Changes
@@ -154,7 +192,6 @@ For more detailed information on CTF usage, see the [CTF Software User's Guide](
     * Minor improvements and bug fixes.
 
 * CFS Plugin Changes
-    * Update FTP Interface with changes from GSFC functional testing.
     
     * Fix the use of CCDD macros in test scripts.
     
@@ -205,7 +242,7 @@ For more detailed information on CTF usage, see the [CTF Software User's Guide](
     * Ensure args do not get malformed while sending a command to multiple cFS targets
     
     * Resolve CheckTlmValue passing if one or more variables fails to be evaluated from the telemetry packet.
-    
+        
     * Minor improvements and bug fixes.
 
     

@@ -240,6 +240,9 @@ class CfsPlugin(Plugin):
         log.info("RegisterCfs for target: {}".format(target))
         self.has_attempted_register = True
 
+        if '$' in target:
+            target = resolve_variable(target)
+
         if target == "":
             return self.load_configured_targets(target)
 
@@ -433,13 +436,13 @@ class CfsPlugin(Plugin):
 
         return result
 
-    def get_tlm_value(self, mid: str, tlm_variable: str, target: str = None):
+    def get_tlm_value(self, mid: str, tlm_variable: str, is_header: bool = False, target: str = None):
         """Get the latest telemetry value with matching mid and named parameter"""
         tlm_value = None
         # Get the latest telemetry value from cfs target
         cfs_target = self.get_cfs_targets(target)
         if cfs_target:
-            tlm_value = cfs_target[0].get_tlm_value(mid, tlm_variable)
+            tlm_value = cfs_target[0].get_tlm_value(mid, tlm_variable, is_header)
         return tlm_value
 
     def check_tlm_continuous(self, verification_id: str, mid: str, args: dict, target: str = None) -> bool:

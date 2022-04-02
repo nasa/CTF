@@ -30,6 +30,12 @@ def update_json_file(filepath):
     with open(filepath, 'r') as file:
         try:
             json_data = json.load(file)
+
+            if "ctf_options" in json_data and "verif_timeout" in json_data["ctf_options"]:
+                json_data["ctf_options"]["verify_timeout"] = json_data["ctf_options"]["verif_timeout"]
+                del json_data["ctf_options"]["verif_timeout"]
+                count += 1
+
             if "tests" in json_data or "functions" in json_data:
                 if "command_watch_list" in json_data:
                     del json_data["command_watch_list"]
@@ -39,6 +45,11 @@ def update_json_file(filepath):
                     count += 1
                 for j in itertools.chain(json_data.get("functions", {}).values(), json_data.get("tests", [])):
                     for inst in j.get("instructions"):
+                        # rename "timeout" to "verify_timeout"
+                        if "timeout" in inst:
+                            inst["verify_timeout"] = inst.pop("timeout")
+                            count += 1
+
                         if inst.get("instruction") == "SendInvalidLengthCfsCommand":
                             inst["instruction"] = "SendCfsCommandWithPayloadLength"
                             count += 1
@@ -47,35 +58,14 @@ def update_json_file(filepath):
                             count += 1
                         elif inst.get("instruction") in ["CheckEvent", "CheckNoEvent"] and "args" not in inst["data"]:
                             args = {
-                                "app": inst["data"].pop("app", None),
-                                "id": inst["data"].pop("id", None),
-                                "msg": inst["data"].pop("msg", None),
-                                "msg_args": inst["data"].pop("msg_args", None),
+                                "app_name": inst["data"].pop("app", None),
+                                "event_id": inst["data"].pop("id", None),
+                                "event_str": inst["data"].pop("msg", None),
+                                "event_str_args": inst["data"].pop("msg_args", None),
                                 "is_regex": inst["data"].pop("is_regex", None)
                             }
                             inst["data"]["args"] = [{k: v for k, v in args.items() if v is not None}]
                             count += 1
-                        # now inst["data"]["args"] is a list of objects, rename it if necessary.
-                        if inst.get("instruction") in ["CheckEvent", "CheckNoEvent"] and "args" in inst["data"]:
-                            args = inst["data"]['args']
-                            for i in range(len(args)):
-                                arg = args[i]
-                                if "app" in arg or "id" in arg or "msg" in arg or "msg_args" in arg:
-                                    count += 1
-                                app_name_value = arg["app_name"] if "app_name" in arg else arg.pop("app", None)
-                                event_id_value = arg["event_id"] if "event_id" in arg else arg.pop("id", None)
-                                event_str_value = arg["event_str"] if "event_str" in arg else arg.pop("msg", None)
-                                event_str_args_value = arg["event_str_args"] if "event_str_args" in arg else arg.pop("msg_args", None)
-                                is_regex_value = arg.pop("is_regex", None)
-                                temp_arg = {
-                                    "app_name": app_name_value,
-                                    "event_id": event_id_value,
-                                    "event_str": event_str_value,
-                                    "event_str_args": event_str_args_value,
-                                    "is_regex": is_regex_value
-                                }
-                                copied_arg = {k: v for k, v in temp_arg.items() if v is not None}
-                                args[i] = copied_arg
             else:
                 print("{} is not a test script".format(filepath))
         except (json.decoder.JSONDecodeError, KeyError):
@@ -97,7 +87,8 @@ def update_ini_file(filepath):
     config.write_empty_values = True
     count = 0
     for section in config:
-        if config[section].get('cfs_protocol') == 'local' and 'cfs_ram_drive_path' not in config[section]:
+        if (section == 'cfs' or config[section].get('cfs_protocol') == 'local')\
+                and 'cfs_ram_drive_path' not in config[section]:
             config[section]["cfs_ram_drive_path"] = "/dev/shm/osal:RAM"
             config[section].comments.update(
                 {"cfs_ram_drive_path": ["", "The ram drive path to be deleted. It is only needed, when '-RPR' "
@@ -114,13 +105,13 @@ def update_ini_file(filepath):
             count += 1
 
         if config[section].get('cfs_protocol') == 'sp0':
-            if not config[section].get("stop_command"):
+            if "stop_command" not in config[section]:
                 config[section]["stop_command"] = "reboot()"
                 config[section].comments.update({
                     "stop_command": ["", "Command to be issued when CFS is shut down"]
                 })
                 count += 1
-            if not config[section].get("auto_start"):
+            if "auto_start" not in config[section]:
                 config[section]["auto_start"] = "False"
                 config[section].comments.update(
                     {"auto_start": ["", "Manual software loading will be skipped during startup"]}
@@ -141,6 +132,11 @@ if __name__ == '__main__':
         print("Usage: python upgrade_v1_4.py [ROOTPATH ...]")
     if not ConfigObj:
         print("Python package configobj not found: INI files will not be updated. Install with 'pip install configobj'")
+    if sys.version_info < (3, 8):
+        print("WARNING: Running an older version of Python ({})."
+              "Make sure your CTF virtual environment is activated, as older versions may behave differently."
+              .format(sys.version))
+        input("Press Enter to continue, or CTRL-C to cancel.")
     for root_path in sys.argv[1:]:
         if not os.path.exists(root_path):
             print("Path {} does not exist, exiting".format(root_path))

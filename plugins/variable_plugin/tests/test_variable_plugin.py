@@ -11,7 +11,7 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
-
+from unittest.mock import patch
 
 import pytest
 
@@ -47,8 +47,8 @@ def test_variable_plugin_commandmap(variable_plugin):
     """
     assert len(variable_plugin.command_map) == 4
     assert "SetUserVariable" in variable_plugin.command_map
-    assert "SetLabel" in variable_plugin.command_map
     assert "SetUserVariableFromTlm" in variable_plugin.command_map
+    assert "SetUserVariableFromTlmHeader" in variable_plugin.command_map
     assert "CheckUserVariable" in variable_plugin.command_map
 
 
@@ -94,7 +94,17 @@ def test_variable_check_user_defined_variable(variable_plugin, utils):
 
 
 def test_variable_set_user_variable_from_tlm(variable_plugin):
-    assert variable_plugin.set_user_variable_from_tlm('my_var', 'TO_HK_TLM_MID', 'usCmdCnt')
+    with patch('lib.ctf_global.Global.plugin_manager.find_plugin_for_command') as mock_get_plugin:
+        mock_get_plugin.return_value.get_tlm_value.return_value = 2
+        assert variable_plugin.set_user_variable_from_tlm('tlm_var', 'TO_HK_TLM_MID', 'usCmdCnt')
+        assert Global.variable_store.get('tlm_var') == 2
+
+
+def test_variable_set_user_variable_from_tlm_header(variable_plugin):
+    with patch('lib.ctf_global.Global.plugin_manager.find_plugin_for_command') as mock_get_plugin:
+        mock_get_plugin.return_value.get_tlm_value.return_value = 12345
+        assert variable_plugin.set_user_variable_from_tlm_header('hdr_var', 'TO_HK_TLM_MID', 'sheader.timestamp')
+        assert Global.variable_store.get('hdr_var') == 12345
 
 
 def test_variable_set_label(variable_plugin):

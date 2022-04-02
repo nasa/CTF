@@ -115,18 +115,24 @@ def test_plugin_manager_init(plugin_manager):
     test PluginManager class constructor
     """
     assert plugin_manager.plugin_packages == ['plugins']
-    assert len(plugin_manager.plugins) == 7
+    assert len(plugin_manager.plugins) == 8
     assert 'CCSDS Plugin' in plugin_manager.plugins
     assert 'CFS Plugin' in plugin_manager.plugins
     assert 'ExamplePlugin' in plugin_manager.plugins
     assert 'SshPlugin' in plugin_manager.plugins
     assert 'UserIOPlugin' in plugin_manager.plugins
-    assert len(plugin_manager.plugin_name_list) == 7
+    assert 'ControlFlow Plugin' in plugin_manager.plugins
+    assert 'VariablePlugin' in plugin_manager.plugins
+    assert 'ValidationPlugin' in plugin_manager.plugins
+    assert len(plugin_manager.plugin_name_list) == 8
     assert 'CCSDS Plugin' in plugin_manager.plugin_name_list
     assert 'CFS Plugin' in plugin_manager.plugin_name_list
     assert 'ExamplePlugin' in plugin_manager.plugin_name_list
     assert 'SshPlugin' in plugin_manager.plugin_name_list
     assert 'UserIOPlugin' in plugin_manager.plugin_name_list
+    assert 'ControlFlow Plugin' in plugin_manager.plugin_name_list
+    assert 'VariablePlugin' in plugin_manager.plugin_name_list
+    assert 'ValidationPlugin' in plugin_manager.plugin_name_list
 
 
 def test_plugin_manager_initialize_plugins(plugin_manager):
@@ -195,12 +201,15 @@ def test_plugin_manager_reload_plugins(plugin_manager, utils):
     provided plugin package to load all available plugins
     """
     assert plugin_manager.reload_plugins() is None
-    assert len(plugin_manager.plugin_name_list) == 7
+    assert len(plugin_manager.plugin_name_list) == 8
     assert 'CCSDS Plugin' in plugin_manager.plugin_name_list
     assert 'CFS Plugin' in plugin_manager.plugin_name_list
     assert 'ExamplePlugin' in plugin_manager.plugin_name_list
     assert 'SshPlugin' in plugin_manager.plugin_name_list
     assert 'UserIOPlugin' in plugin_manager.plugin_name_list
+    assert 'ControlFlow Plugin' in plugin_manager.plugin_name_list
+    assert 'VariablePlugin' in plugin_manager.plugin_name_list
+    assert 'ValidationPlugin' in plugin_manager.plugin_name_list
 
     utils.clear_log()
     plugin_manager.plugin_packages = ['plugins_fail']

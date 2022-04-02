@@ -1,0 +1,37 @@
+{
+    "test_number": "Basic-CFE-6-7-Cfs-Plugin-Test",
+    "test_name": "Basic CFE-6-7 CFS Plugin Test",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "description": "Basic CTF Example Script To Save EVS Binary File to Txt File",
+    "owner": "CTF",
+    "test_setup": "",
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "import": {},
+    "tests": [
+        {
+            "case_number": "CFE-6-7-Plugin-Test-Save-EVS_Log-As-Text",
+            "description": "Register CFS, Save EVS Log File as Text File",
+            "instructions": [
+                {
+                    "instruction": "RegisterCfs",
+                    "data": {
+                        "target": ""
+                    }
+                },
+                {
+                    "instruction": "SaveFileAsText",
+                    "data": {
+                        "input_file": "./plugins/validation_plugin/tests/evs.bin",
+                        "output_file": "./testArtifacts/evs_log.txt",
+                        "file_type": "EVS",
+                        "target": ""
+                    }
+                }
+            ]
+        }
+    ]
+}

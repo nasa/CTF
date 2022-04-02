@@ -64,14 +64,14 @@ class VariablePlugin(Plugin):
         ## Plugin Command Map
         self.command_map = {
             "SetUserVariable": (self.set_user_defined_variable, [ArgTypes.string, ArgTypes.string, ArgTypes.other]),
-            "SetLabel": (self.set_label, [ArgTypes.string]),
-            "SetUserVariableFromTlm": (self.set_user_variable_from_tlm, [ArgTypes.string, ArgTypes.string,
-                                                                         ArgTypes.string]),
+            "SetUserVariableFromTlm": (self.set_user_variable_from_tlm,
+                                       [ArgTypes.string, ArgTypes.string, ArgTypes.string]),
+            "SetUserVariableFromTlmHeader": (self.set_user_variable_from_tlm_header,
+                                             [ArgTypes.string, ArgTypes.string, ArgTypes.string]),
             "CheckUserVariable": (self.check_user_defined_variable, [ArgTypes.string, ArgTypes.string, ArgTypes.other])
         }
 
-    @staticmethod
-    def initialize():
+    def initialize(self):
         """
         Initialize implementation for the variable plugin.
 
@@ -97,16 +97,24 @@ class VariablePlugin(Plugin):
         return status
 
     @staticmethod
-    def set_user_variable_from_tlm(variable_name: str, mid: str, tlm_variable: str):
+    def set_user_variable_from_tlm(variable_name: str, mid: str, tlm_variable: str, is_header: bool = False):
         """
         Get the latest telemetry value from queue, and set it to the specified variable.
         @return bool: True if successful, False otherwise.
         """
         log.info("Set user variable: '{}' from tlm mid: '{}' variable: '{}'".format(variable_name, mid, tlm_variable))
         cfs_plugin = Global.plugin_manager.find_plugin_for_command("StartCfs")
-        tlm_value = cfs_plugin.get_tlm_value(mid, tlm_variable)
+        tlm_value = cfs_plugin.get_tlm_value(mid, tlm_variable, is_header)
         status = VariablePlugin.set_user_defined_variable(variable_name, "=", tlm_value)
         return status
+
+    @staticmethod
+    def set_user_variable_from_tlm_header(variable_name: str, mid: str, header_variable: str):
+        """
+        Get the latest telemetry header value from queue, and set it to the specified variable.
+        @return bool: True if successful, False otherwise.
+        """
+        return VariablePlugin.set_user_variable_from_tlm(variable_name, mid, header_variable, True)
 
     @staticmethod
     def set_label(label: str) -> bool:

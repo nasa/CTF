@@ -141,7 +141,7 @@ conda install -c anaconda pytest'>=6.2.1' -y
 conda install -c anaconda pytest-cov -y
 conda install -c anaconda mock -y
 conda install -c anaconda pylint -y
-
+conda install -c conda-forge demjson -y
 
 
 if  [[ "$platform" == 'linux' ]]; then

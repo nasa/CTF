@@ -52,7 +52,6 @@ import sys
 from inspect import signature
 
 from lib.ctf_global import Global
-from lib.ctf_utility import switch_to_cft_directory
 from lib.exceptions import CtfTestError
 from lib.logger import logger as log
 

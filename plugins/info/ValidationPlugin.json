@@ -1,90 +1,75 @@
 {
-  "group_name": "VariablePlugin",
+  "group_name": "ValidationPlugin",
   "instructions": [
     {
-      "name": "SetUserVariable",
+      "name": "DeleteFiles",
       "description": "",
       "parameters": [
         {
-          "name": "variable_name",
-          "description": "",
-          "type": "string"
-        },
-        {
-          "name": "operator",
-          "description": "",
-          "type": "string"
-        },
-        {
-          "name": "value",
-          "description": "",
-          "type": "other"
-        }
-      ]
-    },
-    {
-      "name": "SetUserVariableFromTlm",
-      "description": "",
-      "parameters": [
-        {
-          "name": "variable_name",
-          "description": "",
-          "type": "string"
-        },
-        {
-          "name": "mid",
-          "description": "",
-          "type": "string"
-        },
-        {
-          "name": "tlm_variable",
+          "name": "path",
           "description": "",
           "type": "string"
         }
       ]
     },
     {
-      "name": "SetUserVariableFromTlmHeader",
+      "name": "CopyFiles",
       "description": "",
       "parameters": [
         {
-          "name": "variable_name",
+          "name": "source",
           "description": "",
           "type": "string"
         },
         {
-          "name": "mid",
-          "description": "",
-          "type": "string"
-        },
-        {
-          "name": "header_variable",
+          "name": "destination",
           "description": "",
           "type": "string"
         }
       ]
     },
     {
-      "name": "CheckUserVariable",
+      "name": "SaveFileAsText",
       "description": "",
       "parameters": [
         {
-          "name": "variable_name",
+          "name": "input_file",
           "description": "",
           "type": "string"
         },
         {
-          "name": "operator",
+          "name": "output_file",
           "description": "",
           "type": "string"
         },
         {
-          "name": "value",
+          "name": "file_type",
           "description": "",
-          "type": "other"
+          "type": "string"
+        },
+        {
+          "name": "target",
+          "description": "",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "SearchStr",
+      "description": "",
+      "parameters": [
+        {
+          "name": "file",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "search_str",
+          "description": "",
+          "type": "string"
         }
       ]
     }
   ],
-  "description": "Variable Plugin"
+  "description": "CTF Validation Plugin"
 }

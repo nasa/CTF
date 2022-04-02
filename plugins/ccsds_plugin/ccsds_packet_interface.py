@@ -27,7 +27,7 @@ from collections import namedtuple
 from lib.ctf_global import Global
 from lib.logger import logger as log
 from lib.exceptions import CtfTestError
-from lib.ctf_utility import expand_path, switch_to_cft_directory
+from lib.ctf_utility import expand_path
 
 CcsdsHeaderTypes = namedtuple('CcsdsHeaderTypes', 'CcsdsPrimaryHeader CcsdsCommand CcsdsTelemetry')
 

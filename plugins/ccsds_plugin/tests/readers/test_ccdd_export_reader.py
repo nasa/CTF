@@ -123,15 +123,29 @@ def test_ccdd_export_reader_process_command_exception(ccdd_export_reader, utils)
     utils.clear_log()
     with patch('plugins.ccsds_plugin.readers.ccdd_export_reader.CCDDExportReader._create_parameterized_type') \
             as mock_create:
-        mock_create.side_effect = CtfTestError('Mock reate_type_class')
+        mock_create.side_effect = CtfTestError('Mock _create_parameterized_type')
         with pytest.raises(CtfTestError):
             enum_map_len = len(ccdd_export_reader.enum_map)
             mid_map_len = len(ccdd_export_reader.mid_map)
             ccdd_export_reader.process_command(json_dict)
-            assert utils.has_log_level("ERROR")
-            # no new type is added
-            assert enum_map_len == len(ccdd_export_reader.enum_map)
-            assert mid_map_len == len(ccdd_export_reader.mid_map)
+        assert utils.has_log_level("ERROR")
+        # no new type is added
+        assert enum_map_len == len(ccdd_export_reader.enum_map)
+        assert mid_map_len == len(ccdd_export_reader.mid_map)
+
+        json_dict = {
+            "cmd_mid_name": "INVALID_CMD_MID", "cmd_codes":
+            [{"cc_name": "INVALID", "cc_value": "0", "cc_data_type": "INVALID", "cc_parameters": []}]
+        }
+        utils.clear_log()
+        with pytest.raises(CtfTestError):
+            enum_map_len = len(ccdd_export_reader.enum_map)
+            mid_map_len = len(ccdd_export_reader.mid_map)
+            ccdd_export_reader.process_command(json_dict)
+        assert utils.has_log_level("ERROR")
+        # no new type is added
+        assert enum_map_len == len(ccdd_export_reader.enum_map)
+        assert mid_map_len == len(ccdd_export_reader.mid_map)
 
 
 def test_ccdd_export_reader_process_command(ccdd_export_reader, utils):
@@ -164,6 +178,29 @@ def test_ccdd_export_reader_process_command(ccdd_export_reader, utils):
     assert 'CFE_SB_SUB_RPT_CTRL_MID' not in ccdd_export_reader.enum_map
     ccdd_export_reader.process_command(json_dict)
     assert 'CFE_SB_SUB_RPT_CTRL_MID' in ccdd_export_reader.enum_map
+
+
+def test_ccdd_export_reader_process_command_no_cc(ccdd_export_reader, utils):
+    json_dict = {
+        "cmd_mid_name": "HK_SEND_COMBINED_PKT_MID",
+        "cmd_description": "",
+        "cmd_data_type": "HK_Send_Out_Msg_t",
+        "cmd_parameters": [
+            {
+                "name": "OutMsgToSend",
+                "description": "MsgId #CFE_SB_MsgId_t of combined tlm pkt to send",
+                "array_size": "0",
+                "data_type": "CFE_SB_MsgId_t",
+                "bit_length": "0",
+                "parameters": []
+            }
+        ]
+    }
+    assert "HK_SEND_COMBINED_PKT_MID" not in ccdd_export_reader.enum_map
+    ccdd_export_reader.mids['HK_SEND_COMBINED_PKT_MID'] = 1234
+    ccdd_export_reader.process_command(json_dict)
+    assert "HK_SEND_COMBINED_PKT_MID" in ccdd_export_reader.enum_map
+    assert ccdd_export_reader.mid_map["HK_SEND_COMBINED_PKT_MID"]["CC"][""]["CODE"] == 0
 
 
 def test_ccdd_export_reader_build_data_type_and_field_existing_type(ccdd_export_reader, utils):
@@ -254,12 +291,13 @@ def test_ccdd_export_reader_create_parameterized_type(ccdd_export_reader):
                           {'name': 'Spare', 'data_type': 'uint8', 'description': '', 'array_size': '3',
                            'enumeration': [{'label': 'mock_label', 'value': 'mock_value'}],
                            'bit_length': '0', 'parameters': []}],
-                 'cc_description': '', 'cc_data_type': 'CF_ResetCtrsCmd_t'}
+                 'cc_description': '', 'cc_data_type': 'uint8'}
     type_id = 'cc_data_type'
     arg_id = 'args'
     subtypes = {}
+    ccdd_export_reader.type_dict = {'uint8': ctypes.c_ubyte}
     parameterized_type = ccdd_export_reader._create_parameterized_type(type_dict, type_id, arg_id, subtypes)
-    assert parameterized_type[0].__name__ == 'CF_ResetCtrsCmd_t'
+    assert parameterized_type[0].__name__ == 'uint8'
 
 
 def test_ccdd_export_reader_create_parameterized_type_exception(ccdd_export_reader, utils):
@@ -283,60 +321,9 @@ def test_ccdd_export_reader_create_parameterized_type_exception(ccdd_export_read
 
     # test case : create_type_class method raise the first exception
     with patch('plugins.ccsds_plugin.readers.ccdd_export_reader.create_type_class') as mock_create:
-        mock_create.side_effect = CtfTestError('Mock reate_type_class')
-        ccdd_export_reader._create_parameterized_type(type_dict, type_id, arg_id, subtypes)
-        assert utils.has_log_level("ERROR")
-
-    type_dict = {'cc_name': 'CF_RESET_CC', 'cc_value': '1',
-                 'args': [],
-                 'cc_description': '', 'cc_data_type': 'CF_ResetCtrsCmd_t'}
-    type_id = 'cc_data_type'
-    arg_id = 'args'
-    subtypes = {}
-    utils.clear_log()
-
-    # test case : create_type_class method raise the second exception
-    with patch('plugins.ccsds_plugin.readers.ccdd_export_reader.create_type_class') as mock_create:
-        mock_create.side_effect = CtfTestError('Mock reate_type_class')
-        ccdd_export_reader._create_parameterized_type(type_dict, type_id, arg_id, subtypes)
-        assert utils.has_log_level("ERROR")
-
-
-def test_ccdd_export_reader_create_parameterized_type_none(ccdd_export_reader, utils):
-    """
-    Test CCDDExportReader class method: _create_parameterized_type -- corner cases (type is None )
-    Recursively creates custom type definitions from JSON data and any known subtypes,
-    and adds them to the type dictionary. Returns the top-level type and a dictionary of any enumerations.
-    """
-    type_dict = {'cc_name': 'CF_RESET_CC', 'cc_value': '1',
-                 'args': [{'name': 'Spare', 'data_type': 'uint8', 'description': '', 'array_size': '3',
-                           'enumeration': [{'label': 'mock_label', 'value': 'mock_value'}],
-                           'bit_length': '0', 'parameters': []}],
-                 'data_type': 'Mock_type',
-                 'cc_description': '', 'cc_data_type': 'CF_ResetCtrsCmd_t'}
-    type_id = 'cc_data_type'
-    arg_id = 'args'
-    subtypes = {}
-    utils.clear_log()
-
-    with patch('plugins.ccsds_plugin.readers.ccdd_export_reader.CCDDExportReader._build_data_type_and_field',
-               return_value=None):
-        ccdd_export_reader._create_parameterized_type(type_dict, type_id, arg_id, subtypes)
-        assert utils.has_log_level("ERROR")
-
-    type_dict = {'cc_name': 'CF_RESET_CC', 'cc_value': '1',
-                 'args': [],
-                 'data_type': 'Mock_type',
-                 'cc_description': '', 'cc_data_type': 'CF_ResetCtrsCmd_t'}
-    type_id = 'cc_data_type'
-    arg_id = 'args'
-    subtypes = {}
-    utils.clear_log()
-
-    with patch('plugins.ccsds_plugin.readers.ccdd_export_reader.CCDDExportReader._build_data_type_and_field',
-               return_value=None):
-        ccdd_export_reader._create_parameterized_type(type_dict, type_id, arg_id, subtypes)
-        assert utils.has_log_level("ERROR")
+        mock_create.side_effect = CtfTestError('Mock create_type_class')
+        with pytest.raises(CtfTestError):
+            ccdd_export_reader._create_parameterized_type(type_dict, type_id, arg_id, subtypes)
 
 
 def test_ccdd_export_reader_create_process_telemetry_exception(ccdd_export_reader, utils):
@@ -552,6 +539,46 @@ def test_ccdd_export_reader_process_types_second_pass_warnings(ccdd_export_reade
     ccdd_export_reader.type_dict.clear()
     ccdd_export_reader.type_dict['c_int32'] = ' '
     ccdd_export_reader.process_types_second_pass(json_list)
+
+
+def test_ccdd_export_reader_process_custom_types(ccdd_export_reader):
+    json_dict = {
+        "data_type": "my_custom_type",
+        "parameters": [{"name": "myArg", "data_type": "char", "parameters": []}]
+    }
+    ccdd_export_reader.process_custom_types(json_dict)
+    assert "my_custom_type" in ccdd_export_reader.type_dict
+
+
+def test_ccdd_export_reader_process_custom_types_errors(ccdd_export_reader):
+    # invalid name key
+    json_dict = {
+        "cc_data_type": "my_custom_type",
+        "parameters": [{"name": "myArg", "data_type": "char", "parameters": []}]
+    }
+    with pytest.raises(CtfTestError):
+        ccdd_export_reader.process_custom_types(json_dict)
+    assert "my_custom_type" not in ccdd_export_reader.type_dict
+
+    # invalid parameter key
+    json_dict = {
+        "data_type": "my_custom_type",
+        "cc_parameters": [{"name": "myArg", "data_type": "char", "parameters": []}]
+    }
+    with pytest.raises(CtfTestError):
+        ccdd_export_reader.process_custom_types(json_dict)
+    assert "my_custom_type" not in ccdd_export_reader.type_dict
+
+    # exception during creation
+    json_dict = {
+        "data_type": "my_custom_type",
+        "parameters": [{"name": "myArg", "data_type": "char", "parameters": []}]
+    }
+    with patch('plugins.ccsds_plugin.readers.ccdd_export_reader.CCDDExportReader._build_data_type_and_field') as mock:
+        mock.side_effect = CtfTestError('Mock _build_data_type_and_field')
+        with pytest.raises(CtfTestError):
+            ccdd_export_reader.process_custom_types(json_dict)
+        assert "my_custom_type" not in ccdd_export_reader.type_dict
 
 
 def test_ccdd_export_reader_process_ccsds_json_file_invalid_file(ccdd_export_reader, utils):

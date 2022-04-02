@@ -256,7 +256,7 @@ class Test:
                 reset_ver_start_time = False
 
             if instruction in self.verify_required_commands:
-                timeout = i.command["timeout"] if "timeout" in i.command else self.ctf_verification_timeout
+                timeout = i.command.get("verify_timeout", self.ctf_verification_timeout)
                 instruction_result = self.execute_verification(i.command,
                                                                i.command_index,
                                                                timeout,

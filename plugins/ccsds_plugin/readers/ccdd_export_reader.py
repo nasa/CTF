@@ -27,7 +27,6 @@ import ctypes
 from lib.logger import logger as log
 from lib.exceptions import CtfTestError
 from plugins.ccsds_plugin.ccsds_interface import CCSDSInterface
-from plugins.ccsds_plugin.readers.command_builder import populate_message
 
 
 # Helper Functions
@@ -111,43 +110,52 @@ class CCDDExportReader(CCSDSInterface):
             log.error("No valid endianess_of_target in config")
 
     @staticmethod
-    def is_command_msg(json_dict):
+    def is_command_msg(json_data):
         """
         Returns whether a JSON dictionary represents a CCSDS command message.
         """
-        return isinstance(json_dict, dict) and json_dict.get("cmd_mid_name", None) is not None
+        return isinstance(json_data, dict) and json_data.get("cmd_mid_name", None) is not None
 
     @staticmethod
-    def is_telemetry_msg(json_dict):
+    def is_telemetry_msg(json_data):
         """
         Returns whether a JSON dictionary represents a CCSDS telemetry message.
         """
-        return isinstance(json_dict, dict) and json_dict.get("tlm_mid_name", None) is not None
+        return isinstance(json_data, dict) and json_data.get("tlm_mid_name", None) is not None
 
-    def is_command_tlm(self, json_dict):
+    @staticmethod
+    def is_command_tlm(json_data):
         """
         Returns whether a JSON dictionary represents a CCSDS command or telemetry message.
         """
-        return self.is_command_msg(json_dict) or self.is_telemetry_msg(json_dict)
+        return CCDDExportReader.is_command_msg(json_data) or CCDDExportReader.is_telemetry_msg(json_data)
 
-    def is_types_macros(self, json_dict):
+    @staticmethod
+    def is_types_macros(json_data):
         """
-        Returns whether a JSON dictionary represents type macros.
+        Returns whether a JSON dictionary represents type aliases or macros.
 
-        @note - A dictionary that is not found to be a CCSDS command or telemetry message is assumed to be type macros.
+        @note - A list is assumed to be type aliases or macros.
         """
-        return not self.is_command_tlm(json_dict)
+        return isinstance(json_data, list)
+
+    @staticmethod
+    def is_custom_types(json_data):
+        """
+        Returns whether a JSON dictionary represents custom type definitions.
+        """
+        return isinstance(json_data, dict) and json_data.get("data_type", None) is not None
 
     # ENHANCE - Validate each JSON file against the appropriate schema before attempting to parse it
     @staticmethod
-    def validate_json_schema(json_dict, schema_path):
+    def validate_json_schema(json_data, schema_path):
         """
         Validates a dictionary of JSON data against a schema file.
 
-        @param json_dict: A dictionary containing JSON data to be validated
+        @param json_data: A dictionary containing JSON data to be validated
         @param schema_path: Path to a JSON schema file
         """
-        log.debug("json_dict argument {}".format(json_dict))
+        log.debug("json_data argument {}".format(json_data))
         if not os.path.exists(schema_path):
             log.error("Cannot find JSON schema {}. Skipping ".format(schema_path))
 
@@ -166,23 +174,36 @@ class CCDDExportReader(CCSDSInterface):
         else:
             cmd_mid_name = json_dict["cmd_mid_name"]
 
-        command_class = populate_message(json_dict)
-
         command_codes = {}
-        for cmd_code in command_class.command_codes:
+
+        if "cmd_data_type" in json_dict:
+            # This MID has no command codes, so use anonymous/0 CC for compatibility
             try:
-                [cls, _] = self._create_parameterized_type(cmd_code, type_id="cc_data_type", arg_id="args")
-                code = int(cmd_code.cc_value, 0) if isinstance(cmd_code.cc_value, str) else cmd_code.cc_value
-                command_codes[cmd_code.cc_name] = {
+                [cls, _] = self._create_parameterized_type(json_dict, type_id="cmd_data_type", arg_id="cmd_parameters")
+                command_codes[""] = {
+                    "CODE": 0,
+                    "ARG_CLASS": cls
+                }
+            except Exception as ex:
+                log.error("Failed to create command data type for MID {}: {}".format(cmd_mid_name, ex))
+                raise CtfTestError("Error in process_command") from ex
+
+        for cmd_code in json_dict.get("cmd_codes", []):
+            cc_name = cmd_code.get("cc_name", None)
+            cc_value = cmd_code.get("cc_value", None)
+            try:
+                [cls, _] = self._create_parameterized_type(cmd_code, type_id="cc_data_type", arg_id="cc_parameters")
+                code = int(cc_value, 0) if isinstance(cc_value, str) else cc_value
+                command_codes[cc_name] = {
                     "CODE": code,
                     "ARG_CLASS": cls
                 }
-                if cmd_code.cc_name:
-                    self.type_dict[cmd_code.cc_name] = cls
-                    self.add_enumeration(cmd_code.cc_name, code)
-            except Exception as exception:
-                log.error("Failed to create command data type {}: {}".format(cmd_code.cc_name, exception))
-                raise CtfTestError("Error in process_command") from exception
+                if cc_name:
+                    self.type_dict[cc_name] = cls
+                    self.add_enumeration(cc_name, code)
+            except Exception as ex:
+                log.error("Failed to create command data type for MID {} CC {}: {}".format(cmd_mid_name, cc_name, ex))
+                raise CtfTestError("Error in process_command") from ex
 
         if cmd_mid_name is not None:
             if cmd_mid_name in self.mids:
@@ -199,7 +220,7 @@ class CCDDExportReader(CCSDSInterface):
         Builds a field, containing a simple data type, for a custom type.
         Returns the data type and appends it to fields.
 
-        @note - This method does not create of modify any types. The return value, and the in-out parameter fields,
+        @note - This method does not create or modify any types. The return value, and the in-out parameter fields,
         should be used to create the type with create_type_class.
 
         @param param: A dictionary containing JSON data defining a field of a parent type
@@ -242,12 +263,12 @@ class CCDDExportReader(CCSDSInterface):
 
         return data_type
 
-    def _create_parameterized_type(self, type_dict, type_id=None, arg_id=None, subtypes=None):
+    def _create_parameterized_type(self, json_dict, type_id=None, arg_id=None, subtypes=None):
         """
         Recursively creates custom type definitions from JSON data and any known subtypes,
         and adds them to the type dictionary. Returns the top-level type and a dictionary of any enumerations.
 
-        @param type_dict: A dictionary containing JSON data defining a data type
+        @param json_dict: A dictionary containing JSON data defining a data type
         @param type_id: The dictionary key for the name of the type
         @param arg_id: The dictionary key for the definitions of subtypes, if any
         @param subtypes: A dictionary mapping names of subtypes to their types, used in recursive calls
@@ -255,9 +276,8 @@ class CCDDExportReader(CCSDSInterface):
         fields = []
         subtypes = subtypes or {}
         type_enums = {}
-        data_type_name = str(type_dict.get(type_id, None))
-        parameters = type_dict.get(arg_id, [])
-        parameterized_type = ()
+        data_type_name = str(json_dict.get(type_id, None))
+        parameters = json_dict.get(arg_id, [])
 
         for param in parameters:
             param_name = param['name']
@@ -281,42 +301,22 @@ class CCDDExportReader(CCSDSInterface):
                 for enum in param['enumeration']:
                     type_enums.update({enum["label"]: enum["value"]})
 
-        if len(parameters) == 0:
-            type_name = type_dict.get('data_type')
-            if type_name is None:
-                if self.config.log_ccsds_imports:
-                    log.debug("{} has no fields.".format(data_type_name))
-                try:
-                    data_type = create_type_class(data_type_name, self.ctype_structure, [])
-                except CtfTestError:
-                    data_type = None
-                    log.error("Failed to create type class {}!".format(data_type_name))
-                self.type_dict[data_type_name] = data_type
-                parameterized_type = data_type, type_enums
+        if self.config.log_ccsds_imports:
+            if fields:
+                log.debug("Creating data type {} with fields {}.".format(data_type_name, [f[0] for f in fields]))
             else:
-                data_type = self._build_data_type_and_field(type_dict, fields)
-                if data_type is None:
-                    log.error("Data type {} unknown.".format(type_name))
-                    parameterized_type = None
+                log.debug("Creating data type {} with no fields.".format(data_type_name))
 
-            return parameterized_type
-
-        try:
-            data_type = create_type_class(data_type_name, self.ctype_structure, fields)
-        except CtfTestError:
-            data_type = None
-            log.error("Failed to create type class {}!".format(data_type_name))
-
-        primary_type_name = ('int8', 'int16', 'int32', 'int64', 'uint8', 'uint16', 'uint32', 'uint64', 'float',
-                             'double', 'char', 'string', 'bool', 'boolean', 'address', 'cpuaddr')
-        if data_type_name in primary_type_name and data_type_name in self.type_dict:
-            log.error("Override primary data type {}, it may be a potential issue".format(data_type_name))
+        primary_type_names = ('int8', 'int16', 'int32', 'int64', 'uint8', 'uint16', 'uint32', 'uint64',
+                              'float', 'double', 'char', 'string', 'bool', 'boolean', 'address', 'cpuaddr')
+        if data_type_name in primary_type_names and data_type_name in self.type_dict:
+            log.error("Override of primary data type {} may be a CCDD error!".format(data_type_name))
         elif data_type_name in self.type_dict:
-            log.warning("Data type {} is already created, it will be overridden".format(data_type_name))
+            log.warning("Data type {} is already created, but will be overridden".format(data_type_name))
 
+        data_type = create_type_class(data_type_name, self.ctype_structure, fields)
         self.type_dict[data_type_name] = data_type
-        parameterized_type = data_type, type_enums
-        return parameterized_type
+        return data_type, type_enums
 
     def process_telemetry(self, json_dict):
         """
@@ -401,12 +401,10 @@ class CCDDExportReader(CCSDSInterface):
                             log.info("Found {} MIDs for {}".format(len(typedef['mids']), self.config.ccsds_target))
                         for mid in typedef['mids']:
                             if mid['mid_name'] in self.mids.keys():
-                                log.error("Found duplicate MID key in mids dict, key:{} value:{} ".format(
+                                log.error("Found duplicate MID key: {} with value: {} ".format(
                                     mid['mid_name'], self.mids[mid['mid_name']]))
-                                # raise CtfTestError("Found duplicate MID key")
                             if int(mid['mid_value'], 0) in self.mids.values():
-                                log.error("Found duplicate MID value {} for mid_map".format(mid['mid_value']))
-                                # raise CtfTestError("Found duplicate MID value")
+                                log.error("Found duplicate MID value: {}".format(mid['mid_value']))
                             log.debug("Update mids dict with key:{} value:{} ".format(mid['mid_name'],
                                                                                       int(mid['mid_value'], 0)))
                             self.mids.update({mid['mid_name']: int(mid['mid_value'], 0)})
@@ -445,6 +443,31 @@ class CCDDExportReader(CCSDSInterface):
                 log.error("Unable to parse type definition in {}: {}".format(self.current_file_name, exception))
                 raise CtfTestError("Error in process_types_second_pass") from exception
 
+    def process_custom_types(self, json_dict):
+        """
+        Parses the contents of a JSON dictionary for a custom data type which is added to the type dictionary. This type
+        may then be referenced by name in other files without redefining its structure.
+
+        @note - json_dict must include the keys "data_type" for the name and "parameters" for the contents regardless
+        of whether the data type is to be used in commands or telemetry.
+
+        @note - This method should be called before processing any command and telemetry messages so that the
+        definitions of these custom types are known.
+
+        @param json_dict: A dictionary containing the JSON data of an exported data type definition
+        """
+        if "data_type" not in json_dict:
+            raise CtfTestError("Required key data_type not found in {}".format(self.current_file_name))
+        if "parameters" not in json_dict:
+            raise CtfTestError("Required key parameters not found in {}".format(self.current_file_name))
+
+        try:
+            param_class, _ = self._create_parameterized_type(json_dict, type_id="data_type", arg_id="parameters")
+            self.type_dict[json_dict['data_type']] = param_class
+        except Exception as ex:
+            log.error("Unable to parse type definition in {}: {}".format(self.current_file_name, ex))
+            raise CtfTestError("Error in process_custom_types") from ex
+
     def process_ccsds_json_file(self, filename, file_filter=None, second_pass=False):
         """
         Reads JSON from a single file and, if it matches the filter, parses the contents
@@ -469,6 +492,8 @@ class CCDDExportReader(CCSDSInterface):
                             self.process_command(json_dict)
                         elif self.is_telemetry_msg(json_dict):
                             self.process_telemetry(json_dict)
+                        elif self.is_custom_types(json_dict):
+                            self.process_custom_types(json_dict)
                         elif second_pass:
                             self.process_types_second_pass(json_dict)
                         else:
@@ -499,6 +524,9 @@ class CCDDExportReader(CCSDSInterface):
         for file in files:
             self.current_file_name = os.path.basename(file)
             self.process_ccsds_json_file(file, self.is_types_macros)
+        for file in files:
+            self.current_file_name = os.path.basename(file)
+            self.process_ccsds_json_file(file, self.is_custom_types)
         for file in files:
             self.current_file_name = os.path.basename(file)
             self.process_ccsds_json_file(file, self.is_command_tlm)

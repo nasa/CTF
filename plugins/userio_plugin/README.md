@@ -11,12 +11,12 @@ Any other input will abort the test.
 
 
 Example:
-```javascript
+<pre><code>
 {
     "instruction":"WaitForUserInput",
     "data":{
      "prompt": "  " 
     }      
  }
-```
+</code></pre>
 

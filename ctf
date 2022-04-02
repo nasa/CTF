@@ -24,6 +24,8 @@ import os
 import traceback
 import sys
 from pathlib import Path
+import demjson
+from io import StringIO
 
 from lib.plugin_manager import PluginManager
 from lib.script_manager import ScriptManager
@@ -33,8 +35,8 @@ from lib.ctf_utility import expand_path
 from lib.logger import logger as log, set_logger_options_from_config, change_log_file
 from lib.exceptions import CtfTestError
 
-CTF_VERSION = "v1.4"
-CTF_RELEASE_DATE = "Feb 28 2022"
+CTF_VERSION = "v1.5"
+CTF_RELEASE_DATE = "March 31 2022"
 
 
 def main():
@@ -82,14 +84,22 @@ def main():
         log.info("Reading Test Scripts...")
 
         # Read individual scripts from scripts argument.
+        res_jsonlint = 0
+        log.info("Processing test scripts with jsonlint tool and adding them to script manager")
         for script_file in args.scripts:
             if os.path.isdir(script_file):
                 log.info("Found directory at {}".format(script_file))
-                log.info("Processing Scripts")
                 for file in Path(script_file).rglob("*.json"):
+                    if jsonlint_script(file) != 0:
+                        res_jsonlint = -1
                     script_manager.add_script_file(file)
             else:
+                res_jsonlint = jsonlint_script(script_file)
                 script_manager.add_script_file(script_file)
+
+        if res_jsonlint != 0:
+            log.error("Finding syntax error in test scripts. Please fix the scripts before running CTF")
+            return -1
 
         if len(script_manager.script_list) == 0:
             log.error("No test scripts provided. Please add script path(s) to execute in the arguments.")
@@ -115,6 +125,19 @@ def main():
         handle_exception(interrupt_exception)
 
     return 0 if status_manager.status["status"] == StatusDefs.passed else -1
+
+
+def jsonlint_script(script):
+    lint_out = StringIO()
+    lint = demjson.jsonlint(stdout=lint_out)
+    return_code = lint.main(['-s', '{}'.format(script)])
+
+    if return_code != 0:
+        content_std_out = lint_out.getvalue()
+        log.error("jsonlint output: {}".format(content_std_out))
+        lint_out.close()
+
+    return return_code
 
 
 def handle_exception(passed_exception):

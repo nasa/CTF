@@ -1,16 +1,16 @@
 {
-  "test_number": "Example-Plugin-Test",
-  "test_name": "Example Plugin Test",
-  "requirements": {
-    "MyRequirement": "N/A"
-  },
-  "description": "Testing Example Plugin",
-  "owner": "CTF",
-  "test_setup": "Script will execute a single command, and a single verification",
-  "ctf_options": {
-    "verif_timeout": 2.0
-  },
-  "tests": [
+    "test_number": "Example-Plugin-Test",
+    "test_name": "Example Plugin Test",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "description": "Testing Example Plugin",
+    "owner": "CTF",
+    "test_setup": "Script will execute a single command, and a single verification",
+    "ctf_options": {
+        "verify_timeout": 2.0
+    },
+    "tests": [
         {
             "case_number": "Example Plugin Test",
             "description": "No description",
@@ -26,16 +26,16 @@
                 {
                     "instruction": "TestVerifyCommand",
                     "data": {},
-                    "timeout": 5.0,
-                    "wait": 1
+                    "wait": 1,
+                    "verify_timeout": 5.0
                 },
                 {
                     "instruction": "TestSharedLibraryCommand",
                     "data": {},
-                    "timeout": 5.0,
-                    "wait": 1
+                    "wait": 1,
+                    "verify_timeout": 5.0
                 }
             ]
         }
-  ]
+    ]
 }

@@ -195,7 +195,7 @@ class CfsController:
 
         cc_name = self.validate_cc_value(self.mid_map[mid_name], cc)
         if cc_name is None:
-            log.error("Could not find Command Code {} for MID {} in MID Map".format(cc, mid))
+            log.error("Could not find Command Code {} for MID {} in MID Map".format(cc, hex(mid)))
             return False
         cc = self.mid_map[mid_name]['CC'][cc_name]['CODE']
 
@@ -204,7 +204,7 @@ class CfsController:
         result = self.cfs.send_command(mid, cc, arg_data, header_args)
 
         if not result:
-            log.error("Failed to send command message: MID {}, CC {}, args {}".format(mid, cc, args))
+            log.error("Failed to send command message: MID {}, CC {}, args {}".format(hex(mid), cc, args))
         return result
 
     def build_command_payload(self, mid_name: str, cc_name: str, args: dict,
@@ -312,9 +312,6 @@ class CfsController:
                     byte_offset += 1
                     bit_offset = 0
             elif bit_width:
-                # NOTE - bitfields are serialized with the order of variables as they appear in arg_class
-                # corresponding to most-to-least significant bit order (big endian) regardless of target endianness
-
                 # NOTE - There is a known issue with ctypes, likely related to byte packing and alignment in C, in
                 # which placing a larger bitfield immediately after a smaller one causes arg_class to be improperly
                 # sized and incorrect offsets within the second bitfield. To avoid this problem, structures with
@@ -324,7 +321,8 @@ class CfsController:
                 start_byte = byte_offset  # first byte index of bitfield
                 stop_byte = byte_offset + field_length  # byte index after bitfield
                 stop_bit = (field_length * 8) - bit_offset - bit_width  # LSB position of this field
-                bitfield_value = int.from_bytes(buf.raw[start_byte:stop_byte], byteorder="big")  # extract bitfield
+                # extract bitfield value from buffer position
+                bitfield_value = int.from_bytes(buf.raw[start_byte:stop_byte], self.config.endianess_of_target)
 
                 mask = (1 << bit_width) - 1  # produce mask of correct width
                 mask = mask << stop_bit  # shift mask to correct offset
@@ -333,7 +331,7 @@ class CfsController:
                 bitfield_value |= bits  # apply new bits to previous value
 
                 # convert bitfield value back to bytes and reapply to buffer
-                buf[start_byte:stop_byte] = int.to_bytes(bitfield_value, field_length, byteorder="big")
+                buf[start_byte:stop_byte] = int.to_bytes(bitfield_value, field_length, self.config.endianess_of_target)
 
                 bit_offset += bit_width
                 if bit_offset >= field_length * 8:  # reached end of this bitfield, advancing to next field
@@ -501,7 +499,7 @@ class CfsController:
 
         return result
 
-    def get_tlm_value(self, mid, tlm_variable):
+    def get_tlm_value(self, mid: str, tlm_variable: str, is_header: bool = False) -> any:
         """
         Implementation of CFS plugin instructions get_tlm_value. When CFS plugin method (get_tlm_value)
         is executed, it calls CfsController instance's get_tlm_value function.
@@ -518,7 +516,7 @@ class CfsController:
             log.error("Messages never received for MID {}:{}.".format(mid, current_mid_value))
             return None
 
-        result = self.cfs.get_tlm_value(mid, tlm_variable)
+        result = self.cfs.get_tlm_value(mid, tlm_variable, is_header)
         return result
 
     def check_tlm_continuous(self, v_id, mid, args):

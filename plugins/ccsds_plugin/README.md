@@ -14,7 +14,7 @@ Validates the format of CFS data types by sending one of each known command with
 - **target:** (string) The name of a registered CFS target. See [CFS Plugin](../cfs/README.md) for registering targets.
 
 Example:
-```javascript
+<pre><code>
 {
     "instruction": "RegisterCfs",
     "data": {
@@ -36,7 +36,7 @@ Example:
     },
     "wait": 1
 }
-```
+</code></pre>
 
 ### Custom CCSDS Headers
 The CCSDS Plugin provides default implementations of CCSDS message headers, and interfaces for implementing your own custom header types.
@@ -47,7 +47,7 @@ Create a new Python source file in the desired location. Import `ctypes` and dec
 These may extend the corresponding types provided by the CCSDS Plugin, or ultimately from `ctypes.Structure`. CCSDS headers typically extend from `ctypes.BigEndianStructure`.
 
 Example:
-```
+<pre><code>
 import ctypes
 
 from plugins.ccsds_plugin.ccsds_primary_header import CcsdsPrimaryHeaderBase
@@ -60,7 +60,7 @@ class MyCmdPacket(ctypes.Structure):
 
 class MyTlmPacket(ctypes.Structure):
     pass
-```
+</code></pre>
 
 #### Define the fields and methods
 Declare fields representing the bit structure of the headers. See `ctypes` documentation for details. Implement the necessary class methods to expose the field values.
@@ -71,7 +71,7 @@ Declare fields representing the bit structure of the headers. See `ctypes` docum
 - **Telemetry Packet:** `get_msg_id()`
 
 Example:
-```
+<pre><code>
 class MyPrimaryHeader(ctypes.BigEndianStructure):
     _pack_ = 1
     _fields_ = [
@@ -85,18 +85,18 @@ class MyPrimaryHeader(ctypes.BigEndianStructure):
 
     def get_msg_id(self) -> int:
         return self.app_id
-```
+</code></pre>
 
 #### Export the types
 Alias your types to `CcsdsPrimaryHeader`, `CcsdsCommand`, `CcsdsTelemetry` respectively for export. CTF will import and reference them by these names.
 In the CTF config file, set `ccsds:CCSDS_header_path` to the full path to your module.
 
 Example:
-```
+<pre><code>
 CcsdsPrimaryHeader = MyPrimaryHeader
 CcsdsCommand = MyCmdPacket
 CcsdsTelemetry = MyTlmPacket
-```
+</code></pre>
 
 #### Test
 Use the `ValidateCfsCcsdsData` in a test script to validate the header definitions as shown above.

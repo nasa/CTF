@@ -82,10 +82,10 @@ class JSONScriptReader:
             test_owner = str(self.raw_data["owner"])
             test_setup = self.raw_data.get("test_setup") or ""
             ctf_options = self.raw_data.get("ctf_options")
-            verif_timeout = ctf_options.get("verif_timeout") if ctf_options else 0
+            verify_timeout = ctf_options.get("verify_timeout", 0) if ctf_options else 0
 
             self.script.set_header_info(verification_test_number, verification_test_name,
-                                        requirements, test_description, test_owner, test_setup, verif_timeout)
+                                        requirements, test_description, test_owner, test_setup, verify_timeout)
         except KeyError as exception:
             log.error("Exception: Invalid Json Script file: {} does not contain {}"
                       .format(self.input_script_path, exception))

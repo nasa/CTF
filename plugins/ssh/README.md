@@ -8,7 +8,7 @@ Declares a target host by name. This command must be run before any other comman
    - **name**: An arbitrary, unique name to identify the target in subsequent commands. Does not need be the actual hostname of the target. Name is optional in all other commands, but if not provided all such commands will share a single connection.
   
 Example:
-```javascript
+<pre><code>
     {
         "instruction": "SSH_RegisterTarget",
         "wait": 1,
@@ -16,7 +16,7 @@ Example:
             "name": "workstation"
          }
     }
-```
+</code></pre>
 
 ### SSH_InitSSH
 Establishes an SSH connection with a target host. This command must be run before other remote commands will work. Command may be used multiple times with the same name to connect to different remote hosts in succession, or be used with different names to maintain concurrent connections to multiple hosts.
@@ -31,7 +31,7 @@ Establishes an SSH connection with a target host. This command must be run befor
 
 Note - CTF does not currently handle password entry/storage. Follow the tutorial [here](https://www.ssh.com/ssh/copy-id) to set up SSH key authorization  
 Example:
-```javascript
+<pre><code>
     {
         "instruction": "SSH_InitSSH",
         "wait": 1,
@@ -44,7 +44,7 @@ Example:
             "ssh_config_path": "./ssh/config"
          }
     }
-```
+</code></pre>
 
 ### SSH_RunRemoteCommand
 Executes a command on the remote host. **ExecutionInitSSH** must be called first to establish an SSH connection.
@@ -53,7 +53,7 @@ Executes a command on the remote host. **ExecutionInitSSH** must be called first
    - **command**: The shell command to be executed. Can contain multiple commands separated with `;` 
 
 Example:
-```javascript
+<pre><code>
     {
         "instruction": "SSH_RunRemoteCommand",
         "wait": 1,
@@ -62,7 +62,7 @@ Example:
             "host": "cd lander_fsw_ctf/;rm -rf build; make; make install;"
          }
     }
-```
+</code></pre>
 
 ### SSH_RunLocalCommand
 Executes a command on the local host (the machine running CTF), regardless of the target. This is different from calling
@@ -72,7 +72,7 @@ Executes a command on the local host (the machine running CTF), regardless of th
    - **command**: The shell command to be executed. Can contain multiple commands separated with `;` 
 
 Example:
-```javascript
+<pre><code>
     {
         "instruction": "SSH_RunLocalCommand",
         "wait": 1,
@@ -81,7 +81,7 @@ Example:
             "host": "cd lander_fsw_ctf/;rm -rf build; make; make install;"
          }
     }
-```
+</code></pre>
 
 ### SSH_CheckOutput
 Compares the output of the most recently executed command. **ExecutionRunRemoteCommand** or **ExecutionRunLocalCommand** must be called first.
@@ -92,7 +92,7 @@ Compares the output of the most recently executed command. **ExecutionRunRemoteC
    - **exit_code** (optional, default = 0): The expected exit code after the shell command is executed.
 
 Example:
-```javascript
+<pre><code>
     {
         "instruction": "SSH_CheckOutput",
         "wait": 0,
@@ -103,7 +103,7 @@ Example:
             "exit_code": 0
         }
     }
-```
+</code></pre>
 
 
 ### SSH_PutFile
@@ -117,7 +117,7 @@ Copies a path (file or directory) from the local filesystem to the remote host v
       - **exclude**: A string or array of strings corresponding to `rsync`'s `--exclude` option. Defaults to None.
 
 Example:
-```javascript
+<pre><code>
     {
         "instruction": "SSH_PutFile",
         "wait": 0,
@@ -131,7 +131,7 @@ Example:
             }
         }
     }
-```
+</code></pre>
 
 
 ### SSH_GetFile
@@ -145,7 +145,7 @@ Copies a path (file or directory) from the remote host to the local filesystem v
       - **exclude**: A string or array of strings corresponding to `rsync`'s `--exclude` option. Defaults to None.
 
 Example:
-```javascript
+<pre><code>
     {
         "instruction": "SSH_GetFile",
         "wait": 0,
@@ -155,7 +155,7 @@ Example:
             "local_path": "./results.txt"
         }
     }
-```
+</code></pre>
 
 ### SSH_GetFTP
 Downloads a path (file or directory) from the FTP server to the local filesystem.
@@ -166,7 +166,7 @@ Downloads a path (file or directory) from the FTP server to the local filesystem
    - **local_path**: The local path to where the file or directory is to be downloaded
 
 Example:
-```javascript
+<pre><code>
     {
         "instruction": "SSH_GetFTP",
         "wait": 0,
@@ -177,7 +177,7 @@ Example:
             "local_path": "./results.txt"
         }
     }
-```
+</code></pre>
 
 ### SSH_PutFTP
 Uploads a path (file or directory) from the local filesystem to the FTP server.
@@ -188,7 +188,7 @@ Uploads a path (file or directory) from the local filesystem to the FTP server.
    - **local_path**: The local path to the source file or directory
 
 Example:
-```javascript
+<pre><code>
     {
         "instruction": "SSH_PutFTP",
         "wait": 0,
@@ -199,4 +199,4 @@ Example:
             "local_path": "./results.txt"
         }
     }
-```
+</code></pre>

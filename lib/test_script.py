@@ -57,7 +57,7 @@ class TestScript:
         self.num_error = 0
 
     def set_header_info(self, test_number, test_name, requirements, test_description, test_owner, test_setup,
-                        verif_timeout):
+                        verify_timeout):
         """
         Set the TestScript's header information from the input test script file.
 
@@ -67,7 +67,7 @@ class TestScript:
         @param test_description: Test Description
         @param test_owner: Test Owner
         @param test_setup: Test Setup
-        @param verif_timeout: Test Specific Verification Timeout (Overrides Config Timeout)
+        @param verify_timeout: Test Specific Verification Timeout (Overrides 'ctf_verification_timeout' in INI File)
         """
         self.test_number = test_number
         self.test_name = test_name
@@ -75,7 +75,7 @@ class TestScript:
         self.test_description = test_description
         self.test_owner = test_owner
         self.test_setup = test_setup
-        self.verify_timeout = verif_timeout
+        self.verify_timeout = verify_timeout
 
     def set_options(self, options):
         """
