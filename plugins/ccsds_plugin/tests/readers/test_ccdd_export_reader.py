@@ -47,12 +47,12 @@ def test_func_create_type_class(utils):
     and attributes with essential fields for the metaclass used by ctypes.
     """
     ctype_structure = ctypes.Structure
-    data_type_name = 'CF_ResetCtrsCmd_t'
+    data_type_name = 'CTF_TestCmd_t'
     data_type = create_type_class(data_type_name, ctype_structure, [])
     assert data_type.__str__ is to_string
     assert data_type.__init__ is dynamic_init
     type_1 = data_type()
-    assert 'CF_ResetCtrsCmd_t' in str(type_1)
+    assert 'CTF_TestCmd_t' in str(type_1)
     utils.clear_log()
 
     with pytest.raises(Exception):
@@ -98,7 +98,7 @@ def test_ccdd_export_reader_process_command_invalid_file(ccdd_export_reader, uti
     """
     utils.clear_log()
     # json file has No cmd_mid_name
-    json_dict = {'cmd_mid_nameXYZ': 'CF_WAKE_UP_REQ_CMD_MID', 'cmd_description': '', 'cmd_data_type': 'CF_NoArgsCmd_t',
+    json_dict = {'cmd_mid_nameXYZ': 'CTF_TEST_MID', 'cmd_description': '', 'cmd_data_type': 'CTF_NoArgsCmd_t',
                  'cmd_parameters': []}
     enum_map_len = len(ccdd_export_reader.enum_map)
     mid_map_len = len(ccdd_export_reader.mid_map)
@@ -117,7 +117,7 @@ def test_ccdd_export_reader_process_command_exception(ccdd_export_reader, utils)
     and an enumeration for each command code by name.
     """
     # json file has No cmd_mid_name
-    json_dict = {'cmd_mid_name': 'CF_WAKE_UP_REQ_CMD_MID', 'cmd_description': '', 'cmd_data_type': 'CF_NoArgsCmd_t',
+    json_dict = {'cmd_mid_name': 'CTF_TEST_MID', 'cmd_description': '', 'cmd_data_type': 'CTF_NoArgsCmd_t',
                  'cmd_parameters': []}
 
     utils.clear_log()
@@ -284,7 +284,7 @@ def test_ccdd_export_reader_create_parameterized_type(ccdd_export_reader):
     Recursively creates custom type definitions from JSON data and any known subtypes,
     and adds them to the type dictionary. Returns the top-level type and a dictionary of any enumerations.
     """
-    type_dict = {'cc_name': 'CF_RESET_CC', 'cc_value': '1',
+    type_dict = {'cc_name': 'CI_RESET_CC', 'cc_value': '1',
                  'args': [{'name': 'Byte', 'data_type': 'uint8', 'description': '0=all, 1=cmd, 2=fault 3=up 4=down',
                            'array_size': '0', 'bit_length': '0',
                            'parameters': []},
@@ -306,14 +306,14 @@ def test_ccdd_export_reader_create_parameterized_type_exception(ccdd_export_read
     Recursively creates custom type definitions from JSON data and any known subtypes,
     and adds them to the type dictionary. Returns the top-level type and a dictionary of any enumerations.
     """
-    type_dict = {'cc_name': 'CF_RESET_CC', 'cc_value': '1',
+    type_dict = {'cc_name': 'CI_RESET_CC', 'cc_value': '1',
                  'args': [{'name': 'Byte', 'data_type': 'uint8', 'description': '0=all, 1=cmd, 2=fault 3=up 4=down',
                            'array_size': '0', 'bit_length': '0',
                            'parameters': []},
                           {'name': 'Spare', 'data_type': 'uint8', 'description': '', 'array_size': '3',
                            'enumeration': [{'label': 'mock_label', 'value': 'mock_value'}],
                            'bit_length': '0', 'parameters': []}],
-                 'cc_description': '', 'cc_data_type': 'CF_ResetCtrsCmd_t'}
+                 'cc_description': '', 'cc_data_type': 'CI_ResetCtrsCmd_t'}
     type_id = 'cc_data_type'
     arg_id = 'args'
     subtypes = {}
@@ -408,12 +408,11 @@ def test_ccdd_export_reader_process_types(ccdd_export_reader, utils):
                  {'alias_name': '_tblref_', 'actual_name': 'c_char'},
                  {'constant_name': 'TRUE', 'constant_value': '1'},
                  {'constant_name': 'FALSE', 'constant_value': 'abc1#'},
-                 {'constant_name': 'CCSDS_TIME_SIZE', 'constant_value': '6'},
-                 {'alias_name': 'FM_FreeSpaceTblPtr', 'actual_name': 'c_voidp'}]
+                 {'constant_name': 'CCSDS_TIME_SIZE', 'constant_value': '6'}]
     assert ccdd_export_reader.process_types(json_list) is None
-    assert len(ccdd_export_reader.type_dict) == 29
+    assert len(ccdd_export_reader.type_dict) == 28
 
-    json_list.append({'alias_name_error': 'FM_FreeSpaceTblPtr', 'actual_name': 'c_voidp'})
+    json_list.append({'alias_name_error': 'CFE_EVS_MsgFormat_Enum_t', 'actual_name': 'c_uint8'})
     ccdd_export_reader.process_types(json_list)
     assert utils.has_log_level("ERROR")
 
@@ -513,9 +512,7 @@ def test_ccdd_export_reader_process_types_second_pass_exception(ccdd_export_read
                  {'constant_name': 'CFE_MISSION_SB_MAX_PIPES', 'constant_value': '64'},
                  {'constant_name': 'CFE_SB_MAX_PIPES', 'constant_value': '64'},
                  {'constant_name': 'CFE_SB_TLM_HDR_SIZE', 'constant_value': '24'},
-                 {'constant_name': 'CFE_TBL_MAX_FULL_NAME_LEN', 'constant_value': '40'},
-                 {'constant_name': 'CF_MAX_CFG_PARAM_CHARS', 'constant_value': '32'},
-                 {'constant_name': 'FM_CHILD_QUEUE_DEPTH', 'constant_value': '3'}]
+                 {'constant_name': 'CFE_TBL_MAX_FULL_NAME_LEN', 'constant_value': '40'}]
 
     with patch('lib.logger.logger.error') as mock_exception:
         mock_exception.side_effect = [CtfTestError('Mock function call'), lib.logger.logger.error]
@@ -589,7 +586,7 @@ def test_ccdd_export_reader_process_ccsds_json_file_invalid_file(ccdd_export_rea
     utils.clear_log()
     config = CfsConfig('cfs')
     directory = config.ccsds_data_dir
-    json_file = directory + '/auto_cf_CMD.json'
+    json_file = directory + '/auto_cfe_es_CMD.json'
     ccdd_export_reader.process_ccsds_json_file(json_file)
     json_file = directory + '/auto_ci_CMD.json'
     ccdd_export_reader.process_ccsds_json_file(json_file)
@@ -602,6 +599,21 @@ def test_ccdd_export_reader_process_ccsds_json_file_invalid_file(ccdd_export_rea
     assert utils.has_log_level("ERROR")
 
 
+def test_ccdd_export_reader_process_ccsds_json_file_custom_types(ccdd_export_reader):
+    """
+    Test CCDDExportReader class method: process_ccsds_json_file  process custom_types json file
+    Reads JSON from a single file and, if it matches the filter, parses the contents
+    """
+    config = CfsConfig('cfs')
+    directory = config.ccsds_data_dir
+    custom_types_file = directory + '/custom_types.json'
+    with open(custom_types_file, 'w') as f:
+        f.write(' {"data_type": 100} ')
+    rm_cmd = "rm {}".format(custom_types_file)
+    ccdd_export_reader.process_ccsds_json_file(custom_types_file)
+    os.system(rm_cmd)
+
+
 def test_ccdd_export_reader_process_ccsds_json_file_exception(ccdd_export_reader, utils):
     """
     Test CCDDExportReader class method: process_ccsds_json_file  raise exception
@@ -610,7 +622,7 @@ def test_ccdd_export_reader_process_ccsds_json_file_exception(ccdd_export_reader
     utils.clear_log()
     config = CfsConfig('cfs')
     directory = config.ccsds_data_dir
-    json_file = directory + '/auto_cf_CMD.json'
+    json_file = directory + '/auto_cfe_es_CMD.json'
     ccdd_export_reader.process_ccsds_json_file(json_file)
 
     with patch('plugins.ccsds_plugin.readers.ccdd_export_reader.CCDDExportReader.process_command') as mock_command:

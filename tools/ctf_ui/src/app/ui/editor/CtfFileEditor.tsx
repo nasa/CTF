@@ -86,7 +86,7 @@ interface EditorProps extends FormComponentProps {
     onAddImportFile?: () => void;
     visible: boolean;
     functionData?: LibraryGroup[]
-}  
+}
 
 function hasErrors(fieldsError) {
     return Object.keys(fieldsError).some(field => fieldsError[field]);
@@ -129,7 +129,7 @@ class CtfFileEditor extends React.Component<EditorProps, EditorProps, any> {
             );
         } else if (droppableId.startsWith(TEST_CASE_DROPPABLE_PREFIX)) {
             const caseNum = substringAfter(droppableId, PREFIX_SEPARATOR);
-            return this.state.ctfFile.tests.find(t => t.case_number === caseNum)
+            return this.state.ctfFile.tests.find(t => t.test_number === caseNum)
                 .instructions;
         } else if (droppableId.startsWith(FUNCTION_DEF_DROPPABLE_PREFIX)) {
             const functionName = substringAfter(droppableId, PREFIX_SEPARATOR);
@@ -142,7 +142,7 @@ class CtfFileEditor extends React.Component<EditorProps, EditorProps, any> {
             const caseNum = substringAfter(droppableId, PREFIX_SEPARATOR);
             const newCtfFile = jsonclone(this.state.ctfFile);
             newCtfFile.tests.find(
-                t => t.case_number === caseNum
+                t => t.test_number === caseNum
             ).instructions = newValues;
             if (this.state.onChange) this.state.onChange(newCtfFile);
         } else if (droppableId.startsWith(FUNCTION_DEF_DROPPABLE_PREFIX)) {
@@ -190,7 +190,7 @@ class CtfFileEditor extends React.Component<EditorProps, EditorProps, any> {
     };
 
     onTestCaseChanged = (index: number, testCase: CtfTest) => {
-       
+
         const newFile = jsonclone(this.state.ctfFile);
         newFile.tests[index] = testCase;
         this.setState({ ctfFile: newFile });
@@ -224,7 +224,7 @@ class CtfFileEditor extends React.Component<EditorProps, EditorProps, any> {
         const newFile = jsonclone(this.state.ctfFile);
         newFile.tests.push({
             id: uuid(),
-            case_number: 'Untitled Test',
+            test_number: 'Untitled Test',
             description: 'No description',
             instructions: []
         });
@@ -260,21 +260,21 @@ class CtfFileEditor extends React.Component<EditorProps, EditorProps, any> {
     };
 
 
-    checkallinstructionsdisabled = (case_number: string) => {
+    checkallinstructionsdisabled = (test_number: string) => {
 
         let alltestsdisabled = false;
-        
+
         if (this.state.ctfFile) {
             const ctfFile = this.state.ctfFile;
 
             if (ctfFile.tests) {
                 ctfFile.tests.map((test: CtfTest, testindex) => {
 
-                    if (test.case_number == case_number) {
-                        
+                    if (test.test_number == test_number) {
+
                             let i = 0;
                             for (i = 0; i < test.instructions.length; i++) {
-                                
+
                                 if (!test.instructions[i].hasOwnProperty("disabled")) break;
                                 if (test.instructions[i].hasOwnProperty("disabled") && test.instructions[i].disabled != true)
                                     break;
@@ -282,73 +282,70 @@ class CtfFileEditor extends React.Component<EditorProps, EditorProps, any> {
 
                             if ( i == test.instructions.length) {
                                 alltestsdisabled = true;
-                            }                                
-                                                        
-                    }      
-                        
-                        
+                            }
+
+                    }
+
+
                 }  );
 
-            } 
-        }   
-        
+            }
+        }
+
         return alltestsdisabled;
     }
-    
-    instructionsdisabled = (case_number: string) => {
 
-        let alltestsdisabled = this.checkallinstructionsdisabled(case_number);
+    instructionsdisabled = (test_number: string) => {
+
+        let alltestsdisabled = this.checkallinstructionsdisabled(test_number);
 
         if (alltestsdisabled) {
             return 'Enable test case';
         } else {
             return 'Disable test case';
-        }      
+        }
 
     }
 
-    getbuttonicon = (case_number: string) => {
+    getbuttonicon = (test_number: string) => {
 
-        let alltestsdisabled = this.checkallinstructionsdisabled(case_number);
+        let alltestsdisabled = this.checkallinstructionsdisabled(test_number);
 
         if (alltestsdisabled) {
             return 'close-circle-o';
         } else {
             return 'check-circle-o';
-        }      
+        }
 
     }
 
-    getstyle = (case_number: string) => {
+    getstyle = (test_number: string) => {
 
-        let alltestsdisabled = this.checkallinstructionsdisabled(case_number);
+        let alltestsdisabled = this.checkallinstructionsdisabled(test_number);
 
         if (alltestsdisabled) {
             return { color: "red", flex: "0 0 auto" };
         } else {
             return { color: "green", flex: "0 0 auto" };
-        }      
+        }
 
     }
 
-
-
-
-    checkalltestdisabled = (case_number: string) => {
+    checkalltestdisabled = (test_number: string) => {
 
         let checked = false;
-        
+
         if (this.state.ctfFile) {
             const ctfFile = this.state.ctfFile;
 
             if (ctfFile.tests) {
                 ctfFile.tests.map((test: CtfTest, testindex) => {
 
-                    if (test.case_number == case_number) {
-                                                    
+                    if (test.test_number == test_number) {
+
                             let i = 0;
                             for (i = 0; i < test.instructions.length; i++) {
-                                
+
                                 if (!test.instructions[i].hasOwnProperty("disabled")) break;
                                 if (test.instructions[i].hasOwnProperty("disabled") && test.instructions[i].disabled != true)
                                     break;
@@ -356,58 +353,54 @@ class CtfFileEditor extends React.Component<EditorProps, EditorProps, any> {
 
                             if ( i == test.instructions.length) {
                                 checked = true;
-                            }                                
-                                                        
-                    }      
-                        
-                        
+                            }
+
+                    }
+
+
                 }  );
 
-            } 
-        }       
+            }
+        }
 
         return checked;
 
     }
 
     onClickIcon = e => {
-        
+
         if (this.state.ctfFile) {
             const ctfFile = this.state.ctfFile;
 
             if (ctfFile.tests) {
                 ctfFile.tests.map((test: CtfTest, testindex) => {
 
-                        if (test.case_number == e.target.id) {
-                            
-                            let alltestsdisabled = this.checkallinstructionsdisabled(test.case_number);
+                        if (test.test_number == e.target.id) {
+
+                            let alltestsdisabled = this.checkallinstructionsdisabled(test.test_number);
                             let newdisable = !alltestsdisabled;
 
-                            const newtest =  Object.assign( {}, test );                            
+                            const newtest =  Object.assign( {}, test );
 
-                            
-                            
-                            test.instructions.map((cmd, index) => { //instruction 
-                                   
+                            test.instructions.map((cmd, index) => { //instruction
+
                                 if (cmd.hasOwnProperty("instruction") || cmd.hasOwnProperty("function") ) {
                                         const newcmd = Object.assign({}, cmd, {disabled: newdisable});
-                                        
-                                        newtest.instructions[index] = newcmd;                                        
-                                 }                                    
+
+                                        newtest.instructions[index] = newcmd;
+                                 }
 
                                }
-                            );     
-                            
-                            
+                            );
 
                             this.onTestCaseChanged( testindex, newtest );
-                          
-                        }
-                        
-                    } 
-                );               
 
-            } 
+                        }
+
+                    }
+                );
+
+            }
 
            e.stopPropagation();
         }
@@ -415,48 +408,43 @@ class CtfFileEditor extends React.Component<EditorProps, EditorProps, any> {
     }
 
     onChangeCheckbox = e => {
-        
         if (this.state.ctfFile) {
             const ctfFile = this.state.ctfFile;
 
             if (ctfFile.tests) {
                 ctfFile.tests.map((test: CtfTest, testindex) => {
 
-                        if (test.case_number == e.target.name) {
-                            
-                            const newtest =  Object.assign( {}, test );
-                            
+                        if (test.test_number == e.target.name) {
 
-                            
+                            const newtest =  Object.assign( {}, test );
+
                             test.instructions.map((cmd, index) => {
-                                   
+
                                     if (cmd.hasOwnProperty("instruction")) {
-                                        
+
                                         const newcmd = Object.assign({}, cmd, {disabled: e.target.checked});
-                                        
-                                        newtest.instructions[index] = newcmd;                                        
-                                    } 
+
+                                        newtest.instructions[index] = newcmd;
+                                    }
                                     else {  // function
 
                                     }
 
-                                } 
-                            );     
-                            
+                                }
+                            );
 
-                            
                             this.onTestCaseChanged( testindex, newtest );
-                          
-                        }
-                        
-                    } 
-                );               
 
-            } 
+                        }
+
+                    }
+                );
+
+            }
 
             e.stopPropagation();
         }
-        
+
     };
 
     reloadImports = () =>{
@@ -473,7 +461,7 @@ class CtfFileEditor extends React.Component<EditorProps, EditorProps, any> {
     onNewRequirementAdded = (req: string, coverage: string) => {
         const newFile = jsonclone(this.state.ctfFile);
         newFile.requirements[req] = coverage
-        if (this.state.onChange) 
+        if (this.state.onChange)
             this.state.onChange(newFile);
     }
 
@@ -493,13 +481,13 @@ class CtfFileEditor extends React.Component<EditorProps, EditorProps, any> {
     componentDidMount() {
         // To disabled submit button at the beginning.
       }
-  
+
     handleRequirementSubmit = () => {
         this.onNewRequirementAdded(this.state.newRequirement, this.state.newCoverage);
         this.setState({newRequirement: undefined, newCoverage: undefined})
         this.hideReqPopover();
     }
-       
+
     setNewReqVisibleState = (visible) => {
         this.setState({"visible": visible });
     };
@@ -507,7 +495,7 @@ class CtfFileEditor extends React.Component<EditorProps, EditorProps, any> {
     showReqPopover = () => {
         this.setState({"visible": true });
     };
-    
+
     hideReqPopover = () => {
         this.setState({"visible": false})
     }
@@ -515,15 +503,15 @@ class CtfFileEditor extends React.Component<EditorProps, EditorProps, any> {
         const WrappedHorizontalLoginForm = Form.create({ name: "horizontal_login" })(
             CtfFileEditor
           );
-        const data = this.state.ctfFile;  
-        
+        const data = this.state.ctfFile;
+
         const {
             getFieldDecorator,
             getFieldsError,
             getFieldError,
             isFieldTouched
           } = this.state.form;
-        
+
         return (
           <PageHeader
             title={
@@ -531,20 +519,20 @@ class CtfFileEditor extends React.Component<EditorProps, EditorProps, any> {
                 {this.state.showDirtyFlag ? "*" : ""}
                 <Text
                   editable={{
-                    onChange: str => this.onMetaDataChanged({ test_name: str })
+                    onChange: str => this.onMetaDataChanged({ test_script_name: str })
                   }}
                 >
-                  {data.test_name}
+                  {data.test_script_name}
                 </Text>
               </div>
             }
             subTitle={
               <Text
                 editable={{
-                  onChange: str => this.onMetaDataChanged({ test_number: str })
+                  onChange: str => this.onMetaDataChanged({ test_script_number: str })
                 }}
               >
-                {data.test_number}
+                {data.test_script_number}
               </Text>
             }
           >
@@ -584,7 +572,7 @@ class CtfFileEditor extends React.Component<EditorProps, EditorProps, any> {
               <Descriptions.Item key="requirements" label="Requirements">
                 {data.requirements
                   ? Object.keys(data.requirements).map((req, index) => (
-                      <div key={index} > 
+                      <div key={index} >
                         {req} <Tag>{data.requirements[req]}</Tag>
                         <Tooltip title={"Delete Requirement"}>
                           <Popconfirm
@@ -614,7 +602,7 @@ class CtfFileEditor extends React.Component<EditorProps, EditorProps, any> {
                   onVisibleChange={this.setNewReqVisibleState}
                   content=
                   {
-                  <div>         
+                  <div>
                     <Form layout="inline" ref={this.requirementsFormRef}>
                         <Form.Item>
                             <Input name="requirement"
@@ -769,49 +757,46 @@ class CtfFileEditor extends React.Component<EditorProps, EditorProps, any> {
                                                   <Panel
                                                       header={
                                                           <div
-                                                            style={{display: 'flex',justifyContent: 'space-between'  }}  
+                                                            style={{display: 'flex',justifyContent: 'space-between'  }}
                                                           >
                                                            <div>
                                                             <Text
                                                               editable={{
                                                                   onChange: str =>
+                                                                    {
                                                                       this.onTestCaseChanged(
                                                                           index,
                                                                           Object.assign(
                                                                               {},
                                                                               test,
                                                                               {
-                                                                                  case_number: str
+                                                                                test_number: str
                                                                               }
                                                                           )
                                                                       )
+                                                                    }
                                                               }}
                                                             >
-                                                              {test.case_number}
+                                                              {test.test_number}
                                                             </Text>
                                                             </div>
 
-                                                                                                                  
-                                                           
+                                                           <div>
 
-                                                           <div
-                                                               
-                                                            >
-
-                                                                <Tooltip title={this.instructionsdisabled(test.case_number)}>
+                                                                <Tooltip title={this.instructionsdisabled(test.test_number)}>
                                                                         <Button
                                                                              type="link"
-                                                                             style={this.getstyle(test.case_number)}
-                                                                             icon= {this.getbuttonicon(test.case_number)}
-                                                                             id = {test.case_number}
+                                                                             style={this.getstyle(test.test_number)}
+                                                                             icon= {this.getbuttonicon(test.test_number)}
+                                                                             id = {test.test_number}
                                                                              onClick = {this.onClickIcon}
-                                                                        />         
+                                                                        />
 
-                                                                 </Tooltip>                                                                 
+                                                                 </Tooltip>
 
                                                            </div>
 
-                                                          
+
 
 
                                                           </div>
@@ -967,7 +952,7 @@ class CtfFileEditor extends React.Component<EditorProps, EditorProps, any> {
     getFunctionData = () => {
         var newFunctionData: LibraryGroup[] = this.state.context
             ? this.state.context.functions.reduce(
-                  (groups: LibraryGroup[], editingData) => { 
+                  (groups: LibraryGroup[], editingData) => {
                       const groupName = editingData.src
                           ? editingData.src
                           : LOCAL_FUNCTION_GROUP_NAME;

@@ -1,2 +1,2 @@
 cd ../../
-./ctf --script_dir scripts/example_tests
+./ctf functional_tests/plugin_tests

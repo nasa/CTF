@@ -369,20 +369,20 @@ def test_cfs_plugin_send_raw_cfs_command_pass(cfs_plugin):
     cfs_plugin.targets = {i: mock_controller for i in range(num_controllers)}
     cfs_plugin.has_attempted_register = True
     assert cfs_plugin.send_raw_cfs_command("mid", 1, "0123456789ABCDEF")
-    assert mock_controller.send_cfs_command.call_count == num_controllers
-    mock_controller.send_cfs_command.assert_called_with("mid", 1, "0123456789ABCDEF", None, 8, False)
+    assert mock_controller.send_raw_cfs_command.call_count == num_controllers
+    mock_controller.send_raw_cfs_command.assert_called_with("mid", 1, "0123456789ABCDEF", None)
     assert cfs_plugin.send_raw_cfs_command("mid", 1, "", target=None, header={})
-    mock_controller.send_cfs_command.assert_called_with("mid", 1, "", {}, 0, False)
+    mock_controller.send_raw_cfs_command.assert_called_with("mid", 1, "", {})
 
 
 def test_cfs_plugin_send_raw_cfs_command_fail(cfs_plugin):
     num_controllers = 3
     mock_controller = MagicMock()
-    mock_controller.send_cfs_command.side_effect = [True, False, True]
+    mock_controller.send_raw_cfs_command.side_effect = [True, False, True]
     cfs_plugin.targets = {i: mock_controller for i in range(num_controllers)}
     cfs_plugin.has_attempted_register = True
     assert not cfs_plugin.send_raw_cfs_command("mid", 1, "00")
-    assert mock_controller.send_cfs_command.call_count == num_controllers
+    assert mock_controller.send_raw_cfs_command.call_count == num_controllers
 
 
 def test_cfs_plugin_check_tlm_value_no_target(cfs_plugin):

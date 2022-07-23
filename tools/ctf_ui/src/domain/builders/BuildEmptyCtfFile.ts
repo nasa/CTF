@@ -19,8 +19,8 @@ import { CtfFile } from "../../model/ctf-file";
 export class BuildEmptyCtfFile {
     static build(): CtfFile {
         return {
-            test_name: 'Test Name',
-            test_number: 'Test Number',
+            test_script_name: 'Test Name',
+            test_script_number: 'Test Number',
             test_setup: 'No setup',
             description: 'No description',
             owner: 'No Owner',

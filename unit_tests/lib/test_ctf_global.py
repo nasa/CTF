@@ -63,9 +63,9 @@ def test_ctf_global_create_arg_parser():
     assert args.config_file == './configs/ci_config.ini'
 
     with patch.object(sys, 'argv', ['ctf',
-                                    './functional_tests/plugin_tests/test_ctf_basic_example.json',
-                                    './functional_tests/plugin_tests/test_ctf_intermediate_example.json',
-                                    './functional_tests/plugin_tests/test_ctf_advanced_example.json']):
+                                    './functional_tests/plugin_tests/Test-CTF-Basic-Example.json',
+                                    './functional_tests/plugin_tests/Test-CTF-Intermediate-Example.json',
+                                    './functional_tests/plugin_tests/Test-CTF-Advanced-Example.json']):
         args = Global.create_arg_parser().parse_args()
     assert len(args.scripts) == 3
     assert not args.port

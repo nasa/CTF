@@ -1,6 +1,6 @@
 """
 @namespace lib.test_test.py
-Unit Test for Test class: Represents a single CTF test case.
+Unit Test for Test class: Represents a single CTF test.
 """
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
@@ -49,6 +49,7 @@ def _test_instance_inited():
 
     status_manager.start()
     test.status_manager = status_manager
+    test.end_test_on_fail = False
     return test
 
 
@@ -93,7 +94,7 @@ def test_test_execute_instruction(test_instance_inited):
     Execute a CTF Test Instruction
     """
     test_instruction = {'instruction': 'StartCfs', 'data': {'target': ''}, 'wait': 1}
-    test_instance_inited.test_info = {'test_case': 'CFE-6-7-Plugin-Test-001',
+    test_instance_inited.test_info = {'test_number': 'CFE-6-7-Plugin-Test-001',
                                       'description': 'Start CFS, Send TO NOOP command'}
 
     # test instruction pass
@@ -198,9 +199,9 @@ def test_test_process_verification_delay(test_instance):
 def test_test_run_commands_fail(test_instance_inited, utils):
     """
     test Test class method: run_commands -- test fail
-    Run all CTF Instructions in the current test case
+    Run all CTF Instructions in the current test
     """
-    test_instance_inited.test_info = {'test_case': 'CFE-6-7-Plugin-Test-001',
+    test_instance_inited.test_info = {'test_number': 'CFE-6-7-Plugin-Test-001',
                                       'description': 'Start CFS, Send TO NOOP command'}
 
     # no test instruction
@@ -213,21 +214,21 @@ def test_test_run_commands_fail(test_instance_inited, utils):
 def test_test_run_commands(test_instance_inited):
     """
     test Test class method: run_commands
-    Run all CTF Instructions in the current test case
+    Run all CTF Instructions in the current test
     """
-    test_instance_inited.test_info = {'test_case': 'CFE-6-7-Plugin-Test-001',
+    test_instance_inited.test_info = {'test_number': 'CFE-6-7-Plugin-Test-001',
                                       'description': 'Start CFS, Send TO NOOP command'}
     with patch("lib.test.Test.execute_verification", return_value=None), \
          patch("lib.test.Test.execute_instruction", return_value=None):
         assert test_instance_inited.run_commands() is None
 
     test_instance_inited.instructions[0].is_disabled = True
-    test_instance_inited.ignored_instructions = ['SendCfsCommand']
+    test_instance_inited.ignored_instructions = ['SendCfsCommand','EnableCfsOutput']
     with patch("lib.test.Test.execute_verification", return_value=None), \
          patch("lib.test.Test.execute_instruction", return_value=None):
         assert test_instance_inited.run_commands() is None
 
-    test_instance_inited.ignored_instructions = []
+    test_instance_inited.ignored_instructions = ['EnableCfsOutput']
     with patch("lib.test.Test.execute_verification", return_value=None), \
          patch("lib.test.Test.execute_instruction", return_value=None):
         assert test_instance_inited.run_commands() is None
@@ -243,9 +244,9 @@ def test_test_run_commands(test_instance_inited):
 def test_test_run_commands_looping(test_instance_inited, utils):
     """
     test Test class method: run_commands
-    Run all CTF Instructions in the current test case, and test control flow statement
+    Run all CTF Instructions in the current test, and test control flow statement
     """
-    test_instance_inited.test_info = {'test_case': 'CFE-6-7-Plugin-Test-001',
+    test_instance_inited.test_info = {'test_number': 'CFE-6-7-Plugin-Test-001',
                                       'description': 'Start CFS, Send TO NOOP command'}
     Global.goto_instruction_index = -1
     test_instance_inited.instructions[0].is_disabled = True
@@ -507,10 +508,10 @@ def test_test_process_control_flow_label_exception4(test_instance_inited, utils)
 def test_test_run_commands_exception(test_instance_inited, utils):
     """
     test Test class method: run_commands -- raise exception
-    Run all CTF Instructions in the current test case
+    Run all CTF Instructions in the current test
     """
     utils.clear_log()
-    test_instance_inited.test_info = {'test_case': 'CFE-6-7-Plugin-Test-001',
+    test_instance_inited.test_info = {'test_number': 'CFE-6-7-Plugin-Test-001',
                                       'description': 'Start CFS, Send TO NOOP command'}
     with patch("lib.test.Test.process_command_delay") as mock_process_command_delay, \
             patch("lib.test.Test.execute_verification", return_value=None), \
@@ -540,9 +541,9 @@ def test_test_run_commands_exception(test_instance_inited, utils):
 def test_test_run_test_fail(test_instance_inited):
     """
     test Test class method: run_test  test fail
-    Run all CTF Instructions within a test case
+    Run all CTF Instructions within a test
     """
-    test_instance_inited.test_info = {'test_case': 'CFE-6-7-Plugin-Test-001',
+    test_instance_inited.test_info = {'test_number': 'CFE-6-7-Plugin-Test-001',
                                       'description': 'Start CFS, Send TO NOOP command'}
     with patch("lib.test.Test.run_commands", return_value=None):
         test_instance_inited.test_result = False
@@ -552,9 +553,9 @@ def test_test_run_test_fail(test_instance_inited):
 def test_test_run_test_abort(test_instance_inited):
     """
     test Test class method: run_test  test abort
-    Run all CTF Instructions within a test case
+    Run all CTF Instructions within a test
     """
-    test_instance_inited.test_info = {'test_case': 'CFE-6-7-Plugin-Test-001',
+    test_instance_inited.test_info = {'test_number': 'CFE-6-7-Plugin-Test-001',
                                       'description': 'Start CFS, Send TO NOOP command'}
     with patch("lib.test.Test.run_commands", return_value=None):
         test_instance_inited.test_aborted = True
@@ -564,9 +565,9 @@ def test_test_run_test_abort(test_instance_inited):
 def test_test_run_test_pass(test_instance_inited):
     """
     test Test class method: run_test
-    Run all CTF Instructions within a test case
+    Run all CTF Instructions within a test
     """
-    test_instance_inited.test_info = {'test_case': 'CFE-6-7-Plugin-Test-001',
+    test_instance_inited.test_info = {'test_number': 'CFE-6-7-Plugin-Test-001',
                                       'description': 'Start CFS, Send TO NOOP command'}
     with patch("lib.test.Test.run_commands", return_value=None):
         test_instance_inited.test_result = True
@@ -576,9 +577,9 @@ def test_test_run_test_pass(test_instance_inited):
 def test_test_run_test_exception(test_instance_inited):
     """
     test Test class method: run_test -- raise exception from run_commands
-    Run all CTF Instructions within a test case
+    Run all CTF Instructions within a test
     """
-    test_instance_inited.test_info = {'test_case': 'CFE-6-7-Plugin-Test-001',
+    test_instance_inited.test_info = {'test_number': 'CFE-6-7-Plugin-Test-001',
                                       'description': 'Start CFS, Send TO NOOP command'}
 
     with patch("lib.test.Test.run_commands") as mock_run_commands:

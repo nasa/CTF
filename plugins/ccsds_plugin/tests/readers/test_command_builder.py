@@ -52,9 +52,9 @@ def test_commandcode_class():
     """
     cmd_code = CommandCode(None, None)
     assert not cmd_code.args
-    cmd_code['cc_name'] = 'CF_NOOP_CC'
+    cmd_code['cc_name'] = 'CI_NOOP_CC'
     cmd_code['cc_value'] = '0'
-    cmd_code['cc_data_type'] = 'CF_NoArgsCmd_t'
+    cmd_code['cc_data_type'] = 'CI_NoArgsCmd_t'
 
     with pytest.raises(AttributeError):
         type_check = cmd_code.data_type_fake
@@ -122,8 +122,8 @@ def test_populate_command_code():
     """
     Test populate_command_code function:  Helper function to construct a CommandCode object
     """
-    cmd_code_dict = {'cc_name': 'CF_GET_MIB_PARAM_CC', 'cc_value': '11', 'cc_description': '',
-                     'cc_data_type': 'CF_GetMibParam_t',
+    cmd_code_dict = {'cc_name': 'CTF_TEST_CC', 'cc_value': '11', 'cc_description': '',
+                     'cc_data_type': 'CTF_TestParam_t',
                      'cc_parameters': [{'name': 'Param', 'description': '', 'array_size': '16',
                                         'data_type': 'char', 'bit_length': '0',
                                         'parameters': []
@@ -137,10 +137,10 @@ def test_populate_command_code():
     assert 'cc_data_type' in cmd_code
     assert 'args' in cmd_code
 
-    assert cmd_code['cc_name'] == 'CF_GET_MIB_PARAM_CC'
+    assert cmd_code['cc_name'] == 'CTF_TEST_CC'
     assert cmd_code['cc_value'] == '11'
     assert cmd_code['cc_description'] == ''
-    assert cmd_code['cc_data_type'] == 'CF_GetMibParam_t'
+    assert cmd_code['cc_data_type'] == 'CTF_TestParam_t'
     assert cmd_code['args'][0]['name'] == 'Param'
 
 
@@ -150,7 +150,7 @@ def test_populate_message():
     Helper function to construct a CommandMessage object, populating the message
     with the respective command codes and arguments.
     """
-    msg_dict = {'cmd_mid_name': 'CF_WAKE_UP_REQ_CMD_MID', 'cmd_description': '', 'cmd_data_type': 'CF_NoArgsCmd_t',
+    msg_dict = {'cmd_mid_name': 'CTF_TEST_CMD_MID', 'cmd_description': '', 'cmd_data_type': 'CTF_TestCmd_t',
                 'cmd_parameters': [{"name": "Trans", "description": "", "array_size": "64",
                                     "data_type": "char", "bit_length": "0", "parameters": []
                                     }]}
@@ -161,20 +161,20 @@ def test_populate_message():
     assert 'cmd_data_type' in msg
     assert 'command_codes' in msg
 
-    assert msg['cmd_mid_name'] == 'CF_WAKE_UP_REQ_CMD_MID'
+    assert msg['cmd_mid_name'] == 'CTF_TEST_CMD_MID'
     assert msg['cmd_description'] == ''
-    assert msg['cmd_data_type'] == 'CF_NoArgsCmd_t'
+    assert msg['cmd_data_type'] == 'CTF_TestCmd_t'
     assert msg['command_codes'][0]['args'][0]['name'] == 'Trans'
 
 
 def test_populate_message_cmd_codes():
-    msg_dict = {"cmd_mid_name": "CF_CMD_MID", "cmd_description": "",
-                "cmd_codes": [{"cc_name": "CF_NOOP_CC", "cc_value": "0", "cc_description": "",
-                               "cc_data_type": "CF_NoArgsCmd_t", "cc_parameters": []
+    msg_dict = {"cmd_mid_name": "CI_CMD_MID", "cmd_description": "",
+                "cmd_codes": [{"cc_name": "CI_NOOP_CC", "cc_value": "0", "cc_description": "",
+                               "cc_data_type": "CI_NoArgsCmd_t", "cc_parameters": []
                                }]}
 
     msg = populate_message(msg_dict)
 
-    assert msg['cmd_mid_name'] == 'CF_CMD_MID'
+    assert msg['cmd_mid_name'] == 'CI_CMD_MID'
     assert msg['cmd_description'] == ''
-    assert msg['command_codes'][0]['cc_name'] == 'CF_NOOP_CC'
+    assert msg['command_codes'][0]['cc_name'] == 'CI_NOOP_CC'

@@ -16,9 +16,10 @@ The Variable Plugin module allows users to set / update / check variables define
 # Unless required by applicable law or agreed to in writing, software distributed under the
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
-
+import ast
 
 from lib import ctf_utility
+from lib.exceptions import CtfTestError
 from lib.logger import logger as log
 from lib.ctf_global import Global
 from lib.ctf_utility import resolve_variable
@@ -63,11 +64,12 @@ class VariablePlugin(Plugin):
 
         ## Plugin Command Map
         self.command_map = {
-            "SetUserVariable": (self.set_user_defined_variable, [ArgTypes.string, ArgTypes.string, ArgTypes.other]),
+            "SetUserVariable": (self.set_user_defined_variable,
+                                [ArgTypes.string, ArgTypes.string, ArgTypes.other, ArgTypes.string]),
             "SetUserVariableFromTlm": (self.set_user_variable_from_tlm,
-                                       [ArgTypes.string, ArgTypes.string, ArgTypes.string]),
+                                       [ArgTypes.string, ArgTypes.string, ArgTypes.string, ArgTypes.string]),
             "SetUserVariableFromTlmHeader": (self.set_user_variable_from_tlm_header,
-                                             [ArgTypes.string, ArgTypes.string, ArgTypes.string]),
+                                             [ArgTypes.string, ArgTypes.string, ArgTypes.string, ArgTypes.string]),
             "CheckUserVariable": (self.check_user_defined_variable, [ArgTypes.string, ArgTypes.string, ArgTypes.other])
         }
 
@@ -81,40 +83,86 @@ class VariablePlugin(Plugin):
 
         @return bool: True if successful, False otherwise.
         """
+
+        VariablePlugin.add_variables_from_config()
+
         log.info("Initialized Variable Plugin!")
         return True
 
     @staticmethod
-    def set_user_defined_variable(variable_name: str, operator: str, value):
+    def add_variables_from_config():
+        """
+        Add the test variables defined in INI config files to the global user defined variables dictionary.
+        Supported types: int, float, bool, str.
+        @return None
+        """
+        if "test_variable" not in Global.config.sections():
+            return
+
+        # exclude default variables from os.environ
+        variables_defined = [item for item in Global.config.items("test_variable")
+                             if item not in Global.config.defaults().items()]
+
+        log.debug("Test variables defined in section 'test_variables' : {}".format(variables_defined))
+        casted_types = {int: "int", float: "float", str: "string", bool: "boolean"}
+
+        for key, value in variables_defined:
+            if value in ("false", "true"):
+                value = value.capitalize()
+            try:
+                casted_value = ast.literal_eval(value)
+            except (ValueError, SyntaxError) as exception:
+                log.error("Could not type cast value '{}'".format(value))
+                log.error("Invoke exception {}".format(exception))
+                continue
+            variable_type = type(casted_value)
+            if variable_type in casted_types:
+                log.info("Add '{}':{} to User Defined Variable Dictionary".format(key, casted_value))
+                VariablePlugin.set_user_defined_variable(key, "=", casted_value, casted_types[variable_type])
+            else:
+                log.warning("The type of variable {}={} is not supported".format(key, casted_value))
+
+        return
+
+    @staticmethod
+    def set_user_defined_variable(variable_name: str, operator: str, value: any, variable_type: str = None):
         """
         Set / update the value of user defined variable (defined in json test scripts)
 
         @return bool: True if successful, False otherwise.
         """
-        status = ctf_utility.set_variable(variable_name, operator, value)
+        status = ctf_utility.set_variable(variable_name, operator, value, variable_type)
         variable_value = ctf_utility.get_variable(variable_name)
-        log.info("The variable {} becomes {}".format(variable_name, variable_value))
+        if status:
+            log.info("The variable {} becomes {}".format(variable_name, variable_value))
+        else:
+            log.error("Failed to set variable {}".format(variable_name))
         return status
 
     @staticmethod
-    def set_user_variable_from_tlm(variable_name: str, mid: str, tlm_variable: str, is_header: bool = False):
+    def set_user_variable_from_tlm(variable_name: str, mid: str, tlm_variable: str,
+                                   target: str = None, is_header: bool = False):
         """
         Get the latest telemetry value from queue, and set it to the specified variable.
         @return bool: True if successful, False otherwise.
         """
         log.info("Set user variable: '{}' from tlm mid: '{}' variable: '{}'".format(variable_name, mid, tlm_variable))
+        resolved_mid = resolve_variable(mid)
+        resolved_tlm_variable = resolve_variable(tlm_variable)
+        resolved_variable_name = resolve_variable(variable_name)
+        resolved_target = resolve_variable(target)
         cfs_plugin = Global.plugin_manager.find_plugin_for_command("StartCfs")
-        tlm_value = cfs_plugin.get_tlm_value(mid, tlm_variable, is_header)
-        status = VariablePlugin.set_user_defined_variable(variable_name, "=", tlm_value)
+        tlm_value = cfs_plugin.get_tlm_value(resolved_mid, resolved_tlm_variable, is_header, resolved_target)
+        status = VariablePlugin.set_user_defined_variable(resolved_variable_name, "=", tlm_value)
         return status
 
     @staticmethod
-    def set_user_variable_from_tlm_header(variable_name: str, mid: str, header_variable: str):
+    def set_user_variable_from_tlm_header(variable_name: str, mid: str, header_variable: str, target: str = None):
         """
         Get the latest telemetry header value from queue, and set it to the specified variable.
         @return bool: True if successful, False otherwise.
         """
-        return VariablePlugin.set_user_variable_from_tlm(variable_name, mid, header_variable, True)
+        return VariablePlugin.set_user_variable_from_tlm(variable_name, mid, header_variable, target, True)
 
     @staticmethod
     def set_label(label: str) -> bool:
@@ -160,7 +208,14 @@ class VariablePlugin(Plugin):
 
         # pylint: disable=unidiomatic-typecheck
         if type(variable_value) != type(value):
-            log.warning("Variable and the compared value are not the same type!")
+            log.warning("Variable and value are not the same type! The check will likely fail.")
+            if isinstance(value, str):
+                try:
+                    value = ast.literal_eval(value)
+                    log.warning("The compared value is string, which is evaluated to the literal {}".format(value))
+                except Exception as exception:
+                    log.error('Evaluating {} trigger exception {}'.format(value, exception))
+                    raise CtfTestError("Error in ast.literal_eval") from exception
 
         status = op_func(variable_value, value)
         log_func = log.info if status else log.warning

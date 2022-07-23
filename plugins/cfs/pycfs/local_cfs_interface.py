@@ -30,11 +30,10 @@ import time
 
 # module dependencies
 from plugins.cfs.pycfs.cfs_interface import CfsInterface
-
-# external dependencies
-from lib.logger import logger as log
+from lib.ctf_utility import set_variable
 from lib.ctf_global import Global
 from lib.exceptions import CtfTestError
+from lib.logger import logger as log
 
 
 class LocalCfsInterface(CfsInterface):
@@ -79,6 +78,9 @@ class LocalCfsInterface(CfsInterface):
 
         cfs_std_out_filename = "{}_{}".format(self.config.name, self.config.cfs_output_file)
         self.cfs_std_out_path = os.path.join(os.path.abspath(Global.current_script_log_dir), cfs_std_out_filename)
+        # define build-in variable for CFS stdout folder
+        cfs_std_output_file = "_CTF_"+self.config.name.upper()+"_CFS_OUTPUT_FILE"
+        set_variable(cfs_std_output_file, "=", self.cfs_std_out_path, "string")
 
         # ENHANCE - Test use of debug when running embedded
         if not self.config.cfs_run_in_xterm or find_executable('xterm') is None:
@@ -187,5 +189,6 @@ class LocalCfsInterface(CfsInterface):
             return return_values
 
         return_values["result"] = True
+        self.is_running = True
 
         return return_values

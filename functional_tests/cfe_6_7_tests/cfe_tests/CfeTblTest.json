@@ -1,12 +1,12 @@
 {
-    "test_number": "CFE-TBL-Functions-Test",
-    "test_name": "CFE TBL Functions Test",
+    "test_script_number": "CFE-TBL-Functions-Test",
+    "test_script_name": "CfeTblTest.json",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Testing CFE TBL Functions",
+    "description": "Example script showing CFE TBL function usage",
     "owner": "CTF",
-    "test_setup": "Example Script Showing TBL function usage",
+    "test_setup": "",
     "ctf_options": {
         "verify_timeout": 4
     },
@@ -27,7 +27,7 @@
     "functions": {},
     "tests": [
         {
-            "case_number": "CFE-6-7-Plugin-Test-001",
+            "test_number": "CFE-TBL-Functions-Test-1",
             "description": "Start CFS, Send TO NOOP command",
             "instructions": [
                 {

@@ -27,7 +27,7 @@ export interface CtfInstructionStatus {
 }
 
 export interface CtfEngineTestStatus {
-    case_number: string;
+    test_number: string;
     status: CtfRunStatus;
     details?: string;
     instructions: CtfInstructionStatus[];
@@ -35,7 +35,7 @@ export interface CtfEngineTestStatus {
 
 export interface CtfEngineScriptStatus {
     path: string;
-    test_name: string;
+    test_script_number: string;
     status: CtfRunStatus;
     details?: string;
     tests: CtfEngineTestStatus[];
@@ -50,7 +50,7 @@ export interface CtfEngineRunStatusMsg {
 export interface CtfEngineInputRequestMsg {
     path: string;
     test_name: string;
-    case_number: string;
+    test_number: string;
     instruction_index: number;
     continue: boolean;
 }

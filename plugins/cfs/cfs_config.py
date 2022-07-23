@@ -22,14 +22,13 @@ cfs_config.py: CFS Plugin Config for CTF.
 import os
 import socket
 import traceback
+from pprint import pformat
 
 from lib.ctf_global import Global
 from lib.args_validation import ArgsValidation
 from lib.logger import logger as log
 from lib.exceptions import CtfTestError
 from lib.ctf_utility import expand_path
-
-CONFIG = Global.config
 
 
 class CfsConfig:
@@ -96,6 +95,7 @@ class CfsConfig:
             if self.get_error_count() == 0:
                 self.set_cfs_run_cmd()
                 self.set_ctf_ip()
+            log.debug("CfsConfig for target {} resolved the following values:\n{}".format(name, pformat(vars(self))))
         except Exception as exception:
             self.validation.add_error("Config File error: {}".format(exception))
             log.debug(traceback.format_exc())
@@ -113,8 +113,8 @@ class CfsConfig:
 
         value = config_getter(section, field_name, fallback=None)
         if value is None and section != "cfs":
-            log.warning("Config Value {}:{} does not exist or is not the right type. "
-                        "Attempting to load from base section [cfs].".format(section, field_name))
+            log.info("Config Value {}:{} does not exist or is not the right type. "
+                     "Attempting to load from base section [cfs].".format(section, field_name))
             value = config_getter("cfs", field_name, fallback=None)
         if value is None:
             log.error("Config Value cfs:{} does not exist or is not the right type. "

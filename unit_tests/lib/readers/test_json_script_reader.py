@@ -36,7 +36,7 @@ def init_global():
 
 @pytest.fixture(name="json_script_reader")
 def _json_script_reader_instance():
-    input_script_path = 'functional_tests/plugin_tests/test_ctf_all_instructions.json'
+    input_script_path = 'functional_tests/plugin_tests/Test_CTF_All_Instructions.json'
     return JSONScriptReader(input_script_path)
 
 
@@ -45,9 +45,9 @@ def test_json_script_reader_init(json_script_reader):
     test JSONScriptReader class constructor
     """
     assert json_script_reader.valid_script
-    assert json_script_reader.input_script_path == 'functional_tests/plugin_tests/test_ctf_all_instructions.json'
+    assert json_script_reader.input_script_path == 'functional_tests/plugin_tests/Test_CTF_All_Instructions.json'
     assert json_script_reader.script.input_file_path == 'functional_tests/plugin_tests'
-    assert json_script_reader.script.input_file == 'test_ctf_all_instructions.json'
+    assert json_script_reader.script.input_file == 'Test_CTF_All_Instructions.json'
 
 
 def test_json_script_reader_init_exception(utils):
@@ -66,7 +66,7 @@ def test_json_script_reader_init_exception2(utils):
     test JSONScriptReader class constructor  -- raise exception when calling json.load
     """
     utils.clear_log()
-    input_script_path = 'functional_tests/plugin_tests/test_ctf_all_instructions.json'
+    input_script_path = 'functional_tests/plugin_tests/Test_CTF_All_Instructions.json'
     with patch("json.load") as mock_load:
         mock_load.side_effect = ValueError()
         reader = JSONScriptReader(input_script_path)
@@ -79,7 +79,7 @@ def test_json_script_reader_init_exception3(utils):
     test JSONScriptReader class constructor  -- raise exception when calling process_header
     """
     utils.clear_log()
-    input_script_path = 'functional_tests/plugin_tests/test_ctf_all_instructions.json'
+    input_script_path = 'functional_tests/plugin_tests/Test_CTF_All_Instructions.json'
     with patch("lib.readers.json_script_reader.JSONScriptReader.process_header") as mock_process_header:
         mock_process_header.side_effect = CtfTestError('mock_process_header')
         reader = JSONScriptReader(input_script_path)
@@ -120,6 +120,17 @@ def test_json_script_reader_process_functions(json_script_reader):
     }
     assert json_script_reader.process_functions() is None
     assert 'SendCheckCiEnableToCmd' in json_script_reader.functions
+
+
+def test_json_script_reader_process_functions_with_function():
+    """
+    test JSONScriptReader class method : process_functions
+    Parse the function definitions and imports in the test script
+    """
+    input_script_path = 'functional_tests/cfe_6_7_tests/app_tests/CiFunctionTests.json'
+    reader = JSONScriptReader(input_script_path)
+    assert reader.process_functions() is None
+    assert 'SendCheckCiEnableToCmd' in reader.functions
 
 
 def test_json_script_reader_process_functions_exception(utils):
@@ -196,7 +207,7 @@ def test_json_script_reader_sanitize_args_list(json_script_reader):
 def test_json_script_reader_process_tests_empty_test(json_script_reader):
     """
     test JSONScriptReader class method : process_tests   -- empty test
-    Iterates over test cases within the test script and parses each test case.
+    Iterates over tests within the test script and parses each test.
     """
     json_script_reader.raw_data['tests'] = None
     assert json_script_reader.process_tests() is None
@@ -206,7 +217,7 @@ def test_json_script_reader_process_tests_empty_test(json_script_reader):
 def test_json_script_reader_process_tests():
     """
     test JSONScriptReader class method : process_tests
-    Iterates over test cases within the test script and parses each test case.
+    Iterates over tests within the test script and parses each test.
     """
     input_script_path = 'functional_tests/cfe_6_7_tests/cfe_tests/CfeEsTest.json'
     reader = JSONScriptReader(input_script_path)
@@ -217,7 +228,7 @@ def test_json_script_reader_process_tests():
 def test_json_script_reader_process_tests_no_commands_in_function():
     """
     test JSONScriptReader class method : process_tests - No commands in function
-    Iterates over test cases within the test script and parses each test case.
+    Iterates over tests within the test script and parses each test.
     """
     input_script_path = 'functional_tests/cfe_6_7_tests/cfe_tests/CfeEsTest.json'
     reader = JSONScriptReader(input_script_path)
@@ -228,7 +239,7 @@ def test_json_script_reader_process_tests_no_commands_in_function():
 def test_json_script_reader_process_tests_no_wait():
     """
     test JSONScriptReader class method : process_tests  no wait keyword in json file
-    Iterates over test cases within the test script and parses each test case.
+    Iterates over tests within the test script and parses each test.
     """
     input_script_path = 'functional_tests/cfe_6_7_tests/cfe_tests/CfeEsTest.json'
     reader = JSONScriptReader(input_script_path)

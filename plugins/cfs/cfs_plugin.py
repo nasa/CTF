@@ -321,6 +321,8 @@ class CfsPlugin(Plugin):
         """
         log.info("BuildCfs for Target: {}".format(target))
 
+        target = resolve_variable(target)
+
         if not self.has_attempted_register:
             if not self.load_configured_targets(target):
                 log.error("Failed to configure CFS target(s) {} from config file.".format(target))
@@ -336,6 +338,7 @@ class CfsPlugin(Plugin):
         attempt to register any targets defined in the config file.
         """
         log.info("StartCfs for target: {}".format(target))
+        target = resolve_variable(target)
 
         if not self.has_attempted_register:
             if not self.load_configured_targets(target):
@@ -349,6 +352,7 @@ class CfsPlugin(Plugin):
     def enable_cfs_output(self, target: str = None) -> bool:
         """Implements the instruction EnableCfsOutput."""
         log.info("EnableCfsOutput for target: {}".format(target))
+        target = resolve_variable(target)
 
         # Collect the results of enable_cfs_output on each specified target, and check that all passed
         status = [t.enable_cfs_output() for t in self.get_cfs_targets(target)]
@@ -364,6 +368,7 @@ class CfsPlugin(Plugin):
             log.debug("SendCfsCommand - Target: {}, MID: {}, CC: {}, Args: {}, Set Length: {}, CType Args: {}"
                       .format(target, mid, cc, json.dumps(args), payload_length, ctype_args))
 
+        target = resolve_variable(target)
         copied_args = deepcopy(args)
 
         def _resolve_cfs_args_value(cmd_args):
@@ -393,14 +398,17 @@ class CfsPlugin(Plugin):
     def send_raw_cfs_command(self, mid: str, cc: int, hex_buffer: str, target: str = None, header: dict = None) -> bool:
         """Implements the instruction SendCfsCommandWithRawPayload."""
         # pylint: disable=invalid-name
-        payload_length = int(len(hex_buffer)/2)
-        return self.send_cfs_command(mid, cc, hex_buffer, header=header, target=target, payload_length=payload_length)
+        target = resolve_variable(target)
+        status = [t.send_raw_cfs_command(mid, cc, hex_buffer, header) for t in self.get_cfs_targets(target)]
+
+        return all(status) if status else False
 
     def check_tlm_value(self, mid: str, args: list, target: str = None) -> bool:
         """Implements the instruction CheckTlmValue."""
         if Global.current_verification_stage == CtfVerificationStage.first_ver:
             log.info("CheckTlmValue: CFS Target: {}, MID {}, Args {}".format(target, mid, json.dumps(args)))
 
+        target = resolve_variable(target)
         # Collect the results of check_tlm_value on each specified target, and check that all passed
         copied_args = _resolve_tlm_args_values(args)
         status = [t.check_tlm_value(mid, copied_args) for t in self.get_cfs_targets(target)]
@@ -412,6 +420,7 @@ class CfsPlugin(Plugin):
         if Global.current_verification_stage == CtfVerificationStage.first_ver:
             log.info("CheckTlmPacket: CFS Target: {}, MID {}".format(target, mid))
 
+        target = resolve_variable(target)
         # Collect the results of check_tlm_value on each specified target, and check that all passed
         status = [t.check_tlm_value(mid) for t in self.get_cfs_targets(target)]
         return all(status) if status else False
@@ -421,6 +430,7 @@ class CfsPlugin(Plugin):
         if Global.current_verification_stage == CtfVerificationStage.first_ver:
             log.info("CheckNoTlmPacket: CFS Target: {}, MID {}".format(target, mid))
 
+        target = resolve_variable(target)
         # Collect the results of check_tlm_value on each specified target, and check that all did not pass
         status = [t.check_tlm_value(mid) for t in self.get_cfs_targets(target)]
         result = False
@@ -439,10 +449,13 @@ class CfsPlugin(Plugin):
     def get_tlm_value(self, mid: str, tlm_variable: str, is_header: bool = False, target: str = None):
         """Get the latest telemetry value with matching mid and named parameter"""
         tlm_value = None
+        log.debug("get_tlm_value for target: {},  mid: {}, tlm_variable: {}, is_header : {}"
+                  .format(target, mid, tlm_variable, is_header))
         # Get the latest telemetry value from cfs target
         cfs_target = self.get_cfs_targets(target)
         if cfs_target:
             tlm_value = cfs_target[0].get_tlm_value(mid, tlm_variable, is_header)
+        log.debug("get_tlm_value's return tlm_value: {} ({})".format(tlm_value, type(tlm_value).__name__))
         return tlm_value
 
     def check_tlm_continuous(self, verification_id: str, mid: str, args: dict, target: str = None) -> bool:
@@ -450,6 +463,7 @@ class CfsPlugin(Plugin):
         log.info("CheckTlmContinuous for target: {}, Verification ID: {}, MID: {}, Args: {}"
                  .format(target, verification_id, mid, json.dumps(args)))
 
+        target = resolve_variable(target)
         # args will be modified during parameter evaluation, keep the original args for re-evaluation during loop
         copied_args = deepcopy(args)
 
@@ -465,6 +479,7 @@ class CfsPlugin(Plugin):
         """Implements the instruction RemoveCheckTlmContinuous."""
         log.info("RemoveCheckTlmContinuous for target: {}, Verification ID: {}".format(target, verification_id))
 
+        target = resolve_variable(target)
         # Collect the results of remove_check_tlm_continuous on each specified target, and check that all passed
         status = [t.remove_check_tlm_continuous(verification_id) for t in self.get_cfs_targets(target)]
         return all(status) if status else False
@@ -475,6 +490,7 @@ class CfsPlugin(Plugin):
         log.info("CheckEvent: CFS Target {}, Args {}"
                  .format(target, json.dumps(args)))
 
+        target = resolve_variable(target)
         # Collect the results of check_event on each specified target, and check that all passed
         copied_args = _resolve_tlm_args_values(args)
         status = [t.check_event(**event) for event in copied_args for t in self.get_cfs_targets(target)]
@@ -486,6 +502,7 @@ class CfsPlugin(Plugin):
         log.info("CheckNoEvent: CFS Target {}, Args {}"
                  .format(target, json.dumps(args)))
 
+        target = resolve_variable(target)
         # Collect the results of check_event on each specified target, and check that all passed
         copied_args = _resolve_tlm_args_values(args)
         status = [t.check_event(**event) for event in copied_args for t in self.get_cfs_targets(target)]
@@ -507,6 +524,7 @@ class CfsPlugin(Plugin):
         Any running targets will be stopped automatically on plugin shutdown."""
         log.info("ShutdownCfs for target: {}".format(target))
 
+        target = resolve_variable(target)
         # Collect the results of shutdown_cfs on each specified target, and check that all passed
         status = [t.shutdown_cfs() for t in self.get_cfs_targets(target)]
         return all(status) if status else False
@@ -517,6 +535,7 @@ class CfsPlugin(Plugin):
         during the test run into the test script's log directory"""
         log.info("ArchiveCfsFiles for target: {}, Source Path: {}".format(target, source_path))
 
+        target = resolve_variable(target)
         # Collect the results of archive_cfs_files on each specified target, and check that all passed
         status = []
         for cfs_target in self.get_cfs_targets(target):

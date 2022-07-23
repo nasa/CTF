@@ -1,0 +1,69 @@
+{
+    "test_script_number": "Local-SSH-Registered-Config-Test",
+    "test_script_name": "Local_SSH_Registered_Config_Test.json",
+    "test_setup": "Requires the use of configs/cfe_6_7_config_examples.ini or another that defines a target 'local_ssh'",
+    "description": "Demonstrates the use of target 'local_ssh' from the config, using the SSH protocol.",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "owner": "CTF",
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "import": {},
+    "tests": [
+        {
+            "test_number": "Local-SSH-Registered-Config-Test-1",
+            "description": "Register and start CFS target 'local_ssh', send TO NOOP command and check command count",
+            "instructions": [
+                {
+                    "instruction": "RegisterCfs",
+                    "wait": 1,
+                    "data": {
+                        "target": "local_ssh"
+                    }
+                },
+                {
+                    "instruction": "StartCfs",
+                    "data": {},
+                    "wait": 1
+                },
+                {
+                    "instruction": "EnableCfsOutput",
+                    "data": {},
+                    "wait": 1
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_NOOP_CC",
+                        "args": []
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "mid": "TO_HK_TLM_MID",
+                        "args": [
+                            {
+                                "compare": "==",
+                                "variable": "usCmdCnt",
+                                "value": [
+                                    2
+                                ]
+                            }
+                        ]
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "ShutdownCfs",
+                    "data": {},
+                    "wait": 1
+                }
+            ]
+        }
+    ]
+}

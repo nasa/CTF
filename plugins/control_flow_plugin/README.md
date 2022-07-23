@@ -23,8 +23,8 @@ Example:
     "data": {
        "label": "LOOP_1",
        "conditions": [
-                 {"variable": "my_var", "compare": "<", "value": 20},
-                 {"variable": "tlm_usCmdCnt", "compare": "<", "value": 7}
+                 {"variable": "my_var", "compare": "<=", "value": 20},
+                 {"variable": "tlm_usCmdCnt", "compare": "<=", "value": 7}
        ]
       }
  }
@@ -68,8 +68,8 @@ Example:
     "data": {
        "label": "If_Label_1",
        "conditions": [
-                 {"variable": "my_var", "compare": "<", "value": 10},
-                 {"variable": "tlm_usCmdCnt", "compare": "<", "value": 7}
+                 {"variable": "my_var", "compare": "<=", "value": 10},
+                 {"variable": "tlm_usCmdCnt", "compare": "!=", "value": 7}
        ]
       }
 }

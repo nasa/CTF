@@ -1,0 +1,57 @@
+{
+    "test_script_number": "CTF-VV-11",
+    "test_script_name": "CTF_VV_11.json",
+    "requirements": {
+        "CTF-21": "Inspection",
+        "CTF-52": "Full"
+    },
+    "description": "End test run upon the first instruction failure",
+    "owner": "CTF",
+    "test_setup": "Need to run start script first to start cFS instance",
+    "ctf_options": {},
+    "import": {},
+    "tests": [
+        {
+            "test_number": "CTF-VV-11-1",
+            "description": "Nominal OP",
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_NOOP_CC",
+                        "args": {}
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "InsertUserComment",
+                    "data": {
+                        "comment": "EXPECTED_FAIL_BOTH: the next instruction will fail"
+                    }
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "BAD_DATA",
+                        "cc": "BAD_DATA",
+                        "args": {}
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_NOOP_CC",
+                        "args": {}
+                    },
+                    "wait": 1
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,40 @@
+{
+    "test_script_number": "CTF-VV-19",
+    "test_script_name": "CTF_VV_19.json",
+    "requirements": {
+        "CTF-39": "Full"
+    },
+    "description": "Send an invalid command to cFS",
+    "owner": "CTF",
+    "test_setup": "Pair with config file ../configs/vv_lx1_config.ini",
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "import": {
+        "./StartCfsFunction.json": [
+            "StartCfsFunc"
+        ]
+    },
+    "tests": [
+        {
+            "test_number": "CTF-VV-19-1",
+            "description": "Nominal OP",
+            "instructions": [
+                {
+                    "function": "StartCfsFunc",
+                    "params": {}
+                },
+                {
+                    "instruction": "SendCfsCommandWithPayloadLength",
+                    "data": {
+                        "args": {},
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_NOOP_CC",
+                        "payload_length": 10
+                    },
+                    "wait": 0
+                }
+            ]
+        }
+    ]
+}

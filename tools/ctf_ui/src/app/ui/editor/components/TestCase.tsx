@@ -43,7 +43,7 @@ export const TestCase: React.FC<{
     };
 
 
-    return (        
+    return (
 
         <div className={className}>
             <Text
@@ -61,7 +61,7 @@ export const TestCase: React.FC<{
                 {test.description}
             </Text>
             <br/>
-            <Droppable droppableId={droppableIdPrefix + test.case_number}>
+            <Droppable droppableId={droppableIdPrefix + test.test_number}>
                 {(provided, snapshot) => (
                     <div ref={provided.innerRef} style={{ minHeight: 40 }}>
                         {test.instructions.map((cmd, index) => (

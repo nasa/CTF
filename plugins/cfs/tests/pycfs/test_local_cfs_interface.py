@@ -51,6 +51,7 @@ def local_cfs_interface_build_error(cfs_config, mid_map, ccsdsv2):
     from plugins.cfs.pycfs.tlm_listener import TlmListener
     mock_tlm = MagicMock(spec=TlmListener)
     mock_cmd = MagicMock(spec=CommandInterface)
+    cfs_config.build_cfs = True
     with patch('plugins.cfs.pycfs.output_app_interface.ToApi', name='mock'), \
          patch('builtins.open', new_callable=mock_open()), \
          patch('plugins.cfs.pycfs.local_cfs_interface.Popen', side_effect=Exception('mock exception')):

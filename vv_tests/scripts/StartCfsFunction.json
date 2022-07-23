@@ -1,0 +1,34 @@
+{
+    "test_script_number": "CTF-VV-StartCfs-Func",
+    "test_script_name": "StartCfsFunction.json",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "description": "Start cFS instance, enable TO output",
+    "owner": "CTF",
+    "test_setup": "",
+    "ctf_options": {},
+    "import": {},
+    "functions": {
+        "StartCfsFunc": {
+            "description": "Start cFS instance, enable TO output",
+            "varlist": [],
+            "instructions": [
+                {
+                    "instruction": "StartCfs",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "EnableCfsOutput",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 2
+                }
+            ]
+        }
+    }
+}

@@ -76,9 +76,9 @@ class ObjectFactory:
 
     @staticmethod
     def __create_test_status():
-        ## Template Dictionary Definition of an Test Status Object. Includes all status fields at the test case level.
+        ## Template Dictionary Definition of an Test Status Object. Includes all status fields at the test level.
         test_status = {
-            "case_number": "",
+            "test_number": "",
             "status": StatusDefs.waiting,
             "details": "",
             "instructions": [],
@@ -107,7 +107,7 @@ class ObjectFactory:
         ## Template Dictionary Definition of an Scripts Status Object. Includes all status fields at the script level.
         script_status = {
             "path": "",
-            "test_name": "",
+            "test_script_number": "",
             "status": StatusDefs.waiting,
             "details": "",
             "tests": []

@@ -27,6 +27,7 @@ from pathlib import Path
 import demjson
 from io import StringIO
 
+from lib import ctf_utility
 from lib.plugin_manager import PluginManager
 from lib.script_manager import ScriptManager
 from lib.status_manager import StatusManager, StatusDefs
@@ -35,8 +36,8 @@ from lib.ctf_utility import expand_path
 from lib.logger import logger as log, set_logger_options_from_config, change_log_file
 from lib.exceptions import CtfTestError
 
-CTF_VERSION = "v1.5"
-CTF_RELEASE_DATE = "March 31 2022"
+CTF_VERSION = "v1.6"
+CTF_RELEASE_DATE = "July 20 2022"
 
 
 def main():
@@ -111,6 +112,11 @@ def main():
         raise CtfTestError('Raise Exception from main') from exception
 
     log.info("Completed reading in the json script file/files passed in the arguments")
+
+    cwd = os.getcwd()
+    log.info("Current working dirctory {}".format(cwd))
+    # define build-in variable
+    ctf_utility.set_variable("_CTF_EXE_DIR", "=", cwd, "string")
 
     # Kick of scripts
     try:

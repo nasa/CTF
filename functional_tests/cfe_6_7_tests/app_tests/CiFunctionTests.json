@@ -1,12 +1,12 @@
 {
-    "test_number": "CFS-CI-Functions-Test",
-    "test_name": "CFS CI Functions Test",
+    "test_script_number": "CFS-CI-Functions-Test",
+    "test_script_name": "CiFunctionTests.json",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Testing CI Functions",
+    "description": "Example script showing CI function usage",
     "owner": "CTF",
-    "test_setup": "Example Script Showing CI function usage",
+    "test_setup": "",
     "ctf_options": {
         "verify_timeout": 4
     },
@@ -71,7 +71,7 @@
     },
     "tests": [
         {
-            "case_number": "CI-Function-Test-001",
+            "test_number": "CI-Function-Test-1",
             "description": "Test CI Enable TO command",
             "instructions": [
                 {
@@ -96,7 +96,7 @@
             ]
         },
         {
-            "case_number": "CI-Function-Test-002",
+            "test_number": "CI-Function-Test-2",
             "description": "Test CI NOOP command",
             "instructions": [
                 {
@@ -110,7 +110,7 @@
             ]
         },
         {
-            "case_number": "CI-Function-Test-003",
+            "test_number": "CI-Function-Test-3",
             "description": "Test CI Reset command",
             "instructions": [
                 {
@@ -124,7 +124,7 @@
             ]
         },
         {
-            "case_number": "Shell-Function-Test",
+            "test_number": "Shell-Function-Test-1",
             "description": "No description",
             "instructions": [
                 {
@@ -132,8 +132,8 @@
                     "params": {
                         "instruction": "hostname",
                         "output_file": "/cf/test_output.txt",
-                        "expected_cmd_cnt": 1,
-                        "expected_err_cnt": 0
+                        "expected_cmd_cnt": 0,
+                        "expected_err_cnt": 1
                     },
                     "wait": 1
                 }

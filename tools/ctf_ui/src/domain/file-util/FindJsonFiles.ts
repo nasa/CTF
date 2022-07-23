@@ -28,13 +28,14 @@ export class FindJsonFiles {
                 path.basename(rootDirectory),
                 absolutePath,
                 true,
+                false,
                 []
             );
             fs.readdir(
                 absolutePath,
-                { withFileTypes: true }, 
+                { withFileTypes: true },
                 async (err: any, files) => {
-                    if (err) { 
+                    if (err) {
                         reject(err);
                     } else {
                         await Promise.all(files
@@ -43,12 +44,16 @@ export class FindJsonFiles {
                         })
                         .map(
                             async (item) => {
+
+                                let itemIsvalidjson = item.isDirectory()? false: true
+
                                 const itemAbsPath = path.resolve(absolutePath, item.name);
                                 result.items[itemAbsPath] = {
                                     id: itemAbsPath,
                                     title: item.name,
                                     path: itemAbsPath,
                                     isDirectory: item.isDirectory(),
+                                    isValidJson: itemIsvalidjson,
                                     children: []
                                 };
                                 result.items[absolutePath].children.push(itemAbsPath);

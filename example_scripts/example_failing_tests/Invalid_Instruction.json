@@ -1,0 +1,29 @@
+{
+    "test_script_number": "Invalid-Test",
+    "test_script_name": "Invalid_Instruction.json",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "description": "Demonstrates graceful handling of invalid commands",
+    "owner": "CTF",
+    "test_setup": "",
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "import": {},
+    "tests": [
+        {
+            "test_number": "Invalid-Test-1",
+            "description": "Contains an unknown command",
+            "instructions": [
+                {
+                    "instruction": "NotARealCommand",
+                    "wait": 1,
+                    "data": {
+                        "param": "foo"
+                    }
+                }
+            ]
+        }
+    ]
+}

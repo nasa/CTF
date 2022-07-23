@@ -74,7 +74,7 @@ def test_cfs_interface_init(cfs):
     assert cfs.pheader_offset == 6
     assert cfs.should_skip_header is True
     assert cfs.tlm_header_offset == 16
-    assert cfs.cmd_header_offset == 12
+    assert cfs.cmd_header_offset == 16
 
 
 def test_cfs_interface_init_invalid(cfs_config, mid_map, ccsdsv2, utils):
@@ -513,7 +513,7 @@ def test_clear_received_msgs_before_verification_start(cfs, utils):
     assert [not pkt for pkt in cfs.received_mid_packets_dic]
 
     cfs.clear_received_msgs_before_verification_start(8198)
-    assert utils.has_log_level('ERROR')
+    assert utils.has_log_level('WARNING')
     utils.clear_log()
 
     cfs.received_mid_packets_dic[8198].append(Packet(8198, None, MagicMock(), 1, 4.0))
@@ -573,6 +573,16 @@ def test_cfs_get_tlm_value(cfs):
     tlm_variable = 'Payload.CommandCounter'
     cfs.received_mid_packets_dic[8198].append(Packet(8198, None, MagicMock(), 1, 4.0))
     assert cfs.get_tlm_value(mid, tlm_variable)
+
+
+def test_cfs_get_tlm_value_bytes(cfs):
+    mid = {'MID': 8198, 'name': 'CFE_ES_HousekeepingTlm_t', 'PARAM_CLASS': None}
+    tlm_variable = 'Payload.CommandStr'
+    mock_tlm = MagicMock()
+    mock_tlm.Payload = MagicMock()
+    mock_tlm.Payload.CommandStr = b'mock_str'
+    cfs.received_mid_packets_dic[8198].append(Packet(8198, None, mock_tlm, 1, 4.0))
+    assert cfs.get_tlm_value(mid, tlm_variable) == 'mock_str'
 
 
 def test_cfs_check_tlm_value(cfs, mid_map, utils):

@@ -1,12 +1,12 @@
 {
-    "test_number": "CFS-TO-Functions-Test",
-    "test_name": "CFS TO Functions Test",
+    "test_script_number": "CFS-TO-Functions-Test",
+    "test_script_name": "ToFunctionTests.json",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Testing TO Functions",
+    "description": "Example script showing TO function usage",
     "owner": "CTF",
-    "test_setup": "Example Script Showing TO function usage",
+    "test_setup": "",
     "ctf_options": {
         "verify_timeout": 4
     },
@@ -39,25 +39,27 @@
     "functions": {},
     "tests": [
         {
-            "case_number": "TO-Function-Test-001",
+            "test_number": "TO-Function-Test-1",
             "description": "Start CFS, enable CFS output",
             "instructions": [
                 {
                     "instruction": "StartCfs",
                     "wait": 1,
                     "data": {
-            "target": ""}
+                        "target": ""
+                    }
                 },
                 {
                     "instruction": "EnableCfsOutput",
                     "wait": 1,
                     "data": {
-            "target": ""}
+                        "target": ""
+                    }
                 }
             ]
         },
         {
-            "case_number": "TO-Function-Test-002",
+            "test_number": "TO-Function-Test-2",
             "description": "Test TO NOOP command",
             "instructions": [
                 {
@@ -71,7 +73,7 @@
             ]
         },
         {
-            "case_number": "TO-Function-Test-003",
+            "test_number": "TO-Function-Test-3",
             "description": "Test TO RESET command",
             "instructions": [
                 {
@@ -85,7 +87,7 @@
             ]
         },
         {
-            "case_number": "TO-Function-Test-004",
+            "test_number": "TO-Function-Test-4",
             "description": "Test TO ENABLE OUTPUT command",
             "instructions": [
                 {
@@ -103,7 +105,7 @@
             ]
         },
         {
-            "case_number": "TO-Function-Test-005",
+            "test_number": "TO-Function-Test-5",
             "description": "Test TO PAUSE OUTPUT command",
             "instructions": [
                 {
@@ -114,7 +116,7 @@
             ]
         },
         {
-            "case_number": "TO-Function-Test-006",
+            "test_number": "TO-Function-Test-6",
             "description": "Test TO RESUME OUTPUT command",
             "instructions": [
                 {

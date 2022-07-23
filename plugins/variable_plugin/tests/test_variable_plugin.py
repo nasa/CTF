@@ -16,6 +16,7 @@ from unittest.mock import patch
 import pytest
 
 from lib.ctf_global import Global
+from lib.exceptions import CtfTestError
 from lib.plugin_manager import PluginManager
 from plugins.variable_plugin.variable_plugin import VariablePlugin
 
@@ -56,10 +57,35 @@ def test_variable_verify_required_commands(variable_plugin):
     assert len(variable_plugin.verify_required_commands) == 0
 
 
+def test_add_variables_from_config(variable_plugin):
+    assert variable_plugin.add_variables_from_config() is None
+    assert Global.variable_store["variable_1"] == 10
+    assert not Global.variable_store["variable_2"]
+    assert Global.variable_store["variable_3"] == 5.0
+    assert Global.variable_store["variable_4"] == 'abc'
+    Global.variable_store.clear()
+    Global.load_config("./configs/lx1_lx2_config.ini")
+    assert variable_plugin.add_variables_from_config() is None
+    assert "variable_1" not in Global.variable_store
+    assert "variable_2" not in Global.variable_store
+    assert "variable_3" not in Global.variable_store
+    assert "variable_4" not in Global.variable_store
+    Global.load_config("./configs/default_config.ini")
+
+
+def test_add_variables_from_config_exception(variable_plugin, utils):
+    Global.config.set('test_variable', 'added_var', '10x')
+    Global.config.set('test_variable', 'added_var2', '[1,2]')
+    utils.clear_log()
+    assert variable_plugin.add_variables_from_config() is None
+    Global.load_config("./configs/default_config.ini")
+    assert utils.has_log_level('ERROR')
+
+
 def test_variable_set_user_defined_variable(variable_plugin):
     assert variable_plugin.set_user_defined_variable('variable_1', '=', 10)
     assert variable_plugin.set_user_defined_variable('variable_1', '==', 10)
-    assert not variable_plugin.set_user_defined_variable('variable_2', '==', 10)
+    assert not variable_plugin.set_user_defined_variable('variable_2_none', '==', 10)
     Global.variable_store.clear()
 
 
@@ -69,6 +95,21 @@ def test_variable_set_user_defined_variable_str(variable_plugin):
     assert variable_plugin.check_user_defined_variable('variable_1', '==', '10')
     assert variable_plugin.set_user_defined_variable('variable_1', '=', '10')
     assert not variable_plugin.check_user_defined_variable('variable_1', '==', 10)
+    Global.variable_store.clear()
+
+
+def test_variable_set_user_defined_variable_str_convert(variable_plugin):
+    assert variable_plugin.set_user_defined_variable('variable_1', '=', 10)
+    assert variable_plugin.check_user_defined_variable('variable_1', '==', '10')
+    Global.variable_store.clear()
+
+
+def test_variable_set_user_defined_variable_exception(variable_plugin, utils):
+    assert variable_plugin.set_user_defined_variable('variable_1', '=', 10)
+    with pytest.raises(CtfTestError):
+        utils.clear_log()
+        variable_plugin.check_user_defined_variable('variable_1', '==', '10x')
+        assert utils.has_log_level("ERROR")
     Global.variable_store.clear()
 
 

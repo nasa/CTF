@@ -79,7 +79,7 @@ def test_status_manager_set_scripts(status_manager_instance):
 
     status_manager_instance.set_scripts(script_list)
 
-    assert status_manager_instance.status['scripts'][0]['tests'][0]['case_number'] == 'CFE-6-7-Plugin-Test-001'
+    assert status_manager_instance.status['scripts'][0]['tests'][0]['test_number'] == 'CFE-ES-Functions-Test-1'
     assert status_manager_instance.status['scripts'][0]['tests'][0]['status'] == 'waiting'
     assert status_manager_instance.status['scripts'][0]['tests'][0]['instructions'][0]['instruction'] == 'StartCfs'
     assert status_manager_instance.status['scripts'][0]['tests'][0]['instructions'][1][
@@ -225,7 +225,7 @@ def test_status_manager_sanitize_status(status_manager_instance):
     """
     test_status = {'elapsed_time': 0, 'status': 'waiting', 'scripts': [
         {'path': 'CfeEsTest.json', 'test_name': 'CFE ES Functions Test', 'status': 'passed', 'details': 'Running',
-         'tests': [{'case_number': b'CFE-6-7-Plugin-Test-001', 'status': 'passed', 'details': '',
+         'tests': [{'test_number': b'CFE-6-7-Plugin-Test-001', 'status': 'passed', 'details': '',
                     'instructions': [{'instruction': 'StartCfs', 'wait': 1, 'data': {'target': ''}, 'status': 'passed',
                                       'details': '', 'comment': '', 'description': ''},
                                      {'instruction': 'SendCfsCommand', 'wait': 0,
@@ -240,7 +240,7 @@ def test_status_manager_sanitize_status(status_manager_instance):
     result = status_manager_instance.sanitize_status()
 
     duplicated_status = copy.deepcopy(test_status)
-    duplicated_status['scripts'][0]['tests'][0]['case_number'] = 'CFE-6-7-Plugin-Test-001'
+    duplicated_status['scripts'][0]['tests'][0]['test_number'] = 'CFE-6-7-Plugin-Test-001'
 
     assert result == duplicated_status
 

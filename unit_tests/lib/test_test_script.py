@@ -54,7 +54,7 @@ def test_test_script_init(test_script_instance):
     assert test_script_instance.exec_time == 0
     assert test_script_instance.num_tests == 0
     assert test_script_instance.num_passed == 0
-    assert test_script_instance.num_failed == 0
+    assert test_script_instance.failed_tests == []
     assert test_script_instance.num_error == 0
 
 
@@ -171,10 +171,12 @@ def test_test_script_generate_test_results(test_script_instance):
     Generate and Log the test results after test execution
     """
     test1 = Mock()
+    test1.test_info = {"test_number": "test1"}
     test1.test_run = True
     test1.test_result = True
 
     test2 = Mock()
+    test2.test_info = {"test_number": "test2"}
     test2.test_run = True
     test2.test_result = False
 
@@ -186,7 +188,7 @@ def test_test_script_generate_test_results(test_script_instance):
 
     assert test_script_instance.generate_test_results() is None
     assert test_script_instance.num_passed == 2
-    assert test_script_instance.num_failed == 2
+    assert test_script_instance.failed_tests == ['test2', 'test2']
 
 
 

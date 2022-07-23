@@ -1,2 +1,0 @@
-cd ../
-./ctf scripts

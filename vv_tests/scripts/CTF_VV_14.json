@@ -1,0 +1,33 @@
+{
+    "test_script_number": "CTF-VV-14",
+    "test_script_name": "CTF_VV_14.json",
+    "requirements": {
+        "CTF-33": "Full",
+        "CTF-36": "Full",
+        "CTF-40": "Full",
+        "CTF-45": "Full"
+    },
+    "description": "Establish communication with a single local cFS target on Linux",
+    "owner": "CTF",
+    "test_setup": "Pair with config file ../configs/vv_lx1_config.ini",
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "import": {
+        "./StartCfsFunction.json": [
+            "StartCfsFunc"
+        ]
+    },
+    "tests": [
+        {
+            "test_number": "CTF-VV-14-1",
+            "description": "Nominal OP",
+            "instructions": [
+                {
+                    "function": "StartCfsFunc",
+                    "params": {}
+                }
+            ]
+        }
+    ]
+}

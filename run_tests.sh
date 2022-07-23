@@ -47,6 +47,7 @@ elif [ "$1" == "utc" ]; then
     mkdir -p $OUT_SUBDIR
     # Run the unit test suite and code coverage 
     pytest -v ./unit_tests/ \
+           -W ignore::pytest.PytestCollectionWarning \
            --cov-config=.ctf_coveragerc \
            --cov=plugins --cov=lib \
            --cov-report=html | tee $OUT_SUBDIR/ctf_ut_results.log
@@ -77,18 +78,18 @@ elif [ "$1" == "vv" ]; then
     OUT_SUBDIR="$OUT_DIR/vv"
     mkdir -p $OUT_SUBDIR
     # Run requirement verification tests writtent in CTF scripts - set 1
-    ./ctf --config_file vv_tests/configs/ctf-tc_config.ini \
-          vv_tests/scripts/CTF-TC-start.json \
-          vv_tests/scripts/ci-pass && 
+    ./ctf --config_file vv_tests/configs/ctf_vv_config.ini \
+          vv_tests/scripts/CTF_VV_start.json \
+          vv_tests/scripts/ci_pass &&
     # Move the generated output to VV sub-dir
-    mv -f CTF_Results/Run_* $OUT_SUBDIR/vv_run_tc &&
+    mv -f CTF_Results/Run_* $OUT_SUBDIR/vv_run_ci  &&
     # Run requirement verification tests written in CTF scripts - set 2
     ./ctf --config_file vv_tests/configs/ci_vv_lx1_config.ini \
-          vv_tests/scripts/vv_enable_output.json \
-          vv_tests/scripts/vv_invalid_command.json \
-          vv_tests/scripts/vv_custom_plugin.json &&
+          vv_tests/scripts/CTF_VV_14.json \
+          vv_tests/scripts/CTF_VV_15.json \
+          vv_tests/scripts/CTF_VV_19.json &&
     # Move the generated output to VV sub-dir
-    mv -f CTF_Results/Run_* $OUT_SUBDIR/vv_run_ci
+    mv -f CTF_Results/Run_* $OUT_SUBDIR/vv_run_tc
     # Remove un-needed files/dirs
     rm -rf CTF_Results
 else

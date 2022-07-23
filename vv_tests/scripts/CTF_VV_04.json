@@ -1,0 +1,55 @@
+{
+    "test_script_number": "CTF-VV-04",
+    "test_script_name": "CTF_VV_04.json",
+    "requirements": {
+        "CTF-08": "Full",
+        "CTF-09": "Full",
+        "CTF-29": "Full",
+        "CTF-30": "Full",
+        "CTF-31": "Full"
+    },
+    "description": "Build and start a cFS instance",
+    "owner": "CTF",
+    "test_setup": "",
+    "ctf_options": {},
+    "import": {},
+    "tests": [
+        {
+            "test_number": "CTF-VV-04-1",
+            "description": "Nominal OP",
+            "instructions": [
+                {
+                    "instruction": "BuildCfs",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "StartCfs",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_NOOP_CC",
+                        "args": {}
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "ShutdownCfs",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 30
+                }
+            ]
+        }
+    ]
+}

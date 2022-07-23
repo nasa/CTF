@@ -165,7 +165,8 @@ class CcsdsV2CmdPacket(CcsdsV2Packet):
 
     _pack_ = 1
     _fields_ = [
-        ("sheader", CcsdsSecondaryCmdHeader)
+        ("sheader", CcsdsSecondaryCmdHeader),
+        ("spare", ctypes.c_uint32)
     ]
 
     def __init__(self, mid, command_code, payload_length, endian=0, sequence_count=0, **_: dict):

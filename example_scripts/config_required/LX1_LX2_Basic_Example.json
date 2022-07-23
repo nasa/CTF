@@ -1,0 +1,153 @@
+{
+    "test_script_number": "Basic-Two-Targets-CTF-Test",
+    "test_script_name": "LX1_LX2_Basic_Example.json",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "description": "Basic CTF Two Targets Verification Test Example",
+    "owner": "CTF",
+    "test_setup": "N/A",
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "import": {},
+    "tests": [
+        {
+            "test_number": "Basic-CTF-Two-Targets-Test-1",
+            "description": "Start Two CFS Instances, Verify Tlm values and CFS Output",
+            "instructions": [
+                {
+                   "instruction": "RegisterCfs",
+                    "data": {
+                         "target": "cfs_LX1"
+                     }
+                },
+                {
+                   "instruction": "RegisterCfs",
+                    "data": {
+                         "target": "cfs_LX2"
+                     }
+                },
+                {
+                    "instruction": "StartCfs",
+                    "data": {
+                        "target": "cfs_LX1"
+                    }
+                },
+                {
+                    "instruction": "StartCfs",
+                    "data": {
+                        "target": "cfs_LX2"
+                    }
+                },
+                {
+                    "instruction": "EnableCfsOutput",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1,
+                    "description": "Need this to enable the telemetry thread. Enable Output counts as 1 TO cmd"
+                },
+                {
+                    "instruction": "CheckEvent",
+                    "data": {
+                        "args": [
+                            {
+                                "app_name": "TO",
+                                "event_id": "0x3",
+                                "event_str": "TO - ENABLE_OUTPUT cmd succesful for  routeMask:0x00000001",
+                                "event_str_args": ""
+                            }
+                        ],
+                        "target": ""
+                    },
+                    "wait": 1,
+                    "description": "Need this to enable the telemetry thread. Enable Output counts as 1 TO cmd"
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "cfs_LX1",
+                        "mid": "CFE_EVS_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "Payload.CommandCounter",
+                                "value": [
+                                    0
+                                ],
+                                "compare": "=="
+                            }
+                        ]
+                    }
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "cfs_LX2",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_NOOP_CC",
+                        "args": {}
+                    }
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "cfs_LX2",
+                        "mid": "TO_HK_TLM_MID",
+                        "args": [
+                            {
+                                "compare": "==",
+                                "variable": "usCmdCnt",
+                                "value": 2
+                            }
+                        ]
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "cfs_LX1",
+                        "mid": "TO_HK_TLM_MID",
+                        "args": [
+                            {
+                                "compare": "==",
+                                "variable": "usCmdCnt",
+                                "value": 1
+                            }
+                        ]
+                    }
+                },
+                {
+                    "instruction": "SearchStr",
+                    "data": {
+                        "file": "$_CTF_CFS_LX2_CFS_OUTPUT_FILE$",
+                        "search_str": "CI Port: 6010"
+                    }
+                },
+                {
+                    "instruction": "SearchNoStr",
+                    "data": {
+                        "file": "$_CTF_CFS_LX1_CFS_OUTPUT_FILE$",
+                        "search_str": "CI Port: 6010"
+                    }
+                },
+                {
+                    "instruction": "SearchStr",
+                    "data": {
+                        "file": "$_CTF_LOG_DIR$/LX1_LX2_Basic_Example.json.log",
+                        "search_str": "CheckTlmValue: CFS Target: cfs_LX2, MID TO_HK_TLM_MID"
+                    }
+                },
+                {
+                    "instruction": "CheckUserVariable",
+                    "data": {
+                        "variable_name": "_CTF_EXE_DIR",
+                         "operator": "==",
+                         "value": "/builds/aes/ctf"
+                    }
+                }
+            ]
+        }
+    ]
+}

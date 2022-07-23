@@ -37,7 +37,7 @@ def init_global():
 
 @pytest.fixture(scope="session")
 def example_script():
-    script_reader = JSONScriptReader('./functional_tests/plugin_tests/test_ctf_basic_example.json')
+    script_reader = JSONScriptReader('./functional_tests/plugin_tests/Test_CTF_Basic_Example.json')
     return script_reader.script
 
 

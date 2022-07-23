@@ -1,2 +1,2 @@
 cd ../../
-./ctf --script_dir scripts/cfe_6_7_tests/
+./ctf functional_tests/cfe_6_7_tests

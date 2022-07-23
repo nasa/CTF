@@ -69,7 +69,7 @@ function FindTreeKeys ( scripts: CtfEngineScriptStatus[] ) {
         keys.push(script.path)
 
         for (let test of script.tests) {
-            keys.push(test.case_number)
+            keys.push(test.test_number)
         }
     }
 
@@ -445,12 +445,12 @@ export class RunStatusView
           if (content.length > 2) { this.ctf_output_array.push(cur_line); }
         });
     };
-    
+
     componentDidMount = () => {
         this.state.presenter.viewDidLoad();
     };
 
-    
+
 
     componentWillUnmount = () => {
         this.state.presenter.viewWillUnload();
@@ -482,18 +482,16 @@ export class RunStatusView
                      <Tree defaultExpandedKeys={expandkeys} showIcon>
                         {this.state.runStatus.scripts.map(script => (
                             <TreeNode
-                                title={script.test_name}
+                                title={script.test_script_number}
                                 icon={<StatusIcon status={script.status} />}
                                 key={script.path}
                             >
                                 {script.tests.map(test => (
                                     <TreeNode
-                                        title={test.case_number}
+                                        title={test.test_number}
                                         icon={<StatusIcon status={test.status} />}
-                                        key={test.case_number}
+                                        key={test.test_number}
                                     >
-
-
                                    { test.instructions.map(Command)}
 
 
@@ -507,12 +505,12 @@ export class RunStatusView
 
                     <Divider type="horizontal" />
                     <Row>
-                    <Col span={8}>                    
+                    <Col span={8}>
                         <Typography.Title level={4}>CTF Output</Typography.Title>
                     </Col>
                     <Col span={8} offset={8}>
                     <Checkbox onChange={(e) => {
-                        this.setState({"debug_output": e.target.checked}); 
+                        this.setState({"debug_output": e.target.checked});
                         }
                     }>
                             Debug Output

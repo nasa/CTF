@@ -23,7 +23,7 @@ from plugins.cfs.cfs_config import CfsConfig, RemoteCfsConfig
 
 
 def test_cfs_config_init(cfs_config):
-    assert set(cfs_config.sections) == {"ccsds", "cfs", "core", "local_ssh", "logging", "ssh"}
+    assert set(cfs_config.sections) == {"ccsds", "cfs", "core", "local_ssh", "logging", "ssh", 'test_variable'}
     assert cfs_config.validation.get_error_count() == 0
     assert cfs_config.name == "cfs"
     assert cfs_config.cfs_protocol == "local"
@@ -94,12 +94,12 @@ def test_cfs_config_configure_exception(cfs_config, caplog, utils):
 
 def test_cfs_config_load_field(cfs_config, caplog, utils):
     caplog.clear()
-    caplog.set_level("WARNING")
+    caplog.set_level("INFO")
     assert cfs_config.load_field("cfs", "cfs_protocol", Global.config.get, None) == "local", "Valid field is loaded"
     assert not caplog.messages, "Nothing was logged"
     assert cfs_config.load_field("invalid", "cfs_protocol", Global.config.get, None) \
         == "local", "Invalid section falls back to CFS"
-    assert utils.has_log_level("WARNING")
+    assert utils.has_log_level("INFO")
     caplog.clear()
     assert cfs_config.load_field("cfs", "invalid", Global.config.get, None) is None, "Invalid field produces None"
     assert utils.has_log_level("ERROR")
@@ -182,7 +182,7 @@ def remote_cfs_config():
 
 def test_remote_cfs_config_init(remote_cfs_config):
     assert set(remote_cfs_config.sections) == \
-           {"ccsds", "cfs", "cfs_LX1", "cfs_LX2", "cfs_SP01", "cfs_SP02", "core", "local_ssh", "logging", "ssh"}
+           {"ccsds", "cfs", "cfs_LX1", "cfs_LX2", "core", "local_ssh", "logging", "ssh"}
     assert remote_cfs_config.validation.get_error_count() == 0
     assert remote_cfs_config.name == "local_ssh"
     assert remote_cfs_config.cfs_protocol == "ssh"

@@ -45,11 +45,13 @@ def test_validation_plugin_commandmap(validation_plugin):
     """
     Test Validation command content
     """
-    assert len(validation_plugin.command_map) == 4
+    assert len(validation_plugin.command_map) == 6
     assert "DeleteFiles" in validation_plugin.command_map
     assert "CopyFiles" in validation_plugin.command_map
     assert "SaveFileAsText" in validation_plugin.command_map
     assert "SearchStr" in validation_plugin.command_map
+    assert "SearchNoStr" in validation_plugin.command_map
+    assert "InsertUserComment" in validation_plugin.command_map
 
 
 def test_validation_plugin_verify_required_commands(validation_plugin):
@@ -109,13 +111,22 @@ def test_validation_plugin_save_file_as_text_fail(validation_plugin, utils):
     assert utils.has_log_level("ERROR")
 
 
-def test_validation_plugin_parse_txt_file(validation_plugin, utils):
-    assert validation_plugin.parse_txt_file('./ctf', 'NASA Open Source Agreement')
+def test_validation_plugin_search_txt_file(validation_plugin, utils):
+    assert validation_plugin.search_txt_file('./ctf', 'NASA Open Source Agreement')
     utils.clear_log()
-    assert not validation_plugin.parse_txt_file('file_not_exist.txt', 'NASA Open Source Agreement')
-    assert not validation_plugin.parse_txt_file('./ctf', 'NO Open Source Agreement')
+    assert not validation_plugin.search_txt_file('file_not_exist.txt', 'NASA Open Source Agreement')
+    assert not validation_plugin.search_txt_file('./ctf', 'NO Open Source Agreement')
     assert utils.has_log_level("ERROR")
 
+
+def test_validation_plugin_search_no_txt_file(validation_plugin, utils):
+    assert not validation_plugin.search_no_txt_file('./ctf', 'NASA Open Source Agreement', True)
+    utils.clear_log()
+    assert not validation_plugin.search_no_txt_file('file_not_exist.txtxxx', 'NASA Open Source Agreement')
+    '''
+    assert not validation_plugin.search_txt_file('./ctf', 'NO Open Source Agreement')
+    assert utils.has_log_level("ERROR")
+'''
 
 def test_validation_plugin_save_file_as_text_unknown_type(validation_plugin, utils):
     utils.clear_log()
@@ -158,3 +169,7 @@ def test_validation_plugin_interpret_event_log_fail(validation_plugin, utils):
     utils.clear_log()
     assert not validation_plugin.interpret_event_log('file_not_exist.txt', 'evs.txt', 'EVS')
     assert utils.has_log_level("ERROR")
+
+
+def test_validation_plugin_insert_comment(validation_plugin):
+    assert validation_plugin.insert_comment("Demo InsertUserComment instruction")

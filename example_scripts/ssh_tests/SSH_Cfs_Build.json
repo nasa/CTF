@@ -1,0 +1,99 @@
+{
+    "test_script_number": "CFE-Unit-Tests-Example",
+    "test_script_name": "SSH_Remote_Execution_Cfs_Build.json",
+    "test_setup": "Before running the test, you must be able too SSH to localhost without a password prompt. Run 'ssh-copy-id localhost' to enable this",
+    "description": "No description",
+    "owner": "CTF",
+    "ctf_options": {
+        "verify_timeout": 2.0
+    },
+    "environment": {},
+    "requirements": {},
+    "functions": {},
+    "tests": [
+        {
+            "test_number": "Clone-CFS-Repository-1",
+            "description": "Set up connection, remove old test directory, clone and set up the repo.",
+            "instructions": [
+                {
+                    "instruction": "SSH_InitSSH",
+                    "data": {
+                        "host": "localhost"
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SSH_RunRemoteCommand",
+                    "data": {
+                        "command": "rm -rf ~/tmp/cfs_test; mkdir -p /tmp/cfs_test"
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SSH_RunRemoteCommand",
+                    "data": {
+                        "command": "git clone https://github.com/nasa/cFS.git /tmp/cfs_test/; cd /tmp/cfs_test; git submodule init; git submodule update"
+                    },
+                    "wait": 1
+                }
+            ]
+        },
+        {
+            "test_number": "CFE-Unit-Tests-1",
+            "description": "Enable Unit Test By Modifying toolchain-cpu1.cmake",
+            "instructions": [
+                {
+                    "instruction": "SSH_RunRemoteCommand",
+                    "data": {
+                        "command": "cd /tmp/cfs_test/; cp cfe/cmake/Makefile.sample Makefile"
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SSH_RunRemoteCommand",
+                    "data": {
+                        "command": "cd /tmp/cfs_test/; cp -r cfe/cmake/sample_defs sample_defs"
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SSH_RunRemoteCommand",
+                    "data": {
+                        "command": "cd /tmp/cfs_test/; sed -i 's/undef OSAL_DEBUG_PERMISSIVE_MODE/define OSAL_DEBUG_PERMISSIVE_MODE/g' sample_defs/default_osconfig.h"
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SSH_RunRemoteCommand",
+                    "data": {
+                        "command": "cd /tmp/cfs_test/; sed -i -e '3iSET(ENABLE_UNIT_TESTS 1)\\' sample_defs/toolchain-cpu1.cmake"
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SSH_RunRemoteCommand",
+                    "data": {
+                        "command": "cd /tmp/cfs_test/; make prep; make; make install"
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SSH_RunRemoteCommand",
+                    "data": {
+                        "command": "cd /tmp/cfs_test/build/exe/cpu1; ./cfe_core_default_cpu1_es_UT"
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SSH_CheckOutput",
+                    "data": {
+                        "output_contains": "PASS::494",
+                        "output_does_not_contain": "",
+                        "exit_code": 0
+                    },
+                    "wait": 1
+                }
+            ]
+        }
+    ]
+}

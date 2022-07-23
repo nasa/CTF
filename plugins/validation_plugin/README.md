@@ -31,6 +31,7 @@ Search a text file for a given text string. If the string is found, return True,
 
 - **file**: path of the text file.
 - **search_str**: text string to be searched for.
+- **is_regex**: (Optional) True if `search_str` is to be used for a regex match instead of string search.
 
 Example:
 <pre><code>
@@ -38,7 +39,27 @@ Example:
     "instruction":"SearchStr",
      "data":{
          "file": "/testArtifacts/event_log.txt",
-         "search_str": "./testArtifacts/"                                          
+         "search_str": "cFE EVS Initial*",
+         "is_regex": true                                          
+     }        
+}
+</code></pre>
+
+### SearchNoStr
+
+Search a text file for a given text string. If the string is NOT found, return True, otherwise return False.
+
+- **file**: path of the text file.
+- **search_str**: text string to be searched for.
+- **is_regex**: (Optional) True if `search_str` is to be used for a regex match instead of string search.
+
+Example:
+<pre><code>
+{
+    "instruction":"SearchNoStr",
+     "data":{
+         "file": "/testArtifacts/event_log.txt",
+         "search_str": "cFE SCH Initial"                                                  
      }        
 }
 </code></pre>
@@ -56,7 +77,7 @@ Example:
     "instruction":"CopyFiles",
     "data":{
          "source": "./testArtifacts/",
-         "destination": "./testArtifacts/"                                          
+         "destination": "./testArtifacts_2/"                                          
      }        
 }
 </code></pre>
@@ -73,6 +94,22 @@ Example:
      "instruction": "DeleteFiles",
      "data": {
          "path": "./testArtifacts/"                                          
+     }             
+}
+</code></pre>
+
+### InsertUserComment
+
+Insert a comment into test log, which may be used for post-test analysis.  
+
+- **comment**: comment to be inserted into test log.
+
+Example:
+<pre><code>
+{
+     "instruction": "InsertUserComment",
+     "data": {
+         "comment": "EXPECTED_FAIL_LINUX: system table dump is not implemented in OSAL"
      }             
 }
 </code></pre>

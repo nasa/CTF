@@ -74,7 +74,7 @@ export interface CtfFunction {
 
 export interface CtfTest {
     id?: string;
-    case_number: string;
+    test_number: string;
     description: string;
     instructions: Array<CtfInstruction | CtfFunctionCall>;
 }

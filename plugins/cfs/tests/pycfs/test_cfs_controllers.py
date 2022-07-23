@@ -56,6 +56,7 @@ def _cfs_controller_instance_inited():
 @pytest.fixture(name="remote_controller")
 def _remote_controller_instance():
     config = RemoteCfsConfig("local_ssh")
+    config.build_cfs = True
     return RemoteCfsController(config)
 
 
@@ -78,7 +79,6 @@ def test_cfs_controller_init(cfs_controller):
     assert cfs_controller.macro_map is None
     assert cfs_controller.first_call_flag
     assert cfs_controller.mid_pkt_count is None
-    assert not cfs_controller.cfs_running
 
 
 def test_cfs_controller_process_ccsds_files(cfs_controller):
@@ -416,23 +416,90 @@ def test_cfs_controller_send_cfs_command_errors(cfs_controller):
         cfs_controller.cfs.send_command.assert_not_called()
 
 
+def test_send_cfs_raw_command(cfs_controller):
+    with patch('plugins.cfs.pycfs.cfs_controllers.LocalCfsInterface'):
+        cfs_controller.initialize()
+
+        # base case
+        assert cfs_controller.send_raw_cfs_command(
+            "TO_CMD_MID",
+            "TO_ENABLE_OUTPUT_CC",
+            "3132372e302e302e31000000000000009313000000000000",
+            {})
+        cfs_controller.cfs.send_command.assert_called_once_with(
+            10891,
+            2,
+            b'127.0.0.1\x00\x00\x00\x00\x00\x00\x00\x93\x13\x00\x00\x00\x00\x00\x00',
+            {})
+
+        # int mid
+        assert cfs_controller.send_raw_cfs_command(10891, "TO_ENABLE_OUTPUT_CC", "ABCDEF")
+        cfs_controller.cfs.send_command.assert_called_with(10891, 2, b'\xab\xcd\xef', None)
+
+        # int cc
+        assert cfs_controller.send_raw_cfs_command("TO_CMD_MID", 2, "ABCDEF")
+        cfs_controller.cfs.send_command.assert_called_with(10891, 2, b'\xab\xcd\xef', None)
+
+        # both int
+        assert cfs_controller.send_raw_cfs_command(10891, 2, "ABCDEF")
+        cfs_controller.cfs.send_command.assert_called_with(10891, 2, b'\xab\xcd\xef', None)
+
+        # empty payload
+        assert cfs_controller.send_raw_cfs_command(10000, 12, "")
+        cfs_controller.cfs.send_command.assert_called_with(10000, 12, b'', None)
+
+        # leading 0x
+        assert cfs_controller.send_raw_cfs_command(10891, 2, "0xABCDEF")
+        cfs_controller.cfs.send_command.assert_called_with(10891, 2, b'\xab\xcd\xef', None)
+
+
+def test_send_cfs_raw_command_errors(cfs_controller, utils):
+    with patch('plugins.cfs.pycfs.cfs_controllers.LocalCfsInterface'):
+        cfs_controller.initialize()
+
+        # invalid mid
+        utils.clear_log()
+        assert not cfs_controller.send_raw_cfs_command("", "TO_ENABLE_OUTPUT_CC", "ABCDEF")
+        cfs_controller.cfs.send_command.assert_not_called()
+        assert utils.has_log_level("ERROR")
+
+        # invalid cc
+        utils.clear_log()
+        assert not cfs_controller.send_raw_cfs_command("TO_CMD_MID", "", "ABCDEF")
+        cfs_controller.cfs.send_command.assert_not_called()
+        assert utils.has_log_level("ERROR")
+
+        # invalid payload
+        utils.clear_log()
+        assert not cfs_controller.send_raw_cfs_command("TO_CMD_MID", "TO_ENABLE_OUTPUT_CC", "INVALID")
+        cfs_controller.cfs.send_command.assert_not_called()
+        assert utils.has_log_level("ERROR")
+
+        # send error
+        utils.clear_log()
+        cfs_controller.cfs.send_command.return_value = False
+        assert not cfs_controller.send_raw_cfs_command("TO_CMD_MID", "TO_ENABLE_OUTPUT_CC", "ABCDEF")
+        cfs_controller.cfs.send_command.assert_called_once()
+        assert utils.has_log_level("ERROR")
+
+
 def test_cfs_controller_resolve_macros(cfs_controller_inited):
     """
     Test CfsController class resolve_macros method:
      Implementation of helper function resolve_macros, search macro_map to convert arg to string.
     """
     # nominal case
-    assert cfs_controller_inited.resolve_macros('#CF_RESET_CC#') == '1'
+    assert cfs_controller_inited.resolve_macros('#CI_RESET_CC#') == '1'
 
     # embedded macro
-    assert cfs_controller_inited.resolve_macros('1 == #CF_RESET_CC#') == '1 == 1'
+    assert cfs_controller_inited.resolve_macros('1 == #CI_RESET_CC#') == '1 == 1'
 
     # no macro
-    assert cfs_controller_inited.resolve_macros('#CF_RESET_CC') == '#CF_RESET_CC'
+    assert cfs_controller_inited.resolve_macros('#CI_RESET_CC') == '#CI_RESET_CC'
 
     # invalid macro
     with pytest.raises(CtfParameterError):
-        cfs_controller_inited.resolve_macros('#CF_RESET_CC_X#')
+        cfs_controller_inited.resolve_macros('#CI_RESET_CC_X#')
 
 
 def test_cfs_controller_resolve_simple_type(cfs_controller_inited):
@@ -748,7 +815,7 @@ def test_cfs_controller_convert_archive_cfs_files(cfs_controller_inited):
         os.mkdir(source_path)
     if os.path.exists('artifacts'):
         shutil.rmtree('artifacts')
-    shutil.copy('functional_tests/plugin_tests/test_ctf_basic_example.json', source_path)
+    shutil.copy('functional_tests/plugin_tests/Test_CTF_Basic_Example.json', source_path)
 
     # mock Global.test_start_time to year 2016 to move files
     with patch('time.mktime', return_value=1455511418.00):
@@ -772,12 +839,10 @@ def test_cfs_controller_shutdown_cfs(cfs_controller_inited):
     Implementation of CFS plugin instructions shutdown_cfs. When CFS plugin instructions
     (shutdown_cfs) is executed, it calls CfsController instance's shutdown_cfs function.
     """
-    assert not cfs_controller_inited.cfs_process_list
     with patch('os.system') as mock_system:
         mock_system.return_value = 0
         assert cfs_controller_inited.shutdown_cfs()
-    assert not cfs_controller_inited.cfs_running
-    assert not cfs_controller_inited.cfs_process_list
+    assert not cfs_controller_inited.cfs.is_running
 
 
 def test_cfs_controller_shutdown_cfs_fail(cfs_controller_inited):
@@ -786,14 +851,12 @@ def test_cfs_controller_shutdown_cfs_fail(cfs_controller_inited):
     Implementation of CFS plugin instructions shutdown_cfs. When CFS plugin instructions
     (shutdown_cfs) is executed, it calls CfsController instance's shutdown_cfs function.
     """
-    cfs_controller_inited.cfs_process_list = ['pid-1', 'pid-2']
     with patch('os.system') as mock_system, \
          patch('plugins.cfs.pycfs.cfs_controllers.run') as mock_run:
         mock_system.return_value = 255
         mock_run.stdout = "0"
         assert not cfs_controller_inited.shutdown_cfs()
-        assert not cfs_controller_inited.cfs_process_list
-        assert not cfs_controller_inited.cfs_running
+        assert not cfs_controller_inited.cfs.is_running
 
 
 def test_cfs_controller_shutdown(cfs_controller_inited):
@@ -815,7 +878,7 @@ def test_cfs_controller_shutdown_exception(cfs_controller_inited, utils):
     with patch('plugins.cfs.pycfs.cfs_controllers.CfsController.shutdown_cfs') as mock_shutdown_cfs:
         utils.clear_log()
         mock_shutdown_cfs.side_effect = CtfTestError("Raise Exception for shutdown_cfs")
-        cfs_controller_inited.cfs_running = True
+        cfs_controller_inited.cfs.is_running = True
         assert cfs_controller_inited.shutdown() is None
         mock_shutdown_cfs.assert_called_once()
         assert utils.has_log_level("ERROR")
@@ -897,7 +960,6 @@ def test_remote_cfs_controller_init(remote_controller):
     assert remote_controller.macro_map is None
     assert remote_controller.first_call_flag
     assert remote_controller.mid_pkt_count is None
-    assert not remote_controller.cfs_running
     assert remote_controller.execution is None
 
 
@@ -932,7 +994,7 @@ def test_remote_cfs_controller_initialize_pass(remote_controller):
     with patch('plugins.ssh.ssh_plugin.SshController.init_connection', return_value=True), \
          patch('plugins.cfs.pycfs.cfs_controllers.RemoteCfsInterface') as mock_remotecfsinterface:
         mock_remotecfsinterface.return_value.init_passed = True
-        remote_controller.cfs_running = False
+        remote_controller.cfs.is_running = False
         assert remote_controller.initialize()
 
 
@@ -957,28 +1019,23 @@ def test_remote_cfs_controller_shutdown_cfs(remote_controller_inited):
     (shutdown_cfs) is executed, it calls RemoteCfsController instance's shutdown_cfs function.
     """
     with patch('plugins.ssh.ssh_plugin.SshController.run_command', return_value=True):
-        remote_controller_inited.cfs_process_list.append(-100)
         assert remote_controller_inited.shutdown_cfs()
-        assert not remote_controller_inited.cfs_process_list
-        assert not remote_controller_inited.cfs_running
+        assert not remote_controller_inited.cfs.is_running
 
 
-def test_remote_cfs_controller_shutdown_cfs_exception(remote_controller_inited, utils):
+def test_remote_cfs_controller_shutdown_cfs_fail(remote_controller_inited, utils):
     """
-    Test RemoteCfsController class shutdown_cfs method: raise exception
+    Test RemoteCfsController class shutdown_cfs method: remote command fails
     Implementation of CFS plugin instructions shutdown_cfs. When CFS plugin instructions
     (shutdown_cfs) is executed, it calls RemoteCfsController instance's shutdown_cfs function.
     """
     with patch('plugins.ssh.ssh_plugin.SshController.run_command') as mock_run_command:
         utils.clear_log()
-        mock_run_command.side_effect = CtfTestError("Raise Exception for run_command")
-        remote_controller_inited.cfs_process_list.append(-100)
-        with pytest.raises(CtfTestError):
-            assert remote_controller_inited.shutdown_cfs()
+        mock_run_command.return_value = False
+        assert not remote_controller_inited.shutdown_cfs()
         mock_run_command.assert_called_once()
         assert utils.has_log_level("ERROR")
-        assert not remote_controller_inited.cfs_running
-        assert not remote_controller_inited.cfs_process_list
+        assert not remote_controller_inited.cfs.is_running
 
 
 def test_remote_cfs_controller_shutdown(remote_controller):
@@ -993,8 +1050,6 @@ def test_remote_cfs_controller_shutdown(remote_controller):
         Global.current_script_log_dir = '~/sample_cfs_workspace/ctf_tests/results/'
         remote_controller.cfs.cfs_std_out_path = 'local_ssh_output.txt'
         assert remote_controller.shutdown() is None
-        assert not remote_controller.cfs_running
-        assert not remote_controller.cfs_process_list
         assert not remote_controller.cfs
         Global.current_script_log_dir = temp_dir
 
@@ -1011,8 +1066,7 @@ def test_remote_cfs_controller_shutdown_exception(remote_controller_inited, util
         temp_dir = Global.current_script_log_dir
         Global.current_script_log_dir = '~/sample_cfs_workspace/ctf_tests/results/'
         remote_controller_inited.cfs.cfs_std_out_path = 'local_ssh_output.txt'
-        remote_controller_inited.cfs_process_list = ['pid1', 'pid2']
-        remote_controller_inited.cfs_running = True
+        remote_controller_inited.cfs.is_running = True
         assert remote_controller_inited.shutdown() is None
         mock_shutdown.assert_called_once()
         Global.current_script_log_dir = temp_dir
@@ -1030,8 +1084,6 @@ def test_remote_cfs_controller_shutdown_pass(remote_controller_inited):
         Global.current_script_log_dir = '~/sample_cfs_workspace/ctf_tests/results/'
         remote_controller_inited.cfs.cfs_std_out_path = 'local_ssh_output.txt'
         assert remote_controller_inited.shutdown() is None
-        assert not remote_controller_inited.cfs_running
-        assert not remote_controller_inited.cfs_process_list
         assert not remote_controller_inited.cfs
         Global.current_script_log_dir = temp_dir
 

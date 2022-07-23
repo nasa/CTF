@@ -1,0 +1,82 @@
+{
+    "test_script_number": "SSH-Run-Instructions-Test",
+    "test_script_name": "SSH_Run_Instructions.json",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "description": "Example script for execution instructions. Script will establish an SSH connection and execute remote and local commands.",
+    "owner": "CTF",
+    "test_setup": "Before running the test, you must be able too SSH to localhost without a password prompt. Run 'ssh-copy-id localhost' to enable this",
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "import": {},
+    "tests": [
+        {
+            "test_number": "SSH-Run-Instructions-Test-1",
+            "description": "Establish SSH connection, run commands, move files",
+            "instructions": [
+                {
+                    "instruction": "SSH_InitSSH",
+                    "wait": 1,
+                    "data": {
+                        "host": "localhost"
+                    }
+                },
+                {
+                    "instruction": "SSH_RunLocalCommand",
+                    "wait": 1,
+                    "data": {
+                        "command": "hostname"
+                    }
+                },
+                {
+                    "instruction": "SSH_RunRemoteCommand",
+                    "wait": 1,
+                    "data": {
+                        "command": "uname -s"
+                    }
+                },
+                {
+                    "instruction": "SSH_CheckOutput",
+                    "data": {
+                        "output_contains": "Linux",
+                        "output_does_not_contain": "Windows",
+                        "exit_code": 0
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SSH_RunLocalCommand",
+                    "wait": 1,
+                    "data": {
+                        "command": "touch test.txt"
+                    }
+                },
+                {
+                    "instruction": "SSH_PutFile",
+                    "wait": 1,
+                    "data": {
+                        "local_path": "./test.txt",
+                        "remote_path": "text.txt"
+                    }
+                },
+                {
+                    "instruction": "SSH_GetFile",
+                    "wait": 1,
+                    "data": {
+                        "local_path": "./test_new.txt",
+                        "remote_path": "text.txt"
+                    }
+                },
+                {
+                    "instruction": "SSH_RunLocalCommand",
+                    "wait": 1,
+                    "data": {
+                        "command": "rm ./test.txt ./test_new.txt"
+                    }
+                }
+            ]
+        }
+    ]
+}

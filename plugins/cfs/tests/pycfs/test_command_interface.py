@@ -56,7 +56,7 @@ def test_command_interface_send_command(cmdif):
     data = 0x12345678.to_bytes(4, "little")
     with patch.object(cmdif, 'command_socket', spec=socket.socket) as mocksock:
         mocksock.fileno.return_value = 1
-        mocksock.sendto.return_value = len(data) + 12
+        mocksock.sendto.return_value = len(data) + 16
         assert cmdif.send_command(mid, cc, data)
         # TODO compute actual byte array and check called
         mocksock.sendto.assert_called_once()

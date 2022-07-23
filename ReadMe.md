@@ -16,9 +16,50 @@ To get started, clone the CTF repository using the following:
 
 `git clone https://github.com/nasa/CTF`
 
-For more detailed information on CTF usage, see the [CTF Software User's Guide](docs/CTF_SUG.pdf) in the `docs` directory of the CTF repository.
-
+For more detailed information on CTF usage, see the CTF Software User's Guide (CTF_SUG.pdf) 
+in the `CTF Documentation` directory of the CTF releases' Assets (https://github.com/nasa/CTF/releases).
+ 
 ## Release Notes
+
+### v1.6 
+07/20/2022
+
+* CTF Core Changes
+    * Update test script naming conventions and log formatting to be consistent.  
+    
+    * Various logging improvements. 
+    
+    * Update source code for the new sample cFS workspace.
+
+    * Minor improvements and bug fixes.
+
+* CTF Plugins Changes
+    * Updates to Validation Plugin 
+        * Add a new instruction InsertUserComment to allow testers to insert comments into test logs for post-test analysis.
+
+        * Modify SearchStr and SearchNoStr instructions to support regex search.
+
+    * Updates to Variable Plugin
+        * Add target as an argument to SetUserVariableFromTlm and SetUserVariableFromTlmHeader instructions. 
+
+        * Add an optional argument variable_type to SetUserVariable instruction for explicit type conversion. 
+        
+        * Minor improvements and bug fixes: convert bytes array to string in SetUserVariableFromTlm; allow variable to be array index in instruction arguments. 
+    
+    * Updates to CFS Plugin
+        * Allow SendCfsCommandWithRawPayload to work with any MID and command code.
+
+        * Minor improvements and bug fixes. 
+    
+ * CTF Tool and Scripts Changes
+    * Update setup_ctf_env.sh to fix the issue of incompatible packages for Anaconda3 installation.
+
+    * Update CTF Editor (GUI) to highlight invalid json scripts.
+    
+    * Improve documents and test scripts to certify CTF.
+
+    * Modify the upgrade script in ctf/tools to automatically update CTF config files and test scripts for v1.6 compatibility.
+   
 
 ### v1.5 
 03/31/2022
@@ -36,7 +77,7 @@ For more detailed information on CTF usage, see the [CTF Software User's Guide](
     * Updates to CFS Plugin
         * Fix a bug that caused missing logs and telemetry after the first test cases of a run. 
 
-        * Support hex value arguments (of the form `"0x1F`) in `SendCfsCommand`, `CheckTlmValue`, `CheckEvent` instructions. 
+        * Support hex value arguments (of the form `"0x1F"`) in `SendCfsCommand`, `CheckTlmValue`, `CheckEvent` instructions. 
     
         * Change `SendCfsCommand` to use the configured target's endianness for bitfield values.
 

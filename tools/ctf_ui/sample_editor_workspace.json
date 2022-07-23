@@ -5,7 +5,7 @@
     "projectDir": "../../",
 
     "scriptsDir_notes": "CTF Scripts Directory - Directory where scripts are. Files within are shown in the scripts list of the editor",
-    "scriptsDir": "../../scripts",
+    "scriptsDir": "../../functional_tests",
 
     "ctfExecutable_notes": "CTF Executable - CTF executable located at the root directory of CTF repo",
     "ctfExecutable": "../../ctf",

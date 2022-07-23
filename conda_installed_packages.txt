@@ -1,0 +1,61 @@
+# packages in environment at /home/ctf/anaconda3/envs/pythonEnv3:
+#
+# Name                    Version                   Build  Channel
+_libgcc_mutex             0.1                        main  
+_openmp_mutex             5.1                       1_gnu  
+astroid                   2.5              py38h06a4308_1    anaconda
+attrs                     21.4.0             pyhd3eb1b0_0    anaconda
+bcrypt                    3.2.0            py38h7b6447c_0    anaconda
+ca-certificates           2022.4.26            h06a4308_0    anaconda
+certifi                   2022.6.15        py38h06a4308_0    anaconda
+cffi                      1.15.0           py38hd667e15_1    anaconda
+coverage                  6.3.2            py38h7f8727e_0    anaconda
+cryptography              37.0.1           py38h9ce1e76_0    anaconda
+demjson                   2.2.4              pyh9f0ad1d_0    conda-forge
+fabric                    2.6.0            py38h06a4308_0    anaconda
+ftputil                   5.0.4              pyhd8ed1ab_0    conda-forge
+icu                       68.1                 h2531618_0    anaconda
+iniconfig                 1.1.1              pyhd3eb1b0_0    anaconda
+invoke                    1.6.0            py38h06a4308_0    anaconda
+isort                     5.9.3              pyhd3eb1b0_0    anaconda
+lazy-object-proxy         1.6.0            py38h27cfd23_0    anaconda
+ld_impl_linux-64          2.38                 h1181459_1  
+libffi                    3.3                  he6710b0_2  
+libgcc-ng                 11.2.0               h1234567_1  
+libgomp                   11.2.0               h1234567_1  
+libsodium                 1.0.18               h7b6447c_0    anaconda
+libstdcxx-ng              11.2.0               h1234567_1  
+libuv                     1.40.0               h7b6447c_0    anaconda
+libxscrnsaver-cos6-x86_64 1.2.2                         4    anaconda
+libxscrnsaver-devel-cos6-x86_64 1.2.2                         4    anaconda
+mccabe                    0.6.1                    py38_1    anaconda
+mock                      4.0.3              pyhd3eb1b0_0    anaconda
+ncurses                   6.3                  h5eee18b_3  
+nodejs                    16.13.1              hb931c9a_0    anaconda
+openssl                   1.1.1o               h7f8727e_0    anaconda
+packaging                 21.3               pyhd3eb1b0_0    anaconda
+paramiko                  2.8.1              pyhd3eb1b0_0    anaconda
+pip                       22.1.2           py38h06a4308_0  
+pluggy                    1.0.0            py38h06a4308_1    anaconda
+psutil                    5.8.0            py38h27cfd23_1    anaconda
+py                        1.11.0             pyhd3eb1b0_0    anaconda
+pycparser                 2.21               pyhd3eb1b0_0    anaconda
+pyelftools                0.28             py38h578d9bd_2    conda-forge
+pylint                    2.6.0                    py38_0    anaconda
+pynacl                    1.4.0            py38h7b6447c_1    anaconda
+pyparsing                 3.0.4              pyhd3eb1b0_0    anaconda
+pytest                    7.1.2            py38h06a4308_0    anaconda
+pytest-cov                3.0.0              pyhd3eb1b0_0    anaconda
+python                    3.8.12               h12debd9_0  
+python_abi                3.8                      2_cp38    conda-forge
+readline                  8.1.2                h7f8727e_1  
+setuptools                61.2.0           py38h06a4308_0  
+six                       1.16.0             pyhd3eb1b0_1    anaconda
+sqlite                    3.38.5               hc218d9a_0  
+tk                        8.6.12               h1ccaba5_0  
+toml                      0.10.2             pyhd3eb1b0_0    anaconda
+tomli                     1.2.2              pyhd3eb1b0_0    anaconda
+wheel                     0.37.1             pyhd3eb1b0_0  
+wrapt                     1.13.3           py38h7f8727e_2    anaconda
+xz                        5.2.5                h7f8727e_1  
+zlib                      1.2.12               h7f8727e_2  

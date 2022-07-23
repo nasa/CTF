@@ -1,0 +1,79 @@
+{
+    "test_script_number": "CTF-VV-13",
+    "test_script_name": "CTF_VV_13.json",
+    "requirements": {
+        "CTF-26": "Full",
+        "CTF-28": "Full"
+    },
+    "description": "Execute conditional looping using local variables",
+    "owner": "CTF",
+    "test_setup": "Need to run start script first to start cFS instance",
+    "ctf_options": {},
+    "import": {},
+    "tests": [
+        {
+            "test_number": "CTF-VV-13-1",
+            "description": "Nominal OP",
+            "instructions": [
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "=",
+                        "value": 0
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "BeginLoop",
+                    "data": {
+                        "label": "LOOP_1",
+                        "conditions": [
+                            {
+                                "variable": "my_var",
+                                "compare": "<",
+                                "value": 3
+                            }
+                        ]
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "+",
+                        "value": 1
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_NOOP_CC",
+                        "args": {}
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "EndLoop",
+                    "data": {
+                        "label": "LOOP_1"
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "==",
+                        "value": 3
+                    },
+                    "wait": 1
+                }
+            ]
+        }
+    ]
+}

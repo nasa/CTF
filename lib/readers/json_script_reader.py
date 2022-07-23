@@ -75,8 +75,8 @@ class JSONScriptReader:
         Parse and process test information from script header
         """
         try:
-            verification_test_number = self.raw_data["test_number"]
-            verification_test_name = self.raw_data["test_name"]
+            verification_test_number = self.raw_data.get("test_number") or self.raw_data.get("test_script_number")
+            verification_test_name = self.raw_data.get("test_name") or self.raw_data.get("test_script_name")
             requirements = ", ".join([str(x) for x in self.raw_data["requirements"].keys()])
             test_description = str(self.raw_data["description"])
             test_owner = str(self.raw_data["owner"])
@@ -166,7 +166,7 @@ class JSONScriptReader:
 
     def process_tests(self):
         """
-        Iterates over test cases within the test script and parses each test case.
+        Iterates over tests within the test script and parses each test.
         """
         tests = self.raw_data.get("tests")
         test_list = []
@@ -180,6 +180,7 @@ class JSONScriptReader:
             instruction_list = []
             test = Test()
             commands = curr_test["instructions"]
+            test_number = curr_test.get("case_number") or curr_test.get("test_number")
             default_index = -1
             for _, command in enumerate(commands):
                 data = command.get("data")
@@ -196,9 +197,7 @@ class JSONScriptReader:
 
                     inline_commands = self.resolve_function(command["function"], command["params"], self.functions)
                     if inline_commands is None:
-                        log.error("Failed to process test case due to the error(s) above. Skipping {}".format(
-                            curr_test["case_number"]
-                        ))
+                        log.error("Failed to process test due to the error(s) above. Skipping {}".format(test_number))
                         instruction_list = []
                         break
                     if not inline_commands:
@@ -228,7 +227,7 @@ class JSONScriptReader:
             for i, _ in enumerate(instruction_list):
                 instruction_list[i].command_index = i
 
-            test.test_info = {"test_case": curr_test["case_number"], "description": curr_test["description"]}
+            test.test_info = {"test_number": test_number, "description": curr_test["description"]}
             test.instructions = instruction_list
             test_list.append(test)
         self.script.set_tests(test_list)

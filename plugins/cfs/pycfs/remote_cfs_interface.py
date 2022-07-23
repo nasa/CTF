@@ -76,6 +76,7 @@ class RemoteCfsInterface(LocalCfsInterface):
         return_values['pid'] = self.execution_controller.get_last_pid()
 
         if result and return_values['pid'] is not None:
+            self.is_running = True
             Global.time_manager.wait_seconds(1)
             result = self.execution_controller.run_command("ps -p {} > /dev/null 2>&1".format(return_values['pid']))
 

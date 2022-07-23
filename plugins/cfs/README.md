@@ -51,27 +51,33 @@ A number of configuration fields relate to the CCDD files and formats, which wil
 
 ### Test Script Considerations
 
-CTF supports resolving macros from the ccsds_data_dir and replacing macros in the test script with the actual "c_value". Ensure a `#` precedes the macro in the test script in order for CTF to do macro replacement.
+CTF supports resolving macros from the `ccsds_data_dir` and replacing macros in the test script with the actual value.
+Macros are defined as constant values in CCDD json files. An example of macro definition is `sample_cfs_workspace/ccdd/json/auto_cfs_grp1_CONSTANTS.json`.
+Macros are used in instruction parameters by wrapping the name in `#` like this `#macro_name#`. Ensure a `#` before and after the macro name in the instruction argument.  
 
-###### Example 
+Macros can be used in the arguments of `SendCfsCommand`, `CheckTlmValue`, `CheckEvent`, and their related CFS Plugin instructions.
+Macros are target (flight software) specific. In other words, for different targets, their evaluated values may be different.
+
+CTF also supports definition and evaluation of user variables. These work similarly to macros, but variables are defined in test scripts, not CCDD files. 
+Refer to [Variable Plugin README](../variable_plugin/README.md) for details. 
+
+###### Macro Example 
 <pre><code>               
 {
-                    "instruction": "CheckTlmValue",
-                    "data": {
-                        "mid": "CFE_EVS_HK_TLM_MID",
-                        "args": [
-                            {
-                                "variable": "Payload.AppData[#MY_APPDATA_INDEX].AppID",
-                                "value": [
-                                    "0"
-                                ],
-                                "compare": "=="
-                            }
+        "instruction": "CheckTlmValue",
+        "data": {
+                "mid": "CFE_EVS_HK_TLM_MID",
+                "args": [
+                        {
+                            "variable": "Payload.AppData[#MY_APPDATA_INDEX#].AppID",
+                            "value": 0
+                            "compare": "=="
+                        }
                         ],
-                        "target": ""
-                    },
-                    "wait": 1
-                }
+                "target": ""
+                },
+        "wait": 1
+}
 </code></pre>
 
 ### RegisterCfs
@@ -175,12 +181,13 @@ Example:
 }
 </code></pre>
 
+
 ### SendCfsCommandWithRawPayload
-Constructs and sends a command message to CFS with the specified MID, command code, and payload bytes. The payload type for this command must be a byte array.
+Constructs and sends a command message to CFS with the specified MID, command code, and payload bytes.
 - **target:** (Optional) A previously registered target name. If no name is given, applies to all registered targets.
 - **mid:** The message ID of the command (i.e. "BEX_CMD_MID") (string)
 - **cc:** The command code for the command (i.e. "BEX_NOOP_CC") (string)
-- **hex_buffer:** A hexadecimal string representing the command payload. The string must be an even length (2 characters per byte) no larger than the command payload size and contain only hex numerals 0-F.
+- **hex_buffer:** A hexadecimal string representing the command payload. The string must be an even length (2 characters per byte) and contain only hex numerals 0-F. The payload will be sized to fit the bytes given.
 - **header:** (Optional) An object where the key is the header field name, and the value is the field value.
   This object is passed into to the `CcsdsCommand` type (as determined by the config field [`ccsds:CCSDS_header_path`](../ccsds_plugin/README.md)) and is not handled by CTF directly. It is made available for custom CCSDS header implementations to allow specification of the packet header.
 

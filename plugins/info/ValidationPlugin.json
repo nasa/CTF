@@ -69,6 +69,33 @@
           "type": "string"
         }
       ]
+    },
+    {
+      "name": "SearchNoStr",
+      "description": "",
+      "parameters": [
+        {
+          "name": "file",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "search_str",
+          "description": "",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "InsertUserComment",
+      "description": "",
+      "parameters": [
+        {
+          "name": "comment",
+          "description": "",
+          "type": "string"
+        }
+      ]
     }
   ],
   "description": "CTF Validation Plugin"

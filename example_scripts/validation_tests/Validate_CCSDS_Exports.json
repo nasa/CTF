@@ -1,0 +1,48 @@
+{
+    "test_script_number": "Validate-CCSDS-Exports",
+    "test_script_name": "Validate_CCSDS_Exports.json",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "description": "",
+    "owner": "CTF",
+    "test_setup": "",
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "import": {},
+    "tests": [
+        {
+            "test_number": "Validate-CCSDS-Exports-Test-1",
+            "description": "Start CFS, Validate CCSDS JSON Exports",
+            "instructions": [
+                {
+                    "instruction": "StartCfs",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "EnableCfsOutput",
+                    "wait": 1,
+                    "description": "Need this to enable the telemetry thread. Enable Output counts as 1 TO cmd"
+                },
+                {
+                    "instruction": "ValidateCfsCcsdsData",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "ShutdownCfs",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1
+                }
+            ]
+        }
+    ]
+}

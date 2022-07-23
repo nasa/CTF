@@ -21,12 +21,12 @@ validation_plugin.py: Validation Plugin Implementation for CTF.
 """
 
 # ENHANCE - support binary files interpretation for other types of CFS log files.
-
-
+import re
 from pathlib import Path
 import shutil
 
 from lib.ctf_global import Global
+from lib.ctf_utility import resolve_variable
 from lib.plugin_manager import Plugin, ArgTypes
 from lib.logger import logger as log
 
@@ -49,7 +49,6 @@ class ValidationPlugin(Plugin):
         Constructor implementation for validation plugin.
         """
         super().__init__()
-
         ## Plugin Name
         self.name = "ValidationPlugin"
 
@@ -61,7 +60,9 @@ class ValidationPlugin(Plugin):
             "DeleteFiles": (self.delete_file, [ArgTypes.string]),
             "CopyFiles": (self.copy_file, [ArgTypes.string] * 2),
             "SaveFileAsText": (self.save_file_as_text, [ArgTypes.string] * 4),
-            "SearchStr": (self.parse_txt_file, [ArgTypes.string] * 2)
+            "SearchStr": (self.search_txt_file, [ArgTypes.string] * 2),
+            "SearchNoStr": (self.search_no_txt_file, [ArgTypes.string] * 2),
+            "InsertUserComment": (self.insert_comment, [ArgTypes.string])
         }
 
     @staticmethod
@@ -74,6 +75,15 @@ class ValidationPlugin(Plugin):
         @return bool: True
         """
         log.info("Initialized Validation Plugin!")
+        return True
+
+    @staticmethod
+    def insert_comment(comment: str):
+        """
+        Insert comments into the test log
+        @return bool: True
+        """
+        log.info("User Comment - {}".format(comment))
         return True
 
     @staticmethod
@@ -277,27 +287,76 @@ class ValidationPlugin(Plugin):
         return True
 
     @staticmethod
-    def parse_txt_file(file: str, search_str: str) -> bool:
+    def read_file(file: str) -> any:
         """
-        Search a text file for a given text string.
-        @return bool: True, if text string is found; else return False.
+        Helper method: read the file content. If the file does not exist, return None;
+                       else return the content as a string
         """
         file_path = Path(file)
         if not file_path.is_file():
             log.error("File {} not found  ".format(file_path.resolve()))
+            return None
+
+        # Replace malformed data by Python’s backslashed escape sequences.
+        # errors='backslashreplace' is for files which have mixed printable and non-printable characters
+        file_data = file_path.read_text(errors='backslashreplace')
+        log.debug("Text content in file {} = \n{}".format(file_path.resolve(), file_data))
+        return file_data
+
+    @staticmethod
+    def check_str(file_data:str, search_str: str, is_regex: bool = False) -> bool:
+        """
+        Helper method: Check whether a given text string is in text data.
+        @return bool: True, if text string is found; False otherwise.
+        """
+        status = False
+        if is_regex:
+            if re.search(search_str, file_data):
+                log.info("String value {} Found by Regex".format(search_str))
+                status = True
+        else:
+            if search_str in file_data:
+                log.info("String value {} Found".format(search_str))
+                status = True
+        return status
+
+    @staticmethod
+    def search_txt_file(file: str, search_str: str, is_regex: bool = False) -> bool:
+        """
+        Search a text file for a given text string.
+        @return bool: True, if text string is found; False otherwise.
+        """
+        file = resolve_variable(file)
+        search_str = resolve_variable(search_str)
+
+        file_data = ValidationPlugin.read_file(file)
+        if not file_data:
             return False
 
-        file_data = file_path.read_text()
-        log.debug("Text content in file {} = \n{}".format(file_path.resolve(), file_data))
-
-        if search_str in file_data:
-            log.info("String value {} Found".format(search_str))
-            status = True
-        else:
+        status = ValidationPlugin.check_str(file_data, search_str, is_regex)
+        if not status:
             log.error("String value {} not Found".format(search_str))
-            status = False
 
         return status
+
+    @staticmethod
+    def search_no_txt_file(file: str, search_str: str, is_regex: bool = False) -> bool:
+        """
+        Search a text file for a given text string. It has the reversed logic of search_txt_file.
+        @return bool: True, if text string is NOT found; False otherwise
+        """
+        file = resolve_variable(file)
+        search_str = resolve_variable(search_str)
+
+        file_data = ValidationPlugin.read_file(file)
+        if not file_data:
+            return False
+
+        status = ValidationPlugin.check_str(file_data, search_str, is_regex)
+        if status:
+            log.error("String value {} Found".format(search_str))
+
+        return not status
 
     def shutdown(self):
         """

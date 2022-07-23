@@ -1,0 +1,173 @@
+{
+    "test_script_number": "Basic-CCDD-data-type-test",
+    "test_script_name": "Test_CCDD_Definition.json",
+    "test_setup": "",
+    "description": "Verify CCDD json files can be processed properly by SendCfsCommand with complex arguments",
+    "owner": "CTF",
+    "ctf_options": {},
+    "environment": {},
+    "requirements": {},
+    "functions": {},
+    "tests": [
+        {
+            "test_number": "Basic-CCDD-data-type-test-1",
+            "description": "No description",
+            "instructions": [
+                {
+                    "instruction": "StartCfs",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "EnableCfsOutput",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 2,
+                    "description": "Need this to enable the telemetry thread. Enable Output counts as 1 TO cmd"
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "comment": "Test unspecified values for all types",
+                    "data": {
+                        "mid": "DUMMY_IO_CMD_MID",
+                        "cc": "DUMMY_IO_SEND_DATA_CC",
+                        "args": {},
+                        "target": ""
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "comment": "Test nominal values for all types",
+                    "data": {
+                        "mid": "DUMMY_IO_CMD_MID",
+                        "cc": "DUMMY_IO_SEND_DATA_CC",
+                        "args": {
+                            "myData[0]": {
+                                "myByte": 42,
+                                "myShort": 1024,
+                                "myInt": 252525,
+                                "myLong": 9876543210,
+                                "myFloat": 3.5,
+                                "myDouble": 3.1415926535,
+                                "myChar": "a",
+                                "myBool": 1,
+                                "myArray[0]": 0,
+                                "myArray[1]": 1,
+                                "myArray[7]": 7,
+                                "myArray[2]": 2,
+                                "myString": "../../",
+                                "myBitfield8a": 1,
+                                "myBitfield8b": 1,
+                                "myBitfield16a": 1,
+                                "myBitfield16b": 1,
+                                "myBitfield16c": 1
+                            }
+                        },
+                        "target": ""
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "comment": "Test off-nominal values for all types",
+                    "data": {
+                        "mid": "DUMMY_IO_CMD_MID",
+                        "cc": "DUMMY_IO_SEND_DATA_CC",
+                        "args": {
+                            "myData[0]": {
+                                "myByte": "42",
+                                "myShort": "0XD903",
+                                "myInt": "111111",
+                                "myLong": "0xF0F0F0F0F0F0",
+                                "myFloat": "1.56",
+                                "myDouble": "1.0",
+                                "myChar": "0",
+                                "myBool": 0,
+                                "myArray": "4",
+                                "myArray[1]": "0",
+                                "myString": "12345",
+                                "myBitfield8a": "15",
+                                "myBitfield8b": "8",
+                                "myBitfield16a": "1",
+                                "myBitfield16b": "1023",
+                                "myBitfield16c": "31"
+                            }
+                        },
+                        "target": ""
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "DUMMY_IO_OUT_DATA_MID",
+                        "args": [
+                            {
+                                "compare": "streq",
+                                "variable": "myData[0].myString",
+                                "value": "12345"
+                            }
+                        ]
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SetUserVariableFromTlm",
+                    "data": {
+                        "variable_name": "var_str",
+                        "mid": "DUMMY_IO_OUT_DATA_MID",
+                        "tlm_variable": "myData[0].myString"
+                    },
+                    "wait": 3
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "DUMMY_IO_OUT_DATA_MID",
+                        "args": [
+                            {
+                                "compare": "==",
+                                "variable": "myData[0].myByte",
+                                "value": 42
+                            },
+                            {
+                                "compare": "==",
+                                "variable": "myData[0].myShort",
+                                "value": "0xD903"
+                            },
+                            {
+                                "compare": "==",
+                                "variable": "myData[0].myInt",
+                                "value": "0X1B207"
+                            },
+                            {
+                                "compare": "==",
+                                "variable": "myData[0].myLong",
+                                "value": 264917625139440
+                            },
+                            {
+                                "compare": "==",
+                                "variable": "myData[0].myFloat",
+                                "value": 1.56,
+                                "tolerance_minus": 0.01,
+                                "tolerance_plus": 0.01
+                            },
+                            {
+                                "compare": "==",
+                                "variable": "myData[0].myBitfield16c",
+                                "value": 31
+                            }
+                        ]
+                    },
+                    "wait": 1
+                }
+            ]
+        }
+    ]
+}

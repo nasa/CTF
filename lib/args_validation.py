@@ -198,3 +198,6 @@ class ArgsValidation:
         else:
             self.add_error("Boolean")
         return new_value
+
+    def __repr__(self):
+        return "{} errors found".format(self.parameter_errors)

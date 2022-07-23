@@ -53,7 +53,7 @@ class TestScript:
         self.exec_time = 0
         self.num_tests = 0
         self.num_passed = 0
-        self.num_failed = 0
+        self.failed_tests = []
         self.num_error = 0
 
     def set_header_info(self, test_number, test_name, requirements, test_description, test_owner, test_setup,
@@ -96,7 +96,7 @@ class TestScript:
 
     def set_tests(self, tests):
         """
-        Set the list of test cases within this test script
+        Set the list of tests within this test script
         """
         self.tests = tests
 
@@ -111,6 +111,7 @@ class TestScript:
 
         try:
             self.num_tests = len(self.tests)
+            log.info("---------- TEST SCRIPT START ----------")
             self.log_test_header()
             self.start_time = time.time()
             for test in self.tests:
@@ -137,14 +138,14 @@ class TestScript:
         localtime = time.localtime()
         time_string = time.strftime("%m/%d/%Y / %H:%M:%S", localtime)
         sys_info = os.uname()
-        log.info("Verification Test Name: {}".format(self.test_name))
-        log.info("Verification Test Number: {}".format(self.test_number))
-        log.info("Test Conductor: {}".format(pwd.getpwuid(os.getuid())[0]))
-        log.info("Run Date/Time: {}".format(time_string))
-        log.info("Platform: {}".format(sys_info[3]))
-        log.info("Requirement Verification Targets: {}".format(self.requirements))
-        log.info("Test Description : {}".format(self.test_description))
-        log.info("Input file utilized : {}".format(os.path.relpath(self.input_file)))
+        log.info("Test Script Name:                      {}".format(self.test_name))
+        log.info("Test Script Number:                    {}".format(self.test_number))
+        log.info("Test Conductor:                        {}".format(pwd.getpwuid(os.getuid())[0]))
+        log.info("Run Date/Time:                         {}".format(time_string))
+        log.info("Platform:                              {}".format(sys_info[3]))
+        log.info("Requirement Verification Targets:      {}".format(self.requirements))
+        log.info("Test Script Description :              {}".format(self.test_description))
+        log.info("Input file utilized :                  {}".format(os.path.relpath(self.input_file)))
 
     def generate_test_results(self):
         """
@@ -152,16 +153,19 @@ class TestScript:
         """
         self.num_tests = len(self.tests)
         self.num_passed = 0
-        self.num_failed = 0
+        self.failed_tests = []
         for test in self.tests:
             if test.test_run:
                 if test.test_result:
                     self.num_passed += 1
                 else:
-                    self.num_failed += 1
+                    self.failed_tests.append(test.test_info.get("test_number", ""))
 
         self.log_test_header()
-        log.info("Number tests To Run:                {}".format(self.num_tests))
-        log.info("Number tests Ran:                   {}".format(self.num_passed + self.num_failed))
-        log.info("Number tests Passed:                {}".format(self.num_passed))
-        log.info("Number tests Failed:                {}".format(self.num_failed))
+        log.info("Number of tests To Run:                {}".format(self.num_tests))
+        log.info("Number of tests Ran:                   {}".format(self.num_passed + len(self.failed_tests)))
+        log.info("Number of tests Passed:                {}".format(self.num_passed))
+        log.info("Number of tests Failed:                {}".format(len(self.failed_tests)))
+        if self.failed_tests:
+            log.info("Failed tests: {}".format(", ".join(self.failed_tests)))
+        log.info("---------- TEST SCRIPT END ----------")

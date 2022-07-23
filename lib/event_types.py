@@ -24,8 +24,8 @@ class Instruction:
 
     @param delay: The time in seconds to wait before executing this instruction
     @param command: The dict containing instruction parameters
-    @param test: Integer index of the test case that includes this instruction
-    @param command_index: Integer index of this instruction within the test case
+    @param test: Integer index of the test that includes this instruction
+    @param command_index: Integer index of this instruction within the test
     @param disabled: Whether or not the instruction is disabled
 
     """

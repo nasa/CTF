@@ -1,0 +1,27 @@
+{
+    "test_script_number": "CTF-VV-Start",
+    "test_script_name": "CTF_VV_start.json",
+    "requirements": {},
+    "description": "Start cFS instance, enable TO output",
+    "owner": "CTF",
+    "test_setup": "",
+    "ctf_options": {},
+    "import": {
+        "./StartCfsFunction.json": [
+            "StartCfsFunc"
+        ]
+    },
+    "tests": [
+        {
+            "test_number": "CTF-VV-Start-1",
+            "description": "Nominal OP",
+            "instructions": [
+                {
+                    "function": "StartCfsFunc",
+                    "wait": 1,
+                    "params": {}
+                }
+            ]
+        }
+    ]
+}

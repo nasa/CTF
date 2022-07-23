@@ -1,12 +1,12 @@
 {
-    "test_number": "CFE-EVS-Functions-Test",
-    "test_name": "CFE EVS Functions Test",
+    "test_script_number": "CFE-EVS-Functions-Test",
+    "test_script_name": "CfeEvsTest.json",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Testing CFE EVS Functions",
+    "description": "Example script showing EVS function usage",
     "owner": "CTF",
-    "test_setup": "Example Script Showing EVS function usage",
+    "test_setup": "",
     "ctf_options": {
         "verify_timeout": 4
     },
@@ -38,7 +38,7 @@
     "functions": {},
     "tests": [
         {
-            "case_number": "CFE-6-7-CFE-EVS-Test-001",
+            "test_number": "CFE-6-7-CFE-EVS-Test-1",
             "description": "Start CFS, Send EVS NOOP, Reset commands, and 3 commands with arguments",
             "instructions": [
                 {

@@ -1,12 +1,12 @@
 {
-    "test_number": "CFE-ES-Functions-Test",
-    "test_name": "CFE ES Functions Test",
+    "test_script_number": "CFE-ES-Functions-Test",
+    "test_script_name": "CfeEsTest.json",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Testing CFE ES Functions",
+    "description": "Example script showing ES function usage",
     "owner": "CTF",
-    "test_setup": "Example Script Showing ES function usage",
+    "test_setup": "",
     "ctf_options": {
         "verify_timeout": 4
     },
@@ -42,20 +42,22 @@
     "functions": {},
     "tests": [
         {
-            "case_number": "CFE-6-7-Plugin-Test-001",
+            "test_number": "CFE-ES-Functions-Test-1",
             "description": "Start CFS, Send TO NOOP command",
             "instructions": [
                 {
                     "instruction": "StartCfs",
                     "wait": 1,
                     "data": {
-            "target": ""}
+                        "target": ""
+                    }
                 },
                 {
                     "instruction": "EnableCfsOutput",
                     "wait": 1,
                     "data": {
-            "target": ""}
+                        "target": ""
+                    }
                 },
                 {
                     "function": "SendCheckCfeEsNoopCmd",
@@ -105,10 +107,10 @@
                 {
                     "function": "SendCheckCfeEsStopPerfDataAppCmd",
                     "wait": 1,
-                    "description": "Off-nominal Case due to output not being written",
+                    "description": "Nominal case - filename length < 64",
                     "params": {
-                        "expectedCmdCnt": 1,
-                        "expectedErrCnt": 3,
+                        "expectedCmdCnt": 2,
+                        "expectedErrCnt": 2,
                         "fileName": "CfeEsTest_SendCheckCfeEsStopPerfDataAppCmd_Output.txt"
                     }
                 },
@@ -117,8 +119,8 @@
                     "wait": 1,
                     "description": "Off-nominal Case due to mismatch between fileName size on CFS vs JSON",
                     "params": {
-                        "expectedCmdCnt": 1,
-                        "expectedErrCnt": 4,
+                        "expectedCmdCnt": 2,
+                        "expectedErrCnt": 3,
                         "app": "SOME_APP",
                         "entryPoint": "SOME_ENTRY",
                         "fileName": "SOME_FILENAME",

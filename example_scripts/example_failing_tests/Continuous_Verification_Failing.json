@@ -1,0 +1,190 @@
+{
+    "test_script_number": "Failing-Continuous-Verification-Test",
+    "test_script_name": "Continuous_Verification_Failing.json",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "description": "",
+    "owner": "CTF",
+    "test_setup": "",
+    "ctf_options": {},
+    "import": {
+        "../cfe_6_7_tests/libs/CfeEsFunctions.json": [
+            "SendCheckCfeEsNoopCmd",
+            "SendCheckCfeEsResetCounterCmd",
+            "SendCheckCfeEsRestartCmd",
+            "SendCheckCfeEsStartAppCmd",
+            "SendCheckCfeEsShellCmd",
+            "SendCheckCfeEsStopAppCmd",
+            "SendCheckCfeEsRestartAppCmd",
+            "SendCheckCfeEsReloadAppCmd",
+            "SendCheckCfeEsQueryOneAppCmd",
+            "SendCheckCfeEsQueryAllAppCmd",
+            "SendCheckCfeEsClearSyslogAppCmd",
+            "SendCheckCfeEsWriteSyslogAppCmd",
+            "SendCheckCfeEsClearErLogAppCmd",
+            "SendCheckCfeEsWriteErLogAppCmd",
+            "SendCheckCfeEsStartPerfDataAppCmd",
+            "SendCheckCfeEsStopPerfDataAppCmd",
+            "SendCheckCfeEsSetPerfFilterMaskAppCmd",
+            "SendCheckCfeEsSetPerfTriggerMaskAppCmd",
+            "SendCheckCfeEsOverwriteSyslogAppCmd",
+            "SendCheckCfeEsResetPrCountAppCmd",
+            "SendCheckCfeEsSetMaxPrCountAppCmd",
+            "SendCheckCfeEsDeleteCdsAppCmd",
+            "SendCheckCfeSendMemPoolStatsAppCmd",
+            "SendCheckCfeQueryAllTasksAppCmd",
+            "SendCheckCfeDumpCdsRegistryAppCmd"
+        ]
+    },
+    "functions": {
+        "AddContinuousVerificationCfeEsErrCnt": {
+            "description": "Add a continuous verification to always verify ES error count == 0",
+            "varlist": [],
+            "instructions": [
+                {
+                    "instruction": "CheckTlmContinuous",
+                    "data": {
+                        "verification_id": "cfe_es_err_cnt_equal_0",
+                        "mid": "CFE_ES_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "Payload.CommandErrorCounter",
+                                "value": [
+                                    "0"
+                                ],
+                                "compare": "=="
+                            }
+                        ],
+                        "target": ""
+                    },
+                    "wait": 1
+                }
+            ]
+        },
+        "RemoveContinuousVerificationCfeEsErrCnt": {
+            "description": "Remove the continuous verification to always verify ES error count == 0",
+            "varlist": [],
+            "instructions": [
+                {
+                    "instruction": "RemoveCheckTlmContinuous",
+                    "data": {
+                        "verification_id": "cfe_es_err_cnt_equal_0",
+                        "target": ""
+                    },
+                    "wait": 1
+                }
+            ]
+        }
+    },
+    "tests": [
+        {
+            "test_number": "Failing-Continuous-Verification-Test-1",
+            "description": "Start CFS, Send TO NOOP command",
+            "instructions": [
+                {
+                    "instruction": "StartCfs",
+                    "wait": 1,
+                    "data": {
+                        "target": ""
+                    }
+                },
+                {
+                    "instruction": "EnableCfsOutput",
+                    "wait": 1,
+                    "data": {
+                        "target": ""
+                    }
+                },
+                {
+                    "function": "AddContinuousVerificationCfeEsErrCnt",
+                    "params": {},
+                    "wait": 1
+                },
+                {
+                    "function": "SendCheckCfeEsNoopCmd",
+                    "wait": 5,
+                    "params": {
+                        "expectedCmdCnt": 1,
+                        "expectedErrCnt": 0
+                    }
+                },
+                {
+                    "function": "SendCheckCfeEsResetCounterCmd",
+                    "wait": 1,
+                    "params": {
+                        "expectedCmdCnt": 0,
+                        "expectedErrCnt": 0
+                    }
+                },
+                {
+                    "function": "SendCheckCfeEsRestartCmd",
+                    "wait": 1,
+                    "description": "Testing Off Nominal Case, CFS Outputs Invalid Restart Type",
+                    "params": {
+                        "expectedCmdCnt": 0,
+                        "expectedErrCnt": 1,
+                        "restartType": 0
+                    }
+                },
+                {
+                    "function": "SendCheckCfeEsShellCmd",
+                    "wait": 1,
+                    "params": {
+                        "expectedCmdCnt": 0,
+                        "expectedErrCnt": 2,
+                        "cmdString": "pwd",
+                        "outputFile": "CfeEsTest_SendCheckCfeEsShellCmd_Output.txt"
+                    }
+                },
+                {
+                    "function": "SendCheckCfeEsStartPerfDataAppCmd",
+                    "wait": 1,
+                    "params": {
+                        "expectedCmdCnt": 1,
+                        "expectedErrCnt": 2,
+                        "triggerMode": 0
+                    }
+                },
+                {
+                    "function": "SendCheckCfeEsStopPerfDataAppCmd",
+                    "wait": 1,
+                    "description": "Off-nominal Case due to output not being written",
+                    "params": {
+                        "expectedCmdCnt": 1,
+                        "expectedErrCnt": 3,
+                        "fileName": "CfeEsTest_SendCheckCfeEsStopPerfDataAppCmd_Output.txt"
+                    }
+                },
+                {
+                    "function": "SendCheckCfeEsStartAppCmd",
+                    "wait": 1,
+                    "description": "Off-nominal Case due to mismatch between fileName size on CFS vs JSON",
+                    "params": {
+                        "expectedCmdCnt": 1,
+                        "expectedErrCnt": 4,
+                        "app": "SOME_APP",
+                        "entryPoint": "SOME_ENTRY",
+                        "fileName": "SOME_FILENAME",
+                        "stackSize": 12345,
+                        "exceptionAction": 0,
+                        "priority": 0
+                    }
+                },
+                {
+                    "function": "SendCheckCfeEsResetCounterCmd",
+                    "wait": 10,
+                    "params": {
+                        "expectedCmdCnt": 0,
+                        "expectedErrCnt": 0
+                    }
+                },
+                {
+                    "function": "RemoveContinuousVerificationCfeEsErrCnt",
+                    "params": {},
+                    "wait": 1
+                }
+            ]
+        }
+    ]
+}

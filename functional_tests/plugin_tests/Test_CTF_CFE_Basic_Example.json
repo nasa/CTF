@@ -1,0 +1,93 @@
+{
+    "test_script_number": "Basic-CTF-CFE-Example-Test",
+    "test_script_name": "Test_CTF_CFE_Basic_Example.json",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "description": "Basic CTF Example Script Showing Simple Commands/Telemetry Verification",
+    "owner": "CTF",
+    "test_setup": "",
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "import": {},
+    "tests": [
+        {
+            "test_number": "Basic-CTF-CFE-Example-Test-1",
+            "description": "Start CFS, Send TO NOOP command",
+            "instructions": [
+                {
+                    "instruction": "StartCfs",
+                    "data": {
+                        "target": "",
+                        "run_args": "-RPO"
+                    },
+                    "description": "The above run_args are used as command-line arguments when starting the CFS instance.",
+                    "wait": 1
+                },
+                {
+                    "instruction": "EnableCfsOutput",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1,
+                    "description": "Need this to enable the telemetry thread. Enable Output counts as 1 TO cmd"
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_ES_CMD_MID",
+                        "cc": "CFE_ES_NOOP_CC",
+                        "args": {}
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_ES_HK_TLM_MID",
+                        "args": [
+                            {
+                                "compare": "==",
+                                "variable": "Payload.CommandCounter",
+                                "value": [
+                                    1.0
+                                ]
+                            }
+                        ]
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_ES_CMD_MID",
+                        "cc": "CFE_ES_RESET_COUNTERS_CC",
+                        "args": {}
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_ES_HK_TLM_MID",
+                        "args": [
+                            {
+                                "compare": "==",
+                                "variable": "Payload.CommandCounter",
+                                "value": [
+                                    0.0
+                                ]
+                            }
+                        ]
+                    },
+                    "wait": 1
+                }
+            ]
+        }
+    ]
+}

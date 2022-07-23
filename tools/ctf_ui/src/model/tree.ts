@@ -19,12 +19,14 @@ export class FileTreeNode {
     title: string;
     path: string;
     isDirectory: boolean;
+    isValidJson: boolean;
     children: string[];
-    constructor(id: string, title: string, value: string, isDirectory: boolean, children?: string[]) {
+    constructor(id: string, title: string, value: string, isDirectory: boolean, isValidJson: boolean, children?: string[]) {
         this.id = id;
         this.title = title;
         this.path = value;
         this.isDirectory = isDirectory;
+        this.isValidJson = isValidJson;
         this.children = children ? children : [];
     }
 }

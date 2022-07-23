@@ -1,0 +1,57 @@
+{
+    "test_script_number": "CTF-VV-05",
+    "test_script_name": "CTF_VV_05.json",
+    "requirements": {
+        "CTF-10": "Full"
+    },
+    "description": "Run cFS app unit tests",
+    "owner": "CTF",
+    "test_setup": "",
+    "ctf_options": {},
+    "import": {},
+    "tests": [
+        {
+            "test_number": "CTF-VV-05-1",
+            "description": "Nominal OP",
+            "instructions": [
+                {
+                    "instruction": "SSH_InitSSH",
+                    "wait": 1,
+                    "data": {
+                        "host": "localhost"
+                    }
+                },
+                {
+                    "instruction": "SSH_RunRemoteCommand",
+                    "description": "",
+                    "wait": 1,
+                    "data": {
+                        "command": "cd ~/sample_cfs_workspace; make distclean; make prep ENABLE_UNIT_TESTS=1 "
+                    }
+                },
+                {
+                    "instruction": "SSH_RunRemoteCommand",
+                    "description": "",
+                    "wait": 1,
+                    "data": {
+                        "command": "cd ~/sample_cfs_workspace/build/i686-pc-linux-gnu/default_lx1/apps/ci/fsw/unit_test; make "
+                    }
+                },
+                {
+                    "instruction": "SSH_RunRemoteCommand",
+                    "wait": 1,
+                    "data": {
+                        "command": "cd ~/sample_cfs_workspace/build/i686-pc-linux-gnu/default_lx1/apps/ci/fsw/unit_test; ./coverage-ci-all-testrunner || true "
+                    }
+                },
+                {
+                    "instruction": "SSH_RunLocalCommand",
+                    "wait": 1,
+                    "data": {
+                        "command": "cd ~/sample_cfs_workspace/; make distclean"
+                    }
+                }
+            ]
+        }
+    ]
+}

@@ -182,7 +182,7 @@ def test_ccsds_v2_cmd_packet_constructor(ccsds_v2_cmd_packet):
     assert ccsds_v2_cmd_packet.pheader.segmentation_flags == 3
     assert ccsds_v2_cmd_packet.pheader.secondary_header_flag == 1
     assert ccsds_v2_cmd_packet.pheader.sequence_count == 0
-    assert ccsds_v2_cmd_packet.pheader.length == 29
+    assert ccsds_v2_cmd_packet.pheader.length == 33
     assert ccsds_v2_cmd_packet.sheader.get_function_code() == 2
     assert ccsds_v2_cmd_packet.sheader.get_checksum() == 2
 

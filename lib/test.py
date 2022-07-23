@@ -1,6 +1,6 @@
 """
 @namespace lib.Test
-Represents a single CTF test case
+Represents a single CTF test within a script
 """
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
@@ -29,8 +29,8 @@ from lib.status import StatusDefs
 
 class Test:
     """
-    The TestCase class represents a CTF Test Case.
-    @note - A test script may have multiple test cases.
+    The Test class represents a CTF Test.
+    @note - A test script may have multiple tests.
     """
 
     def __init__(self):
@@ -196,11 +196,11 @@ class Test:
 
     def run_commands(self):
         """
-        Run all CTF Instructions in the current test case
+        Run all CTF Instructions in the current test
         """
         if len(self.instructions) == 0:
-            log.error("Invalid Test Case: {}. Check that the script has been parsed correctly.."
-                      .format(self.test_info.get("test_case", "")))
+            log.error("Invalid Test: {}. Check that the script has been parsed correctly.."
+                      .format(self.test_info.get("test_number", "")))
             self.test_result = False
 
         self.current_instruction_index = 0
@@ -275,7 +275,7 @@ class Test:
                 log.error("Instruction: {} Failed. Aborting test...".format(instruction))
                 if self.end_test_on_fail:
                     log.warning("Configuration field \"end_test_on_fail\" enabled. Ending testing.")
-                log.error("Test Case: {} Failed.".format(self.test_info.get("test_case", "")))
+                log.error("Test: {} Failed.".format(self.test_info.get("test_number", "")))
                 self.test_aborted = True
                 break
 
@@ -283,10 +283,10 @@ class Test:
 
             if goto_instruction_index:
                 if goto_instruction_index < 0 or goto_instruction_index > len(self.instructions) - 1:
-                    log.error("Invalid goto instruction index {}. Valid test case instructions: [0, {}]".format(
+                    log.error("Invalid goto instruction index {}. Valid test instructions: [0, {}]".format(
                         goto_instruction_index, len(self.instructions) - 1
                     ))
-                    log.error("Test Case: {} Failed.".format(self.test_info.get("test_case", "")))
+                    log.error("Test: {} Failed.".format(self.test_info.get("test_number", "")))
                     self.test_aborted = True
                     break
 
@@ -411,13 +411,14 @@ class Test:
 
     def run_test(self, status_manager):
         """
-        Run all CTF Instructions within a test case
+        Run all CTF Instructions within a test
         """
         self.status_manager = status_manager
         test_status = StatusDefs.active
         self.status_manager.update_test_status(test_status, "")
 
-        log.info("Test {}: Starting".format(self.test_info.get("test_case", "")))
+        log.info("---------- TEST START ----------")
+        log.info("Test {}: Starting".format(self.test_info.get("test_number", "")))
         log.info(self.test_info.get("description", ""))
         self.test_start_time = time.time()
 
@@ -441,9 +442,10 @@ class Test:
             self.status_manager.update_test_status(test_status, str(exception))
             raise CtfTestError("Error in run_test") from exception
 
-        log.info("Test {}: {}".format(self.test_info.get("test_case"), test_status))
-        log.info("Number instructions To Run:         {}".format(len(self.instructions)))
-        log.info("Number instructions Ran:            {}".format(self.num_ran))
-        log.info("Number instructions Skipped:        {}".format(self.num_skipped))
+        log.info("Test {}: {}".format(self.test_info.get("test_number"), test_status))
+        log.info("Number of instructions To Run:         {}".format(len(self.instructions)))
+        log.info("Number of instructions Ran:            {}".format(self.num_ran))
+        log.info("Number of instructions Skipped:        {}".format(self.num_skipped))
         self.status_manager.end_test()
+        log.info("---------- TEST END ----------")
         return test_status

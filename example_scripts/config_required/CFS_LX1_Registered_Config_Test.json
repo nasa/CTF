@@ -1,0 +1,213 @@
+{
+    "test_script_number": "CFS_LX1_Registered_Config_Test",
+    "test_script_name": "CFS_LX1_Registered_Config_Test.json",
+    "test_setup": "Requires the use of configs/cfe_6_7_config_examples.ini or another that defines a target 'cfs_LX1'",
+    "description": "Demonstrates the use of target 'cfs_LX1' from the config, using the local protocol.",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "owner": "CTF",
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "import": {},
+    "functions": {
+        "Increment Event": {
+            "description": "No description",
+            "varlist": [
+                "expectedCmdCnt",
+                "expectedErrCnt"
+            ],
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_NOOP_CC",
+                        "args": {}
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "mid": "TO_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "usCmdCnt",
+                                "value": [
+                                    "expectedCmdCnt"
+                                ],
+                                "compare": "=="
+                            }
+                        ]
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "mid": "TO_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "usCmdErrCnt",
+                                "value": [
+                                    "expectedErrCnt"
+                                ],
+                                "compare": "=="
+                            }
+                        ]
+                    },
+                    "wait": 1
+                }
+            ]
+        }
+    },
+    "tests": [
+        {
+            "test_number": "CFS_LX1_Registered_Config_Test_1",
+            "description": "Register and start CFS target 'cfs_LX1', send TO commands and check telemetry",
+            "instructions": [
+                {
+                    "instruction": "RegisterCfs",
+                    "data": {
+                        "target": "cfs_LX1"
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "StartCfs",
+                    "wait": 1,
+                    "data": {}
+                },
+                {
+                    "instruction": "EnableCfsOutput",
+                    "wait": 1,
+                    "data": {}
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "mid": "TO_HK_TLM_MID",
+                        "args": [
+                            {
+                                "compare": "==",
+                                "variable": "usCmdErrCnt",
+                                "value": [
+                                    0
+                                ]
+                            }
+                        ]
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SendCfsCommandWithPayloadLength",
+                    "data": {
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_NOOP_CC",
+                        "payload_length": 10,
+                        "args": {}
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "mid": "TO_HK_TLM_MID",
+                        "args": [
+                            {
+                                "compare": "==",
+                                "variable": "usCmdErrCnt",
+                                "value": [
+                                    1
+                                ]
+                            }
+                        ]
+                    },
+                    "wait": 1
+                },
+                {
+                    "function": "Increment Event",
+                    "params": {
+                        "expectedCmdCnt": 2,
+                        "expectedErrCnt": 1
+                    },
+                    "wait": 1
+                },
+                {
+                    "function": "Increment Event",
+                    "params": {
+                        "expectedCmdCnt": 3,
+                        "expectedErrCnt": 1
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "mid": "TO_HK_TLM_MID",
+                        "args": [
+                            {
+                                "compare": "==",
+                                "variable": "usCmdErrCnt",
+                                "value": [
+                                    1.0
+                                ]
+                            },
+                            {
+                                "compare": "==",
+                                "variable": "usCmdCnt",
+                                "value": [
+                                    3.05
+                                ],
+                                "tolerance_plus": 0.1,
+                                "tolerance_minus": 0.1
+                            }
+                        ]
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_RESET_CC",
+                        "args": {}
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "mid": "TO_HK_TLM_MID",
+                        "args": [
+                            {
+                                "compare": "==",
+                                "variable": "usCmdCnt",
+                                "value": [
+                                    0
+                                ]
+                            }
+                        ]
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_RESET_CC",
+                        "args": {}
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "ShutdownCfs",
+                    "data": {},
+                    "wait": 1
+                }
+            ]
+        }
+    ]
+}

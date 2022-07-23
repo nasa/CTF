@@ -1,0 +1,289 @@
+{
+    "test_script_number": "Advanced-Cfs-Plugin-Test",
+    "test_script_name": "Test_CTF_Advanced_Example.json",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "description": "Advanced CTF Example Script Showing Commands/Telemetry Verification with variable tolerances, event checking, and function usage",
+    "owner": "CTF",
+    "test_setup": "",
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "import": {},
+    "functions": {
+        "Increment Event": {
+            "description": "No description",
+            "varlist": [
+                "expectedCmdCnt",
+                "expectedErrCnt"
+            ],
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_NOOP_CC",
+                        "args": {}
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "TO_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "usCmdCnt",
+                                "value": [
+                                    "expectedCmdCnt"
+                                ],
+                                "compare": "=="
+                            }
+                        ]
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "TO_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "usCmdErrCnt",
+                                "value": [
+                                    "expectedErrCnt"
+                                ],
+                                "compare": "=="
+                            }
+                        ]
+                    },
+                    "wait": 1
+                }
+            ]
+        }
+    },
+    "tests": [
+        {
+            "test_number": "Advanced-Cfs-Plugin-Test-1",
+            "description": "Start CFS, Send TO NOOP command",
+            "instructions": [
+                {
+                    "instruction": "BuildCfs",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "StartCfs",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1
+                },
+                {
+                    "description": "Enable output via a raw command payload rather than args",
+                    "instruction": "SendCfsCommandWithRawPayload",
+                    "data": {
+                        "target": "",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_ENABLE_OUTPUT_CC",
+                        "hex_buffer": "3132372e302e302e31000000000000009313000000000000"
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "TO_HK_TLM_MID",
+                        "args": [
+                            {
+                                "compare": "==",
+                                "variable": "usCmdErrCnt",
+                                "value": [
+                                    0.1
+                                ],
+                                "tolerance_minus": 0.1
+                            }
+                        ]
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SendCfsCommandWithPayloadLength",
+                    "data": {
+                        "target": "",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_NOOP_CC",
+                        "payload_length": 10,
+                        "args": {}
+                    },
+                    "wait": 1
+                },
+                {
+                    "description": "This will format the first message with msg_args and then check for a regex match",
+                    "instruction": "CheckEvent",
+                    "data": {
+                        "args": [
+                            {
+                                "app_name": "TO",
+                                "event_id": "3",
+                                "event_str": "%s - %s cmd succesful for  routeMask:0x[0-9]+",
+                                "event_str_args": "('TO', 'ENABLE_OUTPUT')",
+                                "is_regex": true
+                            },
+                            {
+                                "app_name": "TO",
+                                "event_id": "0xC",
+                                "event_str": "TO_VerifyPtrAndCmdLength\\(\\) - Rcvd invalid msgLen for MID:*",
+                                "is_regex": true
+                            }
+                        ],
+                        "target": ""
+                    },
+                    "wait": 0,
+                    "verify_timeout": 2.0
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "TO_HK_TLM_MID",
+                        "args": [
+                            {
+                                "compare": "==",
+                                "variable": "usCmdErrCnt",
+                                "value": [
+                                    1
+                                ]
+                            }
+                        ]
+                    },
+                    "wait": 1
+                },
+                {
+                    "function": "Increment Event",
+                    "params": {
+                        "expectedCmdCnt": 2,
+                        "expectedErrCnt": 1
+                    },
+                    "wait": 1
+                },
+                {
+                    "function": "Increment Event",
+                    "params": {
+                        "expectedCmdCnt": 3,
+                        "expectedErrCnt": 1
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "TO_HK_TLM_MID",
+                        "args": [
+                            {
+                                "compare": "==",
+                                "variable": "usCmdErrCnt",
+                                "value": [
+                                    1
+                                ]
+                            },
+                            {
+                                "compare": "==",
+                                "variable": "usCmdCnt",
+                                "value": [
+                                    2.95
+                                ],
+                                "tolerance_plus": 0.1
+                            }
+                        ]
+                    },
+                    "wait": 1
+                },
+                {
+                    "description": "Demonstrate numeric values for MID and CC to execute a TO reset command",
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": 10891,
+                        "cc": 1,
+                        "args": {}
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "TO_HK_TLM_MID",
+                        "args": [
+                            {
+                                "compare": "==",
+                                "variable": "usCmdCnt",
+                                "value": [
+                                    0
+                                ]
+                            }
+                        ]
+                    },
+                    "wait": 1
+                },
+                {
+                    "description": "Demonstrate the use of header parameters (has no effect in default CCSDS implementation)",
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_ES_CMD_MID",
+                        "cc": "CFE_ES_SHELL_CC",
+                        "args": {
+                            "Payload": {
+                                "CmdString": "hostname",
+                                "OutputFilename": "/cf/test_output.txt"
+                            }
+                        },
+                        "header": {
+                            "field_name": "value"
+                        }
+                    },
+                    "wait": 1
+                },
+                {
+                    "description": "Demonstrate the use of macros in command args",
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "SCH_CMD_MID",
+                        "cc": "SCH_ENABLE_CC",
+                        "args": {
+                            "SlotNumber": "#SCH_TOTAL_SLOTS#",
+                            "EntryNumber": "#SCH_ENTRIES_PER_SLOT#"
+                        }
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "ArchiveCfsFiles",
+                    "data": {
+                        "target": "",
+                        "source_path": "./tools/schema_validator/"
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "ShutdownCfs",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1
+                }
+            ]
+        }
+    ]
+}

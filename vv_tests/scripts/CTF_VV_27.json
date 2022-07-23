@@ -1,0 +1,65 @@
+{
+    "test_script_number": "CTF-VV-27",
+    "test_script_name": "CTF_VV_27.json",
+    "requirements": {
+        "CTF-53": "Full",
+        "CTF-54": "Full"
+    },
+    "description": "Execute file operations test instructions",
+    "owner": "CTF",
+    "test_setup": "Need to run start script first to start cFS instance",
+    "ctf_options": {},
+    "import": {},
+    "tests": [
+        {
+            "test_number": "CTF-VV-27-1",
+            "description": "Nominal OP",
+            "instructions": [
+                {
+                    "instruction": "CopyFiles",
+                    "data": {
+                        "source": "./ctf",
+                        "destination": "Copied_file.txt"
+                    }
+                },
+                {
+                    "instruction": "DeleteFiles",
+                    "data": {
+                        "path": "Copied_file.txt"
+                    }
+                },
+                {
+                    "instruction": "SaveFileAsText",
+                    "data": {
+                        "input_file": "./plugins/validation_plugin/tests/evs.bin",
+                        "output_file": "./testArtifacts/evs_log.txt",
+                        "file_type": "EVS",
+                        "target": ""
+                    }
+                },
+                {
+                    "instruction": "SearchStr",
+                    "data": {
+                        "file": "testArtifacts/evs_log.txt",
+                        "search_str": "cFE EVS Initial*",
+                        "is_regex": true
+                    }
+                },
+                {
+                    "instruction": "SearchNoStr",
+                    "data": {
+                        "file": "testArtifacts/evs_log.txt",
+                        "search_str": "cFE SCH Initial*"
+                    }
+                },
+                {
+                    "instruction": "SearchNoStr",
+                    "data": {
+                        "file": "testArtifacts/evs_log.txt",
+                        "search_str": "TT Initialized"
+                    }
+                }
+            ]
+        }
+    ]
+}

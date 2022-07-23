@@ -1,12 +1,12 @@
 {
-    "test_number": "CFS-SCH-Functions-Test",
-    "test_name": "CFS SCH Functions Test",
+    "test_script_number": "CFS-SCH-Functions-Test",
+    "test_script_name": "SchFunctionTests.json",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Testing SCH Functions",
+    "description": "Example script showing SCH function usage",
     "owner": "CTF",
-    "test_setup": "Example Script Showing SCH function usage",
+    "test_setup": "",
     "ctf_options": {
         "verify_timeout": 4
     },
@@ -25,7 +25,7 @@
     "functions": {},
     "tests": [
         {
-            "case_number": "SCH-Function-Test-001",
+            "test_number": "SCH-Function-Test-1",
             "description": "Start CFS, enable CFS output",
             "instructions": [
                 {
@@ -45,7 +45,7 @@
             ]
         },
         {
-            "case_number": "SCH-Function-Test-002",
+            "test_number": "SCH-Function-Test-2",
             "description": "Test SCH NOOP command",
             "instructions": [
                 {
@@ -59,7 +59,7 @@
             ]
         },
         {
-            "case_number": "SCH-Function-Test-003",
+            "test_number": "SCH-Function-Test-3",
             "description": "Test SCH RESET command",
             "instructions": [
                 {
@@ -73,7 +73,7 @@
             ]
         },
         {
-            "case_number": "SCH-Function-Test-004",
+            "test_number": "SCH-Function-Test-4",
             "description": "Test SendCheckSchEnableCmd function",
             "instructions": [
                 {
@@ -89,7 +89,7 @@
             ]
         },
         {
-            "case_number": "SCH-Function-Test-005",
+            "test_number": "SCH-Function-Test-5",
             "description": "Test SendCheckSchDisableCmd function",
             "instructions": [
                 {
@@ -105,7 +105,7 @@
             ]
         },
         {
-            "case_number": "SCH-Function-Test-006",
+            "test_number": "SCH-Function-Test-6",
             "description": "Test SendCheckSchEnableSyncCmd function",
             "instructions": [
                 {

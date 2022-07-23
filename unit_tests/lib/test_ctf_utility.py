@@ -60,9 +60,16 @@ def test_ctf_utility_resolve_variable():
     Global.variable_store.clear()
 
 
-def test_ctf_utility_resolve_variable_exception():
+def test_ctf_utility_resolve_variable_exception(utils):
     with pytest.raises(CtfParameterError):
+        utils.clear_log()
         ctf_utility.resolve_variable('$var_1$')
+        assert utils.has_log_level('ERROR')
+
+    with pytest.raises(CtfParameterError):
+        utils.clear_log()
+        ctf_utility.resolve_variable('123$var_1$')
+        assert utils.has_log_level('ERROR')
 
 
 def test_ctf_utility_set_variable_pass():
@@ -72,9 +79,62 @@ def test_ctf_utility_set_variable_pass():
     Global.variable_store.clear()
 
 
-def test_ctf_utility_set_variable_fail():
+def test_ctf_utility_set_variable_cast():
+    assert ctf_utility.set_variable('var_1', '=', 1)
+    assert ctf_utility.set_variable('var_1', '+', "10")
+    assert ctf_utility.set_variable('var_1', '-', "10.0")
+    assert ctf_utility.set_variable('var_1', '<', "100")
+    assert ctf_utility.set_variable('var_1', '==', 1)
+    assert ctf_utility.get_variable('var_1') == 1
+    Global.variable_store.clear()
+
+
+def test_ctf_utility_set_variable_specify_type():
+    assert ctf_utility.set_variable('var_1', '=', "1")
+    assert isinstance(ctf_utility.get_variable('var_1'), str)
+    assert ctf_utility.set_variable('var_1', '=', "1", "int")
+    assert isinstance(ctf_utility.get_variable('var_1'), int)
+    assert ctf_utility.set_variable('var_1', '=', "1", "string")
+    assert isinstance(ctf_utility.get_variable('var_1'), str)
+    assert ctf_utility.set_variable('var_1', '=', "1", "boolean")
+    assert isinstance(ctf_utility.get_variable('var_1'), bool)
+    assert ctf_utility.set_variable('var_1', '=', "1", "float")
+    assert isinstance(ctf_utility.get_variable('var_1'), float)
+    assert ctf_utility.get_variable('var_1') == 1.0
+    assert ctf_utility.set_variable('var_1', '+', "10")
+    assert ctf_utility.get_variable('var_1') == 11.0
+    assert isinstance(ctf_utility.get_variable('var_1'), float)
+    Global.variable_store.clear()
+
+
+def test_ctf_utility_set_variable_cast_fail(utils):
+    assert ctf_utility.set_variable('var_1', '=', 1.0)
+    assert not ctf_utility.set_variable('var_1', '+', "ten")
+    assert ctf_utility.set_variable('var_1', '==', "1")
+    assert ctf_utility.get_variable('var_1') == 1
+    assert utils.has_log_level('ERROR')
+    Global.variable_store.clear()
+
+
+def test_ctf_utility_set_variable_fail(utils):
+    utils.clear_log()
     assert not ctf_utility.set_variable('var_1', '?', 100)
     assert not ctf_utility.set_variable('var_2', '<', 100)
+    assert utils.has_log_level('ERROR')
+    Global.variable_store.clear()
+
+
+def test_ctf_utility_set_variable_invalid_type(utils):
+    utils.clear_log()
+    assert not ctf_utility.set_variable('var_1', '=', 100, 'list')
+    assert utils.has_log_level('ERROR')
+    Global.variable_store.clear()
+
+
+def test_ctf_utility_set_variable_exception(utils):
+    utils.clear_log()
+    assert not ctf_utility.set_variable('var_1', '=', 's12', 'int')
+    assert utils.has_log_level('ERROR')
     Global.variable_store.clear()
 
 

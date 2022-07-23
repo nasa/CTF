@@ -1,0 +1,110 @@
+{
+    "test_script_number": "CTF-VV-29",
+    "test_script_name": "CTF_VV_29.json",
+    "requirements": {
+        "CTF-56": "Full"
+    },
+    "description": "Send a command to cFS and verify its receipt in telemetry, then repeat using raw command payloads",
+    "owner": "CTF",
+    "test_setup": "Need to run start script first to start cFS instance",
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "import": {},
+    "tests": [
+        {
+            "test_number": "CTF-VV-29-1",
+            "description": "Nominal OP",
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "mid": "CFE_EVS_CMD_MID",
+                        "cc": "CFE_EVS_RESET_FILTER_CC",
+                        "args": {
+                            "Payload": {
+                                "AppName": "CI",
+                                "EventID": "1"
+                            }
+                        },
+                        "target": ""
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_HK_TLM_MID",
+                        "args": [
+                            {
+                                "compare": "==",
+                                "variable": "Payload.CommandCounter",
+                                "value": 1
+                            }
+                        ]
+                    },
+                    "wait": 0
+                },
+                {
+                    "description": "Send the command with an invalid raw binary payload to produce an error",
+                    "instruction": "SendCfsCommandWithRawPayload",
+                    "data": {
+                        "mid": "CFE_EVS_CMD_MID",
+                        "cc": "CFE_EVS_RESET_FILTER_CC",
+                        "hex_buffer": "4349"
+                    }
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_HK_TLM_MID",
+                        "args": [
+                            {
+                                "compare": "==",
+                                "variable": "Payload.CommandCounter",
+                                "value": 1
+                            },
+                            {
+                                "compare": "==",
+                                "variable": "Payload.CommandErrorCounter",
+                                "value": 1
+                            }
+                        ]
+                    },
+                    "wait": 1
+                },
+                {
+                    "description": "Repeat the first valid command but with a raw binary payload",
+                    "instruction": "SendCfsCommandWithRawPayload",
+                    "data": {
+                        "mid": "CFE_EVS_CMD_MID",
+                        "cc": "CFE_EVS_RESET_FILTER_CC",
+                        "hex_buffer": "43490000000000000000000000000000000000000100"
+                    }
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "CFE_EVS_HK_TLM_MID",
+                        "args": [
+                            {
+                                "compare": "==",
+                                "variable": "Payload.CommandCounter",
+                                "value": 2
+                            },
+                            {
+                                "compare": "==",
+                                "variable": "Payload.CommandErrorCounter",
+                                "value": 1
+                            }
+                        ]
+                    },
+                    "wait": 1
+                }
+            ]
+        }
+    ]
+}

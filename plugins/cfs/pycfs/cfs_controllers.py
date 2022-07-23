@@ -71,7 +71,6 @@ class CfsController:
         Constructor implementation for CfsController class. Assign default values for CfsController properties
         """
         self.config = config
-        self.cfs_process_list = []
         self.cfs = None
         self.ccsds_reader = None
         self.mid_map = None
@@ -79,7 +78,6 @@ class CfsController:
         self.ccsds = None
         self.first_call_flag = True
         self.mid_pkt_count = None
-        self.cfs_running = False
 
     def process_ccsds_files(self):
         """
@@ -114,7 +112,8 @@ class CfsController:
         if not self.process_ccsds_files():
             return False
 
-        log.info("Starting Local CFS Interface to {}:{}".format(self.config.cfs_target_ip, self.config.cmd_udp_port))
+        log.info("Starting Local CFS Interface to {}:{} for target {}"
+                 .format(self.config.cfs_target_ip, self.config.cmd_udp_port, self.config.name))
         command = CommandInterface(self.ccsds, self.config.cmd_udp_port, self.config.cfs_target_ip,
                                    self.config.endianess_of_target)
         telemetry = TlmListener(self.config.ctf_ip, self.config.tlm_udp_port)
@@ -123,7 +122,7 @@ class CfsController:
         if not result:
             log.error("Failed to initialize LocalCfsInterface")
         else:
-            log.info("CfsController Initialized")
+            log.info("CfsController Initialized for target {}".format(self.config.name))
 
         return result
 
@@ -149,14 +148,12 @@ class CfsController:
             log.error("Error: cfs.start_cfs exception caught!")
 
         if result["result"]:
-            # If CFS properly launches the pid will be stored for later use
-            self.cfs_process_list.append(result["pid"])
             Global.time_manager.wait(3)
         else:
             log.error("Failed to start CFS!")
             return False
-        self.cfs_running = result["result"]
-        return self.cfs_running
+
+        return result["result"]
 
     def enable_cfs_output(self):
         """
@@ -165,6 +162,44 @@ class CfsController:
         """
         log.info("Enabling CFS output on {}".format(self.config.name))
         return self.cfs.enable_output()
+
+    def send_raw_cfs_command(self, mid: str, cc: str, buffer: str, header_args: dict = None) -> bool:
+        """
+        Implementation of the CFS plugin instruction send_raw_cfs_command. Serializes a hex string directly to bytes for
+        the command payload, regardless of the data type in the MID map.
+        @return True if the message was successfully sent to the target, False otherwise
+        """
+        # pylint: disable=invalid-name
+        log.info("Sending CFS Command to target: {}, {}:{} with payload: {}".format(self.config.name, mid, cc, buffer))
+
+        if isinstance(mid, str) or isinstance(cc, str):
+            mid_name = self.validate_mid_value(mid)
+            if mid_name is None:
+                log.error("Could not find MID {} in MID Map".format(mid))
+                return False
+            mid = self.mid_map[mid_name]['MID']
+
+            if isinstance(cc, str):
+                cc_name = self.validate_cc_value(self.mid_map[mid_name], cc)
+                if cc_name is None:
+                    log.error("Could not find Command Code {} for MID {} in MID Map".format(cc, hex(mid)))
+                    return False
+                cc = self.mid_map[mid_name]['CC'][cc_name]['CODE']
+
+        result = False
+        try:
+            buffer = buffer.upper().split('0X')[-1]  # remove any leading 0x
+            payload = bytes.fromhex(buffer)
+            log.debug("Sending bytes: {}".format(payload))
+            result = self.cfs.send_command(mid, cc, payload, header_args)
+        except (ValueError, TypeError):
+            log.error("Could not convert payload {} to bytes. "
+                      "Value must be a string with an even number of raw hexadecimal characters: "
+                      "'0123456789ABCDEF'".format(buffer))
+
+        if not result:
+            log.error("Failed to send command message: MID {}, CC {}, payload {}".format(hex(mid), cc, buffer))
+        return result
 
     # noinspection PyProtectedMember
     def send_cfs_command(self, mid: str, cc: str, args: dict,
@@ -415,7 +450,7 @@ class CfsController:
             value = self.resolve_macros(value)
             index = None
             # indexed args of the form 'name[offset]' will be handled differently below
-            if re.match(r"^[\w]+\[\d+\]$", name):
+            if re.match(r"^[\w]+\[\d+]$", name):
                 index = int(name[name.find('[') + 1:name.find(']')])
                 name = name.split('[')[0]
             field_class = self.field_class_by_name(name, args_class)
@@ -644,16 +679,12 @@ class CfsController:
         pid = run(pidof_cfs, stdout=PIPE, stderr=STDOUT, shell=True, check=False).stdout.decode()
         if pid == "":
             log.error("CFS executable {} had already terminated!".format(self.config.cfs_run_cmd))
-            self.cfs_process_list = []
-            self.cfs_running = False
             return True
 
         kill_string = "kill -9 $(pidof {})".format(self.config.cfs_exe)
         status = os.system(kill_string) == 0
         if not status:
             log.error("Failed to kill process {}. CFS may have already exited.")
-        self.cfs_process_list = []
-        self.cfs_running = False
         return status
 
     def shutdown(self):
@@ -662,14 +693,13 @@ class CfsController:
         include the shutdown test command
         """
         log.info("Shutting down controller for {}".format(self.config.name))
-        if self.cfs:
-            if self.cfs_running:
-                try:
-                    self.shutdown_cfs()
-                except CtfTestError:
-                    log.error("Error: Shutting down controller for {}".format(self.config.name))
+        if self.cfs and self.cfs.is_running:
+            try:
+                self.shutdown_cfs()
+            except CtfTestError:
+                log.error("Error: Shutting down controller for {}".format(self.config.name))
 
-            self.cfs = None
+        self.cfs = None
 
     def validate_mid_value(self, mid):
         """
@@ -769,7 +799,8 @@ class RemoteCfsController(CfsController):
         if not self.process_ccsds_files():
             return False
 
-        log.info("Starting Remote CFS Interface to {}:{}".format(self.config.cfs_target_ip, self.config.cmd_udp_port))
+        log.info("Starting Remote CFS Interface to {}:{} for target {}"
+                 .format(self.config.cfs_target_ip, self.config.cmd_udp_port, self.config.name))
         self.execution = SshController(SshConfig())
         result = self.execution.init_connection(self.config.destination)
         if not result:
@@ -785,7 +816,7 @@ class RemoteCfsController(CfsController):
                 log.warning("Not starting CFS executable... Expecting \"StartCfs\" in test script...")
 
         if result:
-            log.info("RemoteCfsController Initialized")
+            log.info("RemoteCfsController Initialized for target {}".format(self.config.name))
         return result
 
     def archive_cfs_files(self, source_path):
@@ -802,7 +833,7 @@ class RemoteCfsController(CfsController):
         results_file = "/tmp/files_since_{}".format(time.strftime("%Y%m%d-%H%M%S", Global.test_start_time))
         find_cmd = "find . ! -path . -mmin -{:.2f} > {}".format(elapsed_min, results_file)
 
-        run_command_result = None
+        run_command_result = False
         if self.execution.run_command(find_cmd, source_path):
             args = {
                 "rsync_opts": "--files-from={}".format(results_file)
@@ -810,7 +841,7 @@ class RemoteCfsController(CfsController):
             run_command_result = self.execution.get_file(source_path, artifacts_path, args)
         else:
             log.error("Unable to find files to archive.")
-            run_command_result = False
+
         return run_command_result
 
     def shutdown_cfs(self):
@@ -824,16 +855,10 @@ class RemoteCfsController(CfsController):
             self.cfs.stop_cfs()
 
         kill_string = "kill -9 $(pidof {})".format(self.config.cfs_exe)
-        try:
-            result = self.execution.run_command(kill_string)
-        except Exception as exception:
-            log.error("Failed to kill process {}: {}".format(self.config.cfs_exe, exception))
-            self.cfs_process_list = []
-            self.cfs_running = False
-            raise CtfTestError('Error in shutdown_cfs') from exception
+        result = self.execution.run_command(kill_string)
+        if not result:
+            log.error("Failed to kill process {}. CFS may have already exited.".format(self.config.cfs_exe))
 
-        self.cfs_process_list = []
-        self.cfs_running = False
         return result
 
     def shutdown(self):
@@ -842,12 +867,11 @@ class RemoteCfsController(CfsController):
         include the shutdown test command
         """
         log.info("Shutting down controller for {}".format(self.config.name))
-        if self.cfs:
-            if self.cfs_running:
-                try:
-                    self.shutdown_cfs()
-                except CtfTestError:
-                    log.info("Error: Shutting down controller for {}".format(self.config.name))
+        if self.cfs and self.cfs.is_running:
+            try:
+                self.shutdown_cfs()
+            except CtfTestError:
+                log.info("Error: Shutting down controller for {}".format(self.config.name))
 
             # Wait 2 time units for shutdown to complete
             Global.time_manager.wait_seconds(2)
@@ -860,4 +884,4 @@ class RemoteCfsController(CfsController):
                     log.info("Successfully copied CFS stdout file from remote SSH Target. Removing remote file")
                     self.execution.run_command("rm {}".format(self.cfs.cfs_std_out_path))
 
-            self.cfs = None
+        self.cfs = None

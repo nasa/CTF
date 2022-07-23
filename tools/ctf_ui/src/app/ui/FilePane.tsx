@@ -63,8 +63,9 @@ export class FilePane extends React.Component<FilePaneProps, FilePaneState> {
     componentWillReceiveProps(props: FilePaneProps) {
         this.setState(props);
     }
-
-    renderContextMenu = (text: string, isfolder: boolean): React.ReactNode => {
+    
+    renderContextMenu = (text: string, isfolder: boolean, isValidJson: boolean): React.ReactNode => {
+        const text_color = (isValidJson || isfolder)? {color: "black" }: {color: "#ffa500" };
         return (
             <Dropdown
                 overlay={
@@ -72,9 +73,9 @@ export class FilePane extends React.Component<FilePaneProps, FilePaneState> {
                         {this.state.contextMenu.map(item => {
                             if ( isfolder == true ) {
                                 return ( <Menu.Item key={item.key}>  {item.icon} {item.title} </Menu.Item> )
-                            } else if ( item.key != 'new-folder')  
+                            } else if ( item.key != 'new-folder')
                                 return (
-                                <Menu.Item key={item.key}>  {item.icon} {item.title} </Menu.Item>                                
+                                <Menu.Item key={item.key}>  {item.icon} {item.title} </Menu.Item>
                             );
                            })
                         }
@@ -82,7 +83,7 @@ export class FilePane extends React.Component<FilePaneProps, FilePaneState> {
                 }
                 trigger={['contextMenu']}
             >
-                <span>{text}</span>
+                <span style={text_color} >{text}</span>
             </Dropdown>
         );
     };
@@ -90,23 +91,35 @@ export class FilePane extends React.Component<FilePaneProps, FilePaneState> {
     renderTreeNode = (itemId: string) => {
         if (this.state.tree) {
             const node = this.state.tree.items[itemId];
-            if (node.children.length > 0) {               
+            if (node.children.length > 0) {
                 return (
                     <TreeNode
-                        title={this.renderContextMenu(node.title, node.isDirectory)}
+                        title={this.renderContextMenu(node.title, node.isDirectory, node.isValidJson)}
                         key={node.id}
                     >
                         {node.children.map(this.renderTreeNode)}
                     </TreeNode>
                 );
             } else {
+                let tooltip_title = node.title;
+                try {
+                    const data = fs.readFileSync(itemId);
+                    JSON.parse(data.toString());
+                    node.isValidJson = true;
+                } catch (err) {
+                    tooltip_title = err.toString();
+                    tooltip_title += '; Run jsonlint tool against it for more details ';
+                    node.isValidJson = false;
+                }
+
                 return (
                     <TreeNode
-                    title={
-                        <Tooltip placement="top" title={(<div><p>{node.title}</p></div>)}>
-                        {this.renderContextMenu(node.title, node.isDirectory)}
-                        </Tooltip>
+                        title={
+                            <Tooltip placement="top" title={(<div><p> {tooltip_title} </p></div>)}>
+                            {this.renderContextMenu(node.title, node.isDirectory, node.isValidJson)}
+                            </Tooltip>
                         }
+
                         key={node.id}
                         isLeaf={!node.isDirectory}
                     />

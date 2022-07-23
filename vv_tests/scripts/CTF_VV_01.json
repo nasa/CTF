@@ -1,0 +1,101 @@
+{
+    "test_script_number": "CTF-VV-01",
+    "test_script_name": "CTF_VV_01.json",
+    "requirements": {
+        "CTF-01": "Partial",
+        "CTF-02": "Partial"
+    },
+    "description": "Integer numbers comparison of with operators '<', '>', '<=', '>=', '==', '!=' ",
+    "owner": "CTF",
+    "test_setup": "Need to run start script first to start cFS instance",
+    "ctf_options": {},
+    "import": {},
+    "tests": [
+        {
+            "test_number": "CTF-VV-01-1",
+            "description": "Nominal OP",
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_RESET_CC",
+                        "args": {}
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_NOOP_CC",
+                        "args": {}
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "TO_HK_TLM_MID",
+                        "args": [
+                            {
+                                "compare": "<",
+                                "variable": "usCmdCnt",
+                                "value": 3
+                            },
+                            {
+                                "compare": ">",
+                                "variable": "usCmdCnt",
+                                "value": 0
+                            }
+                        ]
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "TO_HK_TLM_MID",
+                        "args": [
+                            {
+                                "compare": ">=",
+                                "variable": "usCmdCnt",
+                                "value": 1
+                            },
+                            {
+                                "compare": "<=",
+                                "variable": "usCmdCnt",
+                                "value": 1
+                            }
+                        ]
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "",
+                        "mid": "TO_HK_TLM_MID",
+                        "args": [
+                            {
+                                "compare": "==",
+                                "variable": "usCmdCnt",
+                                "value": 1
+                            },
+                            {
+                                "compare": "!=",
+                                "variable": "usCmdCnt",
+                                "value": 2
+                            }
+                        ]
+                    },
+                    "wait": 1
+                }
+            ]
+        }
+    ]
+}

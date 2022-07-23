@@ -1,0 +1,31 @@
+{
+    "test_script_number": "CTF-VV-16",
+    "test_script_name": "CTF_VV_16.json",
+    "requirements": {
+        "CTF-34": "Full",
+        "CTF-42": "Full"
+    },
+    "description": "Establish communication with multiple remote cFS targets on Linux",
+    "owner": "CTF",
+    "test_setup": "Pair with config file ../configs/vv_lx1_lx2_remote_config.ini",
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "import": {
+        "./StartCfsFunction.json": [
+            "StartCfsFunc"
+        ]
+    },
+    "tests": [
+        {
+            "test_number": "CTF-VV-16-1",
+            "description": "Nominal OP",
+            "instructions": [
+                {
+                    "function": "StartCfsFunc",
+                    "params": {}
+                }
+            ]
+        }
+    ]
+}

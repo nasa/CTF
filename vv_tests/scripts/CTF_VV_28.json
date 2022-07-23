@@ -1,0 +1,60 @@
+{
+    "test_script_number": "CTF-VV-28",
+    "test_script_name": "CTF_VV_28.json",
+    "requirements": {
+        "CTF-28": "Full",
+        "CTF-55": "Full"
+    },
+    "description": "Verify Tlm packets are received and assign tlm value and header value to variables",
+    "owner": "CTF",
+    "test_setup": "Need to run start script first to start cFS instance",
+    "ctf_options": {},
+    "import": {},
+    "tests": [
+        {
+            "test_number": "CTF-VV-28-1",
+            "description": "Nominal OP",
+            "instructions": [
+                {
+                    "instruction": "CheckTlmPacket",
+                    "data": {
+                        "mid": "TO_HK_TLM_MID"
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckNoTlmPacket",
+                    "data": {
+                        "mid": "CFE_ES_APP_TLM_MID"
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "to_seq_cnt",
+                        "operator": "=",
+                        "value": 0
+                    }
+                },
+                {
+                    "instruction": "SetUserVariableFromTlm",
+                    "data": {
+                        "variable_name": "tlm_usCmdCnt",
+                        "mid": "TO_HK_TLM_MID",
+                        "tlm_variable": "usCmdCnt"
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SetUserVariableFromTlmHeader",
+                    "data": {
+                        "variable_name": "to_seq_cnt",
+                        "mid": "TO_HK_TLM_MID",
+                        "header_variable": "pheader.sequence_count"
+                    }
+                }
+            ]
+        }
+    ]
+}

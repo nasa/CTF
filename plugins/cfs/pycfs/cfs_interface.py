@@ -16,6 +16,7 @@
 @namespace plugins.cfs.pycfs.cfs_interface
 cfs_interface.py: Base-class Lower-level interface to communicate with cFS.
 """
+import collections
 import ctypes
 import importlib
 import os
@@ -71,9 +72,12 @@ class CfsInterface:
         and ccsds arguments to interface attributes
         """
         self.config = config
+        self.is_running = False
 
         if self.config.evs_long_event_mid_name in mid_map:
             self.evs_long_event_msg_mid = mid_map[self.config.evs_long_event_mid_name]["MID"]
+            log.debug("Capturing EVS long event messages for MID {} ({})"
+                      .format(self.config.evs_long_event_mid_name, hex(self.evs_long_event_msg_mid)))
         else:
             self.evs_long_event_msg_mid = -1
             log.error("{} not found in MID map! EVS long event messages will not be captured."
@@ -81,6 +85,8 @@ class CfsInterface:
 
         if self.config.evs_short_event_mid_name in mid_map:
             self.evs_short_event_msg_mid = mid_map[self.config.evs_short_event_mid_name]["MID"]
+            log.debug("Capturing EVS short event messages for MID {} ({})"
+                      .format(self.config.evs_short_event_mid_name, hex(self.evs_short_event_msg_mid)))
         else:
             self.evs_short_event_msg_mid = -1
             log.error("{} not found in MID map! EVS short event messages will not be captured."
@@ -102,9 +108,9 @@ class CfsInterface:
         })
 
         # This call will determine which output app to use and instantiate it
-        log.debug("Imported CFS Output Interface")
         output_app_interface = importlib.import_module('plugins.cfs.pycfs.output_app_interface')
         tlm_app_choice = getattr(output_app_interface, self.config.tlm_app_choice)
+        log.debug("Imported CFS Output Interface: {}".format(tlm_app_choice))
 
         self.output_manager = tlm_app_choice(self.config.ctf_ip,
                                              self.config.tlm_udp_port,
@@ -160,13 +166,15 @@ class CfsInterface:
 
         # Close files
         if self.tlm_log_file is not None and not self.tlm_log_file.closed:
-            log.debug("Closing tlm log file")
+            log.debug("Closing tlm log file {}".format(self.tlm_log_file.name))
             self.tlm_log_file.close()
             self.tlm_log_file = None
         if self.evs_log_file is not None and not self.evs_log_file.closed:
-            log.debug("Closing evs log file")
+            log.debug("Closing evs log file {}".format(self.evs_log_file.name))
             self.evs_log_file.close()
             self.evs_log_file = None
+
+        self.is_running = False
 
         for v_ids in self.tlm_verifications_by_mid_and_vid.values():
             for v_id, verification in v_ids.items():
@@ -183,6 +191,9 @@ class CfsInterface:
                 tlm_log_file_path = os.path.join(Global.current_script_log_dir, self.config.name + "_tlm_msgs.log")
                 self.tlm_log_file = open(tlm_log_file_path, "a+")
                 self.tlm_log_file.write("Time: MID, Data\n")
+                # update build-in variable for ctf tlm folder
+                ctf_utility.set_variable("_CTF_TLM_DIR", "=", os.path.abspath(Global.current_script_log_dir), "string")
+
             self.tlm_log_file.write("{}: {}\n\t{}\n".format(Global.get_time_manager().exec_time, hex(mid),
                                                             str(payload).replace("\n", "\n\t")))
             if self.config.telemetry_debug:
@@ -223,6 +234,7 @@ class CfsInterface:
          }
          }
         """
+        mids_read = []
         while True:
             # Read from the socket until no more data available
             try:
@@ -234,8 +246,10 @@ class CfsInterface:
                     pheader = self.ccsds.CcsdsPrimaryHeader.from_buffer(recvd[0:self.pheader_offset])
                 except ValueError:
                     log.error("Cannot create CCSDS Primary Header")
+                    log.debug("Invalid header bytes: {}".format(recvd.hex()))
                     continue
 
+                mids_read.append(pheader.get_msg_id())
                 # If the packet is a command packet it is handled differently
                 if pheader.is_command():
                     self.parse_command_packet(recvd)
@@ -244,6 +258,10 @@ class CfsInterface:
             except socket.timeout:
                 log.warning("No telemetry received from CFS. Socket timeout...")
                 break
+        if mids_read:
+            log.debug("Received {} packets at time {}:".format(len(mids_read), Global.get_time_manager().exec_time))
+            mids_read = sorted(collections.Counter(mids_read).items())
+            log.debug(", ".join(["{}: {}".format(hex(mid), count) for mid, count in mids_read]))
 
     def parse_command_packet(self, buffer):
         """
@@ -332,15 +350,17 @@ class CfsInterface:
         """
         If this is the first time receiving a packet with the given mid then print the value of the mid.
         """
+        exec_time = Global.get_time_manager().exec_time
         if not self.has_received_mid[mid]:
-            log.info("Receiving Packet for Data Type: {} with MID: {}".format(type(payload), hex(mid)))
+            log.info("Receiving first packet for Data Type: {} with MID: {} at time: {}"
+                     .format(type(payload).__name__, hex(mid), exec_time))
 
             # Update the array so that the message is not printed again
             self.has_received_mid[mid] = True
 
         payload_count = len(self.received_mid_packets_dic[mid]) + 1
         # Add the received packet to the dictionary under the correct mid
-        packet = Packet(mid, header, payload, payload_count, Global.get_time_manager().exec_time)
+        packet = Packet(mid, header, payload, payload_count, exec_time)
         self.received_mid_packets_dic[mid].append(packet)
         self.tlm_has_been_received = True
         self.unchecked_packet_mids.append(mid)
@@ -422,7 +442,6 @@ class CfsInterface:
                 check_status = equal
             else:
                 log.warning('String comparison failed, actual value:%s streq expected value: %s', actual, expected)
-                check_status = not equal
 
         else:  # if there was no string to compare
             log.warning('String comparison failed, actual value:%s streq expected value: %s', actual, expected)
@@ -434,6 +453,14 @@ class CfsInterface:
         """
         Based on the argument compare value, use different method to compare argument actual and expected
         """
+        if compare in ['streq', 'strneq', 'regex']:
+            if not isinstance(actual, str):
+                log.warning("Type mismatch for comparator '{}'! Actual value {} is not a string."
+                            .format(compare, actual))
+            if not isinstance(expected, str):
+                log.warning("Type mismatch for comparator '{}'! Expected value {} is not a string."
+                            .format(compare, expected))
+
         if compare == "streq":
             return self.check_strings(actual, expected, True)
         if compare == "strneq":
@@ -456,11 +483,19 @@ class CfsInterface:
         #           We need to either parse the message type's fields to determine the actual ctype and its size,
         #           or extend the types when they are created to expose the ctype used for primitive fields
         if compare in OPERATION_DIC:
+
+            if isinstance(actual, str):
+                log.warning("Type mismatch for comparator '{}'! Actual value '{}' is a string."
+                            .format(compare, actual))
+            if isinstance(expected, str) and not expected.lower().startswith("0x"):
+                log.warning("Type mismatch for comparator '{}'! Expected value '{}' is a string."
+                            .format(compare, expected))
+
             try:
                 actual = float(actual)
                 # the expected is a numerical type. However, if it is a hex string like 0x12' or '0X12',
                 # need to convert it to int first, before converting to float
-                if isinstance(expected, str) and ('0x' in expected or '0X' in expected):
+                if isinstance(expected, str) and expected.lower().startswith("0x"):
                     expected = int(expected, 0)
                 expected = float(expected)
             except ValueError as exception:
@@ -501,7 +536,7 @@ class CfsInterface:
         If packets' received time expires, clear the packets with matching mid.
         """
         if not self.received_mid_packets_dic.get(mid):
-            log.error("No messages received for MID: {} to clear.".format(hex(mid)))
+            log.warning("No messages received for MID: {} to clear.".format(hex(mid)))
             return
         if mid in [self.evs_long_event_msg_mid, self.evs_short_event_msg_mid]:
             start_time = Global.time_manager.exec_time - self.config.evs_messages_clear_after_time
@@ -584,7 +619,7 @@ class CfsInterface:
             return None
 
         # Traverse packets backwards validating each packet for the selected MID
-        log.debug("There are {} packets with mid {}".format(len(self.received_mid_packets_dic[mid]), mid_name))
+        log.debug("There are {} packets with mid {}".format(len(self.received_mid_packets_dic[mid]), hex(mid)))
         for i in range(len(self.received_mid_packets_dic[mid]) - 1, -1, -1):
             # Get current packet for the selected MID
             packet = self.received_mid_packets_dic[mid][i]
@@ -595,6 +630,11 @@ class CfsInterface:
                 log.error("Failed to extract packet from received MID: {}. Continuing...".format(hex(mid)))
                 continue
             latest_tlm_value = ctf_utility.rgetattr(data, tlm_variable, None)
+
+            if isinstance(latest_tlm_value, bytes):
+                log.info("Bytes object {} is decoded to {}".format(latest_tlm_value, latest_tlm_value.decode()))
+                latest_tlm_value = latest_tlm_value.decode()
+
             if latest_tlm_value is not None:
                 break
 
@@ -615,9 +655,7 @@ class CfsInterface:
             mask_value = arg.get("maskValue")
             tol = arg.get("tolerance")
             tol_plus = arg.get("tolerance_plus")
-            tol_plus_result = None
             tol_minus = arg.get("tolerance_minus")
-            tol_minus_result = None
 
             if expected_value is None:
                 # If there is no expected value provided, check_tlm_value will fail before
@@ -652,6 +690,7 @@ class CfsInterface:
                 break
 
             if isinstance(actual, bytes):
+                log.info("Bytes object {} is decoded to {}".format(actual, actual.decode()))
                 actual = actual.decode()
 
             initial_result = self.check_value(actual, expected_value, arg["compare"], mask, mask_value)

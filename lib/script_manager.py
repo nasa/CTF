@@ -23,6 +23,7 @@ import time
 import traceback
 import json
 
+from lib import ctf_utility
 from lib.exceptions import CtfTestError
 from lib.logger import logger as log, change_log_file
 from lib.readers.json_script_reader import JSONScriptReader
@@ -126,6 +127,9 @@ class ScriptManager:
                 os.makedirs(self.curr_script_log_dir_path)
                 change_log_file(os.path.join(Global.current_script_log_dir, script.input_file + ".log"))
 
+                # update build-in variable
+                ctf_utility.set_variable("_CTF_LOG_DIR", "=", self.curr_script_log_dir_path, "string")
+
                 try:
                     script.run_script(self.status_manager)
                 except CtfTestError:
@@ -146,7 +150,7 @@ class ScriptManager:
 
                 self.status_manager.end_script()
 
-                script.status = StatusDefs.passed if script.num_failed == 0 else StatusDefs.failed
+                script.status = StatusDefs.failed if script.failed_tests else StatusDefs.passed
 
                 self.write_summary_line(script)
 
@@ -154,12 +158,12 @@ class ScriptManager:
                     results["Test_Results"].append({
                         "Status": script.status,
                         "Time": script.exec_time,
-                        "Ver_Num": script.test_number,
+                        "Test_Num": script.test_number,
                         "Req_Num": script.requirements,
-                        "Test_Run": script.num_tests,
-                        "Test_Passed": script.num_passed,
-                        "Test_Failed": script.num_failed,
-                        "Test_Error": script.num_error,
+                        "Tests_Run": script.num_tests,
+                        "Tests_Passed": script.num_passed,
+                        "Tests_Failed": len(script.failed_tests),
+                        "Tests_Error": script.num_error,
                         "Script": script.input_file
                     })
 
@@ -175,7 +179,7 @@ class ScriptManager:
                     log.warning("Failed to revert logging to CTF. Does {} still exist?".format(Global.CTF_log_dir_file))
                     raise CtfTestError("Error in run_all_scripts") from ex
 
-                log.info("Waiting {} seconds for plugins to cleanup...".format(wait_time))
+                log.info("Test execution complete. Waiting {} seconds for plugins to clean up...".format(wait_time))
                 Global.time_manager.wait(wait_time)
 
             if not self.config.reset_plugins_between_scripts:
@@ -205,24 +209,24 @@ class ScriptManager:
         self.summary_file.write(str("%0s | %0s | %0s | %0s | %0s | %0s | %0s | %0s | %0s\n"
                                     % ("Status".ljust(10),
                                        "Time (s)".ljust(8),
-                                       "Verification Number".ljust(50),
-                                       "Requirement Verified".ljust(25),
-                                       "Test Run".ljust(8),
-                                       "Test Passed".ljust(12),
-                                       "Test Failed".ljust(12),
-                                       "Test Error".ljust(12),
+                                       "Test Script Number".ljust(50),
+                                       "Requirements Verified".ljust(50),
+                                       "Tests Run".ljust(12),
+                                       "Tests Passed".ljust(12),
+                                       "Tests Failed".ljust(12),
+                                       "Tests Error".ljust(12),
                                        "Script".ljust(50))))
 
-        self.summary_file.write("-" * 180 + "\n")
+        self.summary_file.write("-" * 200 + "\n")
         self.summary_file.close()
 
-    def write_summary_line(self, summary_line):
+    def write_summary_line(self, script):
         """
         Write an entry to the summary results file(s).
         @note - An entry consists of:
                 - Script status (pass/fail)
                 - Execution Time
-                - Verification Number
+                - Test Script Number
                 - Requirements Verified
                 - # of tests that ran
                 - # of tests that passed
@@ -237,18 +241,18 @@ class ScriptManager:
                 log.error("Failed to close CTF results summary file!")
                 return
 
-        formatted_time = "%3.2f" % summary_line.exec_time
+        formatted_time = "%3.2f" % script.exec_time
         self.summary_file = open(self.regression_summary_file_path, "a+", buffering=10)
         self.summary_file.write(str("%0s   %0s   %0s   %0s   %0s   %0s   %0s   %0s   %0s\n"
-                                    % (str(summary_line.status).ljust(10),
+                                    % (str(script.status).ljust(10),
                                        formatted_time.ljust(8),
-                                       str(summary_line.test_number).ljust(50),
-                                       str(summary_line.requirements).ljust(25),
-                                       str(summary_line.num_tests).ljust(8),
-                                       str(summary_line.num_passed).ljust(12),
-                                       str(summary_line.num_failed).ljust(12),
-                                       str(summary_line.num_error).ljust(12),
-                                       summary_line.input_file.ljust(50))))
+                                       str(script.test_number).ljust(50),
+                                       str(script.requirements).ljust(50),
+                                       str(script.num_tests).ljust(12),
+                                       str(script.num_passed).ljust(12),
+                                       str(len(script.failed_tests)).ljust(12),
+                                       str(script.num_error).ljust(12),
+                                       script.input_file.ljust(50))))
         self.summary_file.close()
 
     def __del__(self):

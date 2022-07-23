@@ -1,12 +1,12 @@
 {
-    "test_number": "CFE-SB-Functions-Test",
-    "test_name": "CFE SB Functions Test",
+    "test_script_number": "CFE-SB-Functions-Test",
+    "test_script_name": "CfeSbTest.json",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Testing CFE SB Functions",
+    "description": "Example script showing SB function usage",
     "owner": "CTF",
-    "test_setup": "Example Script Showing SB function usage",
+    "test_setup": "",
     "ctf_options": {
         "verify_timeout": 4
     },
@@ -28,7 +28,7 @@
     "functions": {},
     "tests": [
         {
-            "case_number": "CFE-6-7-CFE-SB-Test-001",
+            "test_number": "CFE-6-7-CFE-SB-Test-1",
             "description": "Start CFS, Send SB NOOP, Reset commands, and 3 commands with arguments",
             "instructions": [
                 {
@@ -65,20 +65,20 @@
                 {
                     "function": "SendCheckCfeSbSendRoutingInfoCmd",
                     "wait": 1,
-                    "description": "Off-Nominal Case - 'Error creating file SendCheckCfeSbSendRoutingInfoCmdParam.txt, stat=0xffffff98'",
+                    "description": "Nominal Case - File name length < 64",
                     "params": {
-                        "expectedCmdCnt": 0,
-                        "expectedErrCnt": 1,
+                        "expectedCmdCnt": 1,
+                        "expectedErrCnt": 0,
                         "fileName": "SendCheckCfeSbSendRoutingInfoCmdParam.txt"
                     }
                 },
                 {
                     "function": "SendCheckCfeSbSendMapInfoCmd",
                     "wait": 1,
-                    "description": "Off-Nominal Case - 'Error creating file SendCheckCfeSbSendMapInfoCmdParam.txt, stat=0xffffff98'",
+                    "description": "Nominal Case - File name length < 64",
                     "params": {
-                        "expectedCmdCnt": 0,
-                        "expectedErrCnt": 2,
+                        "expectedCmdCnt": 2,
+                        "expectedErrCnt": 0,
                         "fileName": "SendCheckCfeSbSendMapInfoCmdParam.txt"
                     }
                 },
@@ -87,8 +87,8 @@
                     "wait": 1,
                     "description": "Off-Nominal Case - 'Enbl Route Cmd:Invalid Param.Msg 0x2006,Pipe 112'",
                     "params": {
-                        "expectedCmdCnt": 0,
-                        "expectedErrCnt": 3,
+                        "expectedCmdCnt": 2,
+                        "expectedErrCnt": 1,
                         "msgId": 8198,
                         "pipe": 0,
                         "spare": 0

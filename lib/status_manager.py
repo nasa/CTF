@@ -68,12 +68,12 @@ class StatusManager:
         for script in scripts:
             script_status = ObjectFactory.create_object("ScriptStatus")
             script_status["path"] = script.input_file
-            script_status["test_name"] = script.test_name
+            script_status["test_script_number"] = script.test_name
             script_status["status"] = StatusDefs.waiting
             script_status["details"] = ""
             for test in script.tests:
                 test_status = ObjectFactory.create_object("TestStatus")
-                test_status["case_number"] = test.test_info["test_case"]
+                test_status["test_number"] = test.test_info["test_number"]
                 test_status["status"] = StatusDefs.waiting
                 test_status["details"] = ""
                 test_status["description"] = test.test_info.get("description", "")
@@ -170,7 +170,7 @@ class StatusManager:
 
     def end_test(self):
         """
-        Increment the current active test case index. Reset the command index to 0.
+        Increment the current active test index. Reset the command index to 0.
         """
         self.command_index = 0
         self.test_index += 1
@@ -231,7 +231,7 @@ class StatusManager:
         status = self.status
         for script_index, script in enumerate(self.status["scripts"]):
             for test_index, test in enumerate(script["tests"]):
-                test["case_number"] = self.sanitize_param(test["case_number"])
+                test["test_number"] = self.sanitize_param(test["test_number"])
                 test["details"] = self.sanitize_param(test["details"])
                 for index, command in enumerate(test["instructions"]):
                     command["data"] = command.get("data")

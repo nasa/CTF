@@ -1,12 +1,12 @@
 {
-    "test_number": "Nominal-CFE_EVS-Commands",
-    "test_name": "Functions for nominal CFE_EVS commands",
+    "test_script_number": "Nominal-CFE-EVS-Commands",
+    "test_script_name": "CfeEvsFunctions.json",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Nominal CFE_EVS Functions",
+    "description": "Nominal CFE-EVS Functions",
     "owner": "CTF",
-    "test_setup": "Functions for use in other tests",
+    "test_setup": "",
     "ctf_options": {
         "verify_timeout": 4
     },
@@ -1019,6 +1019,5 @@
                 }
             ]
         }
-    },
-    "tests": []
+    }
 }

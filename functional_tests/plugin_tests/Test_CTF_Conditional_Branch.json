@@ -1,0 +1,271 @@
+{
+    "test_script_number": "Basic-CTF-Conditional-Branch-Test",
+    "test_script_name": "Test_CTF_Conditional_Branch.json",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "description": "Basic CTF Example Script Showing Conditional Branch Instructions",
+    "owner": "CTF",
+    "test_setup": "",
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "import": {},
+    "tests": [
+        {
+            "test_number": "Basic-CTF-Conditional-Branch-Test-1",
+            "description": "Execute conditional branch instructions when condition is true",
+            "instructions": [
+                {
+                    "instruction": "StartCfs",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "EnableCfsOutput",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1,
+                    "description": "Need this to enable the telemetry thread. Enable Output counts as 1 TO cmd"
+                },
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "=",
+                        "value": 2
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "IfCondition",
+                    "data": {
+                        "conditions": [
+                            {
+                                "variable": "my_var",
+                                "compare": "<",
+                                "value": 3
+                            }
+                        ],
+                        "label": "label_1"
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "+",
+                        "value": 2
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "ElseCondition",
+                    "data": {
+                        "label": "label_1"
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "-",
+                        "value": 2
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "EndCondition",
+                    "data": {
+                        "label": "label_1"
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "==",
+                        "value": 4
+                    },
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "test_number": "Basic-CTF-Conditional-Branch-Test-2",
+            "description": "Execute conditional branch instructions when condition is false",
+            "instructions": [
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "=",
+                        "value": 4
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "IfCondition",
+                    "data": {
+                        "conditions": [
+                            {
+                                "variable": "my_var",
+                                "compare": "<",
+                                "value": 3
+                            }
+                        ],
+                        "label": "label_1"
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "+",
+                        "value": 2
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "ElseCondition",
+                    "data": {
+                        "label": "label_1"
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "-",
+                        "value": 4
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "EndCondition",
+                    "data": {
+                        "label": "label_1"
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "==",
+                        "value": 0
+                    },
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "test_number": "Basic-CTF-Conditional-Branch-Test-3",
+            "description": "Execute nested conditional branch instructions",
+            "instructions": [
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "=",
+                        "value": 4
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "IfCondition",
+                    "data": {
+                        "conditions": [
+                            {
+                                "variable": "my_var",
+                                "compare": ">",
+                                "value": 3
+                            }
+                        ],
+                        "label": "label_1"
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "+",
+                        "value": 2
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "IfCondition",
+                    "data": {
+                        "conditions": [
+                            {
+                                "variable": "my_var",
+                                "compare": "<",
+                                "value": 10
+                            }
+                        ],
+                        "label": "label_2"
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "+",
+                        "value": 20
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "EndCondition",
+                    "data": {
+                        "label": "label_2"
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "ElseCondition",
+                    "data": {
+                        "label": "label_1"
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "+",
+                        "value": 200
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "EndCondition",
+                    "data": {
+                        "label": "label_1"
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "CheckUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "==",
+                        "value": 26
+                    },
+                    "wait": 0
+                }
+            ]
+        }
+    ]
+}

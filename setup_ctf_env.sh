@@ -29,6 +29,19 @@ elif [[ "$unamestr" == 'Darwin' ]]; then
 else
    platform='windows'
 fi
+
+if [[ "$platform" == 'linux' ]] && [[ "$unamemstr" == 'i686' ]]; then
+    printf "\\n"
+    printf "32-bit Linux OS is not supported after CTF v1.5 ! \n\\n"
+    return 1
+fi
+
+if [[ "$platform" == 'windows' ]] ; then
+    printf "\\n"
+    printf "Windows OS is not supported ! \n\\n"
+    return 1
+fi
+
 printf "\\n"
 printf "%s will now be installed into this location:\\n" "$ANACONDA_VERSION"
 printf "%s\\n" "$PREFIX"
@@ -53,138 +66,94 @@ fi
 
 
 if [ "$updateValue" -eq 1 ]; then
-  rm -rf $PREFIX
+      rm -rf $PREFIX
 fi
 
 if [ "$ymlValue" -eq 1 ]; then
-echo 'Generating yml file'
-if [[ "$platform" == 'darwin' ]]; then
- $PREFIX/bin/conda env export > $INSTALL_DIR/pythonEnvironmentMac3.yml
-elif [[ "$platform" == 'linux' ]]; then
- if [[ "$unamemstr" == 'i686' ]]; then
- $PREFIX/bin/conda env export > $INSTALL_DIR/pythonEnvironmentLinuxX86.yml
+      echo 'Generating yml file'
+      if [[ "$platform" == 'darwin' ]]; then
+           $PREFIX/bin/conda env export > $INSTALL_DIR/pythonEnvironmentMac3.yml
+      elif [[ "$platform" == 'linux' ]]; then
+           $PREFIX/bin/conda env export > $INSTALL_DIR/pythonEnvironmentLinux3.yml
+      fi
 else
- $PREFIX/bin/conda env export > $INSTALL_DIR/pythonEnvironmentLinux3.yml
-fi
-else
- $PREFIX/Scripts/conda env export > $INSTALL_DIR/pythonEnvironmentWindows3.yml
-fi
-else
-if [ -d "$PREFIX" ]; then
-if [ ! -d "$PREFIX/envs/pythonEnv3" ]; then
-if [[ "$platform" == 'darwin' ]]; then
- $PREFIX/bin/conda env create -n pythonEnv3 -f=$INSTALL_DIR/pythonEnvironmentMac3.yml
-elif [[ "$platform" == 'linux' ]]; then
- if [[ "$unamemstr" == 'i686' ]]; then
- $PREFIX/bin/conda env create -n pythonEnv3 -f=$INSTALL_DIR/pythonEnvironmentLinuxX86.yml
-else
- $PREFIX/bin/conda env create -n pythonEnv3 -f=$INSTALL_DIR/pythonEnvironmentLinux3.yml
-fi
-else
- $PREFIX/Scripts/conda env create -n pythonEnv3 -f=$INSTALL_DIR/pythonEnvironmentWindows3.yml
-fi
-else
-echo 'Anaconda3 already installed.'
-echo 'execute "source pythonEnvInstall3.sh -u" to update.'
-fi
-else
-if [[ "$platform" == 'darwin' ]]; then
- curl https://repo.anaconda.com/archive/Anaconda3-2018.12-MacOSX-x86_64.sh -o Anaconda3-2018.12-MacOSX-x86_64.sh
- res=$?
- chmod 700 "Anaconda3-2018.12-MacOSX-x86_64.sh"
- ./Anaconda3-2018.12-MacOSX-x86_64.sh -b -p $PREFIX
- rm ./Anaconda3-2018.12-MacOSX-x86_64.sh
-elif  [[ "$platform" == 'linux' ]]; then
- if [[ "$unamemstr" == 'i686' ]]; then
- curl https://repo.anaconda.com/archive/Anaconda3-2018.12-Linux-x86.sh -o Anaconda3-2018.12-Linux-x86.sh
- res=$?
- chmod 700 "Anaconda3-2018.12-Linux-x86.sh"
- ./Anaconda3-2018.12-Linux-x86.sh -b -p $PREFIX
- rm ./Anaconda3-2018.12-Linux-x86.sh
-else
- curl https://repo.anaconda.com/archive/Anaconda3-2018.12-Linux-x86_64.sh -o Anaconda3-2018.12-Linux-x86_64.sh
- res=$?
- chmod 700 "Anaconda3-2018.12-Linux-x86_64.sh"
- ./Anaconda3-2018.12-Linux-x86_64.sh -b -p $PREFIX
- rm ./Anaconda3-2018.12-Linux-x86_64.sh
-fi
-else
-curl https://repo.anaconda.com/archive/Anaconda3-2018.12-Windows-x86_64.exe -o Anaconda3-2018.12-Windows-x86_64.exe
-res=$?
- chmod 700 "Anaconda3-2018.12-Windows-x86_64.exe"
- ./Anaconda3-2018.12-Windows-x86_64.exe /S /D $PREFIX
- rm ./Anaconda3-2018.12-Windows-x86_64.exe
-fi
-if [[ "$res" == '0' ]]; then
+    if [ -d "$PREFIX" ]; then
+       if [ ! -d "$PREFIX/envs/pythonEnv3" ]; then
+          if [[ "$platform" == 'darwin' ]]; then
+             $PREFIX/bin/conda env create -n pythonEnv3 -f=$INSTALL_DIR/pythonEnvironmentMac3.yml
+          elif [[ "$platform" == 'linux' ]]; then
+             $PREFIX/bin/conda env create -n pythonEnv3 -f=$INSTALL_DIR/pythonEnvironmentLinux3.yml
+          fi
+       else
+          echo 'Anaconda3 already installed.'
+          echo 'execute "source pythonEnvInstall3.sh -u" to update.'
+      fi
+    else
+      if [[ "$platform" == 'darwin' ]]; then
+        curl https://repo.anaconda.com/archive/Anaconda3-2021.11-MacOSX-x86_64.sh -o Anaconda3-2021.11-MacOSX-x86_64.sh
+        res=$?
+        chmod 700 "Anaconda3-2021.11-MacOSX-x86_64.sh"
+        ./Anaconda3-2021.11-MacOSX-x86_64.sh -b -p $PREFIX
+         rm ./Anaconda3-2021.11-MacOSX-x86_64.sh
+      elif  [[ "$platform" == 'linux' ]]; then
+        curl https://repo.anaconda.com/archive/Anaconda3-2021.11-Linux-x86_64.sh -o Anaconda3-2021.11-Linux-x86_64.sh
+        res=$?
+        chmod 700 "Anaconda3-2021.11-Linux-x86_64.sh"
+        ./Anaconda3-2021.11-Linux-x86_64.sh -b -p $PREFIX
+        rm ./Anaconda3-2021.11-Linux-x86_64.sh
+      fi
 
-$PREFIX/bin/conda create --name pythonEnv3 -y
+      if [[ "$res" == '0' ]]; then
 
-$PREFIX/bin/conda update -n base -c defaults conda -y
+          $PREFIX/bin/conda create --name pythonEnv3 python=3.8.12 -y
 
-source $PREFIX/bin/activate pythonEnv3
+          # $PREFIX/bin/conda update -n base -c defaults conda -y
 
-#conda install --yes --file requirements.txt
-conda install -c anaconda bcrypt -y
-conda install -c anaconda cffi -y
-conda install -c anaconda cryptography -y
-conda install -c anaconda fabric -y
-conda install -c conda-forge ftputil -y
-conda install -c conda-forge invoke -y
-conda install -c anaconda paramiko -y
-conda install -c anaconda psutil -y
-conda install -c conda-forge pycparser -y
-conda install -c conda-forge PyNaCl -y
-conda install -c anaconda six -y
-conda install -c conda-forge pyelftools -y
-conda install -c conda-forge coverage -y
-conda install -c anaconda pytest'>=6.2.1' -y
-conda install -c anaconda pytest-cov -y
-conda install -c anaconda mock -y
-conda install -c anaconda pylint -y
-conda install -c conda-forge demjson -y
+          source $PREFIX/bin/activate pythonEnv3
+
+          #conda install --yes --file requirements.txt
+          conda install -c anaconda bcrypt -y
+          conda install -c anaconda cffi -y
+          conda install -c anaconda cryptography -y
+          conda install -c anaconda fabric -y
+          conda install -c conda-forge ftputil -y
+          conda install -c anaconda invoke -y
+          conda install -c anaconda paramiko -y
+          conda install -c anaconda psutil -y
+          conda install -c anaconda pycparser -y
+          conda install -c anaconda PyNaCl -y
+          conda install -c anaconda six -y
+          conda install -c conda-forge pyelftools -y
+          conda install -c anaconda coverage -y
+          conda install -c anaconda pytest'>=6.2.1' -y
+          conda install -c anaconda pytest-cov -y
+          conda install -c anaconda mock -y
+          conda install -c anaconda pylint'=2.6.0' -y
+          conda install -c conda-forge demjson -y
 
 
-if  [[ "$platform" == 'linux' ]]; then
-conda install -c anaconda nodejs -y
-if [[ "$unamemstr" == 'i686' ]]; then
-conda install -c anaconda libxscrnsaver-cos6-i686 -y
-conda install -c anaconda nodejs -y
-else
-conda install -c anaconda libxscrnsaver-devel-cos6-x86_64 -y
-conda install -c conda-forge nodejs -y
-fi
-else
-conda install -c conda-forge nodejs -y
-fi
+          if  [[ "$platform" == 'linux' ]]; then
+              # April 2022: if do not specify nodejs version, conda installs nodejs v6.13.1, which is too old for CTF editor
+              # April 2022: conda install nodejs v16.13.1, which is compatible. (v15.10.0 also works)
+              conda install -c anaconda nodejs'>=14.8.0' -y
+              conda install -c anaconda libxscrnsaver-devel-cos6-x86_64 -y
+          else
+              conda install -c conda-forge nodejs -y
+          fi
 
-if [[ "$platform" == 'darwin' ]]; then
-conda env export > $INSTALL_DIR/pythonEnvironmentMac3.yml
-elif [[ "$platform" == 'linux' ]]; then
- if [[ "$unamemstr" == 'i686' ]]; then
-conda env export > $INSTALL_DIR/pythonEnvironmentLinuxX86.yml
-else
-conda env export > $INSTALL_DIR/pythonEnvironmentLinux3.yml
-fi
-else
- $PREFIX/Scripts/conda env export > $INSTALL_DIR/pythonEnvironmentWindows3.yml
-fi
+          if [[ "$platform" == 'darwin' ]]; then
+              conda env export > $INSTALL_DIR/pythonEnvironmentMac3.yml
+          elif [[ "$platform" == 'linux' ]]; then
+              conda env export > $INSTALL_DIR/pythonEnvironmentLinux3.yml
+          fi
 
-# See if python2 is already setup on this system
-if which python2; then
-echo "python2 exist"
-elif which python2.7; then
-export PYTHON_LOCATION=`which python2.7`
-ln -sf "$PYTHON_LOCATION" $PREFIX/envs/pythonEnv3/bin/python2
-else
-echo "python2.7 does not exist required for npm install"
-fi
+          cd $INSTALL_DIR
 
-cd $INSTALL_DIR
-else
-echo 'Download of Anaconda install script failed:'
-echo $res
-fi
-fi
+      else
+          echo 'Download of Anaconda install script failed:'
+          echo $res
+      fi
+    fi
 fi
 
 if which npm; then
@@ -194,6 +163,10 @@ if which npm; then
 else
   echo "npm not installed"
 fi
+
+conda info
+python --version
+node -v
 
 ln -sf $INSTALL_DIR/ctf $PREFIX/condabin/ctf
 ln -sf $INSTALL_DIR/run_editor.sh $PREFIX/condabin/ctf_editor

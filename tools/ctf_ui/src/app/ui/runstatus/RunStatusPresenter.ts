@@ -92,23 +92,24 @@ export class RunStatusPresenter implements IRunStatusPresenter {
             await this.view.showOutput(data)
             var confirmed;
             var promptmsg = "";
-            
+
             if (data.includes('userio_plugin') && data.includes('Wait for user input') )  {
-                 
+
                  const searchstr = 'Executed with args:';
                  const len = searchstr.length;
                  const start = data.indexOf(searchstr)
                  const end   = data.indexOf('\n');
-                 promptmsg = data.substring((start+len), end); 
+                 promptmsg = data.substring((start+len), end);
 
-                 if (promptmsg != '') this.promptmsg = promptmsg;
+                 // promptmsg could be very long, ignore long messages
+                 if (promptmsg != '' && promptmsg.length <= 10) this.promptmsg = promptmsg;
 
                  console.log('RunstatusPresenter:: promptmsg=', promptmsg);
             }
 
             if (data.includes("Please Enter 'Y' to continue")) {
                  console.log('RunStatusPresenter:: user input needed, test pauses', data);
-                 
+
                  if (confirm(this.promptmsg + " \nClick OK to continue tests or Click 'Cancel' to cancel tests")) {
                     confirmed = true;
                   } else {
@@ -119,7 +120,7 @@ export class RunStatusPresenter implements IRunStatusPresenter {
 
                  if (confirmed)
                     this.runner.processstdin.write('y\n');
-                 else 
+                 else
                     this.runner.processstdin.write('n\n');
 
 
