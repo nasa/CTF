@@ -249,12 +249,13 @@ class CfsInterface:
                     log.debug("Invalid header bytes: {}".format(recvd.hex()))
                     continue
 
-                mids_read.append(pheader.get_msg_id())
                 # If the packet is a command packet it is handled differently
                 if pheader.is_command():
-                    self.parse_command_packet(recvd)
+                    mid = self.parse_command_packet(recvd)
                 else:
-                    self.parse_telemetry_packet(recvd)
+                    mid = self.parse_telemetry_packet(recvd)
+                if mid != None:
+                   mids_read.append(mid)
             except socket.timeout:
                 log.warning("No telemetry received from CFS. Socket timeout...")
                 break
@@ -295,6 +296,7 @@ class CfsInterface:
             return
 
         self.on_packet_received(mid, header, payload)
+        return mid
 
     def parse_telemetry_packet(self, buffer):
         """
@@ -324,6 +326,7 @@ class CfsInterface:
         if mid in [self.evs_long_event_msg_mid, self.evs_short_event_msg_mid]:
             # Write this packet to the CFS EVS Log File
             self.write_evs_log(payload)
+        return mid
 
     def log_unknown_packet_mid(self, mid):
         """
