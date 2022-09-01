@@ -190,10 +190,9 @@ class JSONScriptReader:
                     command["args"] = args
 
                 if "function" in command:
-                    params = None if command is None else command.get("params")
+                    params = command.get("params", None)
                     params = self.sanitize_args(params)
-                    if params is not None:
-                        command["params"] = params
+                    command["params"] = params
 
                     inline_commands = self.resolve_function(command["function"], command["params"], self.functions)
                     if inline_commands is None:
