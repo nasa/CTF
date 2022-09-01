@@ -56,7 +56,7 @@ def expand_path(path):
     return os.path.expanduser(os.path.expandvars(path))
 
 
-def switch_to_cft_directory():
+def switch_to_ctf_directory():
     """
     Switch the working directory to ctf directory, return ctf directory path
     """

@@ -33,9 +33,9 @@ def test_ctf_utility_expand_path():
         assert ctf_utility.expand_path('~/$myvar/path') == str(pathlib.Path.home()) + '/foo/bar/path'
 
 
-def test_ctf_utility_switch_to_cft_directory():
+def test_ctf_utility_switch_to_ctf_directory():
     cur_dir = os.getcwd()
-    dir = ctf_utility.switch_to_cft_directory()
+    dir = ctf_utility.switch_to_ctf_directory()
     assert 'anaconda3/envs/pythonEnv3/bin' in dir
     # restore run dir
     os.chdir(cur_dir)
