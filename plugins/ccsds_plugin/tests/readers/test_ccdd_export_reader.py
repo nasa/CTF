@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -20,7 +20,7 @@ import pytest
 import lib
 from lib.exceptions import CtfTestError
 from plugins.ccsds_plugin.readers.ccdd_export_reader import CCDDExportReader, ctypes_name, \
-    dynamic_init, create_type_class, to_string
+    dynamic_init, create_type_class, to_string, _compare_field, _compare_ctypes
 from plugins.cfs.cfs_config import CfsConfig
 
 
@@ -58,6 +58,82 @@ def test_func_create_type_class(utils):
     with pytest.raises(Exception):
         create_type_class(data_type_name, "", [])
         assert utils.has_log_level("ERROR")
+
+
+def test_func_compare_field():
+    # nominal case
+    a1 = ("byte", ctypes.c_uint8)
+    b1 = ("byte", ctypes.c_uint8)
+    assert _compare_field(a1, b1)
+    # different names
+    a2 = ("byte1", ctypes.c_uint8)
+    b2 = ("byte2", ctypes.c_uint8)
+    assert not _compare_field(a2, b2)
+    # same nested fields
+    a3 = create_type_class("twobytes", ctypes.Structure, [a2, b2])
+    b3 = create_type_class("twobytes", ctypes.Structure, [a2, b2])
+    assert _compare_field(("nestedbytes", a3), ("nestedbytes", b3))
+    # different nested fields
+    a4 = create_type_class("twobytes", ctypes.Structure, [a2, b2])
+    b4 = create_type_class("twobytes", ctypes.Structure, [a1, b2])
+    assert not _compare_field(("nestedbytes", a4), ("nestedbytes", b4))
+    # mismatched depth
+    a5 = create_type_class("twobytes", ctypes.Structure, [a2, b2])
+    b5 = ("twobytes", ctypes.c_uint16)
+    assert not _compare_field(("nestedbytes", a5), ("nestedbytes", b5))
+    # different simple types
+    a6 = ("byte", ctypes.c_char)
+    b6 = ("byte", ctypes.c_ubyte)
+    assert not _compare_field(a6, b6)
+    # different lengths
+    a7 = ("twobytes", ctypes.c_uint8 * 2)
+    b7 = ("twobytes", ctypes.c_uint8 * 3)
+    assert not _compare_field(a7, b7)
+
+
+def test_func_compare_ctypes():
+    byte1 = ("byte1", ctypes.c_uint8)
+    byte2 = ("byte2", ctypes.c_uint8)
+    # nominal case
+    a1 = create_type_class("twobytes", ctypes.Structure, [byte1, byte2])
+    b1 = create_type_class("twobytes", ctypes.Structure, [byte1, byte2])
+    assert _compare_ctypes(a1, b1)
+    # different lengths
+    a2 = create_type_class("twobytes", ctypes.Structure, [byte1])
+    b2 = create_type_class("twobytes", ctypes.Structure, [byte1, byte2])
+    assert not _compare_ctypes(a2, b2)
+    # different fields
+    a3 = create_type_class("twobytes", ctypes.Structure, [byte1, byte2])
+    b3 = create_type_class("twobytes", ctypes.Structure, [byte2, byte1])
+    assert not _compare_ctypes(a3, b3)
+    # mismatched depth
+    a4 = create_type_class("twobytes", ctypes.Structure, [byte1, byte2])
+    b4 = ("twobytes", ctypes.c_uint16)
+    assert not _compare_ctypes(a4, b4)
+    # different simple types
+    a5 = ctypes.c_char
+    b5 = ctypes.c_ubyte
+    assert not _compare_ctypes(a5, b5)
+    # mismatched arrays
+    a6 = create_type_class("bytearray", ctypes.Structure, [("bytearray", a2 * 1)])
+    b6 = create_type_class("bytearray", ctypes.Structure, [("bytearray", a2)])
+    assert not _compare_ctypes(a6, b6)
+    # arrays of different types
+    a7 = create_type_class("bytearray", ctypes.Structure, [("twobytes", ctypes.c_uint8 * 2)])
+    b7 = create_type_class("bytearray", ctypes.Structure, [("twobytes", ctypes.c_uint16 * 2)])
+    assert not _compare_ctypes(a7, b7)
+    # arrays of different lengths
+    a8 = create_type_class("bytearray", ctypes.Structure, [("twobytes", ctypes.c_uint8 * 2)])
+    b8 = create_type_class("bytearray", ctypes.Structure, [("twobytes", ctypes.c_uint8 * 3)])
+    assert not _compare_ctypes(a8, b8)
+    # arrays of different depth
+    a9 = create_type_class("arraystruct", ctypes.Structure, [("bytearray", a2 * 2)])
+    b9 = create_type_class("arraystruct", ctypes.Structure, [("bytearray", ctypes.c_uint8 * 2)])
+    assert not _compare_ctypes(a9, b9)
+    # bare structure
+    a10 = create_type_class("struct", ctypes.Structure, [])
+    b10 = create_type_class("struct", ctypes.Structure, [])
+    assert _compare_ctypes(a10, b10)
 
 
 def test_ccdd_export_reader_init(ccdd_export_reader, utils):

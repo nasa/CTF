@@ -1,0 +1,147 @@
+{
+    "test_script_number": "Variable-Plugin-Test",
+    "test_script_name": "Test_CTF_Variable_Plugin.json",
+    "owner": "CTF",
+    "description": "Testing Variable Plugin: script will set and check user defined variables",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "ctf_options": {
+        "verify_timeout": 2.0
+    },
+    "test_setup": "",
+    "tests": [
+        {
+            "test_number": "Variable-Plugin-Test-1",
+            "description": "No description",
+            "instructions": [
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "=",
+                        "value": 13,
+                        "variable_type": "int"
+                    }
+                },
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "+",
+                        "value": 2
+                    }
+                },
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "-",
+                        "value": 3
+                    }
+                },
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "*",
+                        "value": 3
+                    }
+                },
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "/",
+                        "value": 4,
+                        "variable_type": "int"
+                    }
+                },
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "%",
+                        "value": 7
+                    }
+                },
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "**",
+                        "value": 3
+                    }
+                },
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "<<",
+                        "value": 2
+                    }
+                },
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": ">>",
+                        "value": 3
+                    }
+                },
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "|",
+                        "value": 244,
+                        "variable_type": "int"
+                    }
+                },
+                {
+                    "instruction": "CheckUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "==",
+                        "value": 244
+                    }
+                },
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "&",
+                        "value": "0X0F",
+                        "variable_type": "int"
+                    }
+                },
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "^",
+                        "value": 8,
+                        "variable_type": "int"
+                    }
+                },
+                {
+                    "instruction": "CheckUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "==",
+                        "value": 12
+                    }
+                },
+                {
+                    "instruction": "CheckUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "==",
+                        "value": 12
+                    },
+                    "disabled": true
+                }
+            ]
+        }
+    ]
+}

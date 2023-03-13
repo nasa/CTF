@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -63,6 +63,11 @@ def test_out_manager_disable_output(outmgr):
         outmgr.disable_output()
 
 
+def test_out_manager_on_time_interval(outmgr):
+    with pytest.raises(NotImplementedError):
+        outmgr.on_time_interval(1)
+
+
 def test_to_api_init(toapi):
     assert toapi.local_ip == 'local_ip'
     assert toapi.local_port == 'local_port'
@@ -116,3 +121,7 @@ def test_to_api_enable_output_fail(toapi, utils):
         assert not toapi.enable_output()
         assert utils.has_log_level("ERROR")
         pm.find_plugin_for_command_and_execute.assert_not_called()
+
+
+def test_to_api_on_time_interval(toapi):
+    assert toapi.on_time_interval(1) is None

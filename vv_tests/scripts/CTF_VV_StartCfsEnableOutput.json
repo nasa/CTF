@@ -1,0 +1,40 @@
+{
+    "test_script_number": "CTF-VV-Start",
+    "test_script_name": "CTF_VV_start.json",
+    "owner": "CTF",
+    "description": "Register, start cFS instance and enable its Telemetry Output",
+    "requirements": {},
+    "ctf_options": {},
+    "test_setup": "",
+    "import": {},
+    "tests": [
+        {
+            "test_number": "Start-CFS-and-Enable-Output",
+            "description": "",
+            "instructions": [
+                {
+                    "instruction": "RegisterCfs",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "StartCfs",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "EnableCfsOutput",
+                    "description": "",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 30
+                }
+            ]
+        }
+    ]
+}

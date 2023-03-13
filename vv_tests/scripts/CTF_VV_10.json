@@ -1,16 +1,16 @@
 {
     "test_script_number": "CTF-VV-10",
     "test_script_name": "CTF_VV_10.json",
+    "owner": "CTF",
+    "description": "Continuous verification with periodic telemetry with updated verification items during run-time - failed case",
     "requirements": {
         "CTF-14": "Full",
         "CTF-17": "Full",
         "CTF-19": "Full",
         "CTF-22": "Full"
     },
-    "description": "Continuous verification with periodic telemetry with updated verification items during run-time - failed case",
-    "owner": "CTF",
-    "test_setup": "Need to run start script first to start cFS instance",
     "ctf_options": {},
+    "test_setup": "Need to run start script first to start cFS instance",
     "import": {},
     "tests": [
         {
@@ -53,7 +53,6 @@
                     },
                     "wait": 1
                 },
-
                 {
                     "instruction": "SendCfsCommand",
                     "data": {

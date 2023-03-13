@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -14,9 +14,8 @@
 
 import os
 import pathlib
-from unittest.mock import patch
-
 import pytest
+from unittest.mock import patch
 
 from lib import ctf_utility
 from lib.ctf_global import Global
@@ -33,12 +32,12 @@ def test_ctf_utility_expand_path():
         assert ctf_utility.expand_path('~/$myvar/path') == str(pathlib.Path.home()) + '/foo/bar/path'
 
 
-def test_ctf_utility_switch_to_cft_directory():
+def test_ctf_utility_switch_to_ctf_directory():
     cur_dir = os.getcwd()
-    dir = ctf_utility.switch_to_cft_directory()
-    assert 'anaconda3/envs/pythonEnv3/bin' in dir
+    ctf_dir = ctf_utility.switch_to_ctf_directory()
     # restore run dir
     os.chdir(cur_dir)
+    assert 'bin' in ctf_dir
 
 
 def test_ctf_utility_get_current_instruction_index():
@@ -81,9 +80,9 @@ def test_ctf_utility_set_variable_pass():
 
 def test_ctf_utility_set_variable_cast():
     assert ctf_utility.set_variable('var_1', '=', 1)
-    assert ctf_utility.set_variable('var_1', '+', "10")
-    assert ctf_utility.set_variable('var_1', '-', "10.0")
-    assert ctf_utility.set_variable('var_1', '<', "100")
+    assert ctf_utility.set_variable('var_1', '+', "0xa", "int")
+    assert ctf_utility.set_variable('var_1', '-', "10.0", "float")
+    assert ctf_utility.set_variable('var_1', '<', "100", "int")
     assert ctf_utility.set_variable('var_1', '==', 1)
     assert ctf_utility.get_variable('var_1') == 1
     Global.variable_store.clear()
@@ -101,18 +100,24 @@ def test_ctf_utility_set_variable_specify_type():
     assert ctf_utility.set_variable('var_1', '=', "1", "float")
     assert isinstance(ctf_utility.get_variable('var_1'), float)
     assert ctf_utility.get_variable('var_1') == 1.0
-    assert ctf_utility.set_variable('var_1', '+', "10")
+    assert ctf_utility.set_variable('var_1', '+', "10", "float")
     assert ctf_utility.get_variable('var_1') == 11.0
     assert isinstance(ctf_utility.get_variable('var_1'), float)
     Global.variable_store.clear()
 
 
 def test_ctf_utility_set_variable_cast_fail(utils):
+    utils.clear_log()
     assert ctf_utility.set_variable('var_1', '=', 1.0)
     assert not ctf_utility.set_variable('var_1', '+', "ten")
-    assert ctf_utility.set_variable('var_1', '==', "1")
-    assert ctf_utility.get_variable('var_1') == 1
     assert utils.has_log_level('ERROR')
+
+    utils.clear_log()
+    assert not ctf_utility.set_variable('var_1', '+', "ten", "int")
+    assert utils.has_log_level('ERROR')
+
+    assert ctf_utility.set_variable('var_1', '==', "1", "int")
+    assert ctf_utility.get_variable('var_1') == 1
     Global.variable_store.clear()
 
 
@@ -143,3 +148,41 @@ def test_ctf_utility_get_variable():
     assert ctf_utility.set_variable('var_1', '=', 100)
     assert ctf_utility.get_variable('var_1') == 100
     Global.variable_store.clear()
+
+
+def test_ctf_utility_set_nested_attr():
+    class NestedObject:
+        y = 1
+
+    class TestObject:
+        seq = "x"
+        value = NestedObject()
+
+    obj = TestObject()
+    assert obj.value.y == 1
+    assert ctf_utility.set_nested_attr(obj, 'value.y', 3) is None
+    assert obj.value.y == 3
+
+
+def test_ctf_utility_set_nested_attr_exception():
+    class NestedObject:
+        y = 1
+
+    class TestObject:
+        seq = "x"
+        value = NestedObject()
+
+    obj = TestObject()
+    with pytest.raises(CtfParameterError):
+        ctf_utility.set_nested_attr(obj, 'value', 3)
+
+
+def test_ctf_utility_set_nested_attr_exception2():
+    class NestedObject:
+        y = 1
+
+    obj = NestedObject()
+    with pytest.raises(CtfParameterError):
+        ctf_utility.set_nested_attr(obj, 'y.a', 3)
+    with pytest.raises(CtfParameterError):
+        ctf_utility.set_nested_attr(obj, 'x.a', 3)

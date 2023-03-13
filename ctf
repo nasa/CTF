@@ -8,7 +8,7 @@ and generate test reports.
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -36,8 +36,8 @@ from lib.ctf_utility import expand_path
 from lib.logger import logger as log, set_logger_options_from_config, change_log_file
 from lib.exceptions import CtfTestError
 
-CTF_VERSION = "v1.6"
-CTF_RELEASE_DATE = "July 20 2022"
+CTF_VERSION = "v1.7"
+CTF_RELEASE_DATE = "Jan 24 2023"
 
 
 def main():
@@ -90,7 +90,11 @@ def main():
         for script_file in args.scripts:
             if os.path.isdir(script_file):
                 log.info("Found directory at {}".format(script_file))
+                file_list = list()
                 for file in Path(script_file).rglob("*.json"):
+                    file_list.append(file)
+                file_list.sort()
+                for file in file_list:
                     if jsonlint_script(file) != 0:
                         res_jsonlint = -1
                     script_manager.add_script_file(file)

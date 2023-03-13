@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -104,6 +104,7 @@ class CcsdsV2PrimaryHeader(CcsdsPrimaryHeaderBase):
         return self.type
 
 
+# pylint: disable=no-self-use
 class CcsdsV2Packet(CcsdsPacketInterface):
     """
     This class provides an interface to a CCSDS V2 packet
@@ -148,6 +149,12 @@ class CcsdsV2Packet(CcsdsPacketInterface):
         msg_id = msg_id | (self.eheader.subsystem_id << 8)
         return msg_id
 
+    def get_sequence_count(self) -> int:
+        """
+        Returns the sequence_count derived from the header fields
+        """
+        return self.pheader.get_sequence_count()
+
     def has_secondary_header(self) -> bool:
         return self.pheader.secondary_header_flag
 
@@ -156,6 +163,18 @@ class CcsdsV2Packet(CcsdsPacketInterface):
 
     def set_function_code(self, function_code: int) -> None:
         raise TypeError("Function code is only supported in a command packet")
+
+    def get_crc_flag(self) -> int:
+        """
+        Get the header crc flag: CRC is not supported in open source release
+        """
+        return 0
+
+    def validate(self, data: bytearray) -> bool:
+        """
+        Packet validation is not supported in open source release
+        """
+        return True
 
 
 class CcsdsV2CmdPacket(CcsdsV2Packet):

@@ -161,8 +161,8 @@ Constructs and sends a command message to CFS with the specified MID, command co
 - **payload_length:** (Optional) The size of the payload in bytes for a manually sized command. Do not specify for valid fixed-size commands. The actual length of the message will include the header size.
 - **args:** An object where the key is the argument name, and the value is the argument value.
   Because `args` is a dictionary, the order does not matter. (i.e. `{"field_b": 1, "field_a": 0}` is equivalent to `{"field_a": 0, "field_b": 1}`)
-- **header:** (Optional) An object where the key is the header field name, and the value is the field value.
-  This object is passed into to the `CcsdsCommand` type (as determined by the config field [`ccsds:CCSDS_header_path`](../ccsds_plugin/README.md)) and is not handled by CTF directly. It is made available for custom CCSDS header implementations to allow specification of the packet header.
+- **header:** (Optional) An object where the key is the header field name, and the value is the field value. The key should be a fully qualified attribute name, like "pheader.version_number".
+  CTF checks whether the key is an attribute of CCSDS packet. If it is, then set the value to the header attribute. Otherwise, the instruction will fail.
 
 Example:
 <pre><code>
@@ -188,8 +188,8 @@ Constructs and sends a command message to CFS with the specified MID, command co
 - **mid:** The message ID of the command (i.e. "BEX_CMD_MID") (string)
 - **cc:** The command code for the command (i.e. "BEX_NOOP_CC") (string)
 - **hex_buffer:** A hexadecimal string representing the command payload. The string must be an even length (2 characters per byte) and contain only hex numerals 0-F. The payload will be sized to fit the bytes given.
-- **header:** (Optional) An object where the key is the header field name, and the value is the field value.
-  This object is passed into to the `CcsdsCommand` type (as determined by the config field [`ccsds:CCSDS_header_path`](../ccsds_plugin/README.md)) and is not handled by CTF directly. It is made available for custom CCSDS header implementations to allow specification of the packet header.
+- **header:** (Optional) An object where the key is the header field name, and the value is the field value. The key should be a fully qualified attribute name, like "pheader.version_number".
+  CTF checks whether the key is an attribute of CCSDS packet. If it is, then set the value to the header attribute. Otherwise, the instruction will fail.
 
 Example:
 <pre><code>

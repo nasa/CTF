@@ -9,7 +9,7 @@ info and other useful values for plugins
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -130,13 +130,31 @@ class Global:
         """
         status = ""
         if config_file == DEFAULT_CONFIG:
-            status = "Config file may not have been specified. Using default config {}".format(DEFAULT_CONFIG)
+            status = 'Config file may not have been specified. Using default config {}'.format(DEFAULT_CONFIG)
         if not os.path.exists(config_file):
-            status += "Config file does not exist....\nFailed to load config file: {}\n.".format(
+            status += 'Config file does not exist....\nFailed to load config file: {}\n.'.format(
                 os.path.abspath(config_file))
             sys.exit(status)
 
-        Global.config = configparser.ConfigParser(os.environ, interpolation=configparser.ExtendedInterpolation())
+        os_env_variables = os.environ.copy()
+        key_to_delete = []
+        pre_parser = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
+        for key, value in os_env_variables.items():
+            try:
+                pre_parser.read_dict({'Pre-Parser': {key: value}})
+            except ValueError:
+                # print(f'[{datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]}] ctf_global                      '
+                #      f'(147) *** INFO: ConfigParser could not process the OS environment variables: {key}={value}, '
+                #      f'it will not add to the config "DEFAULT" section ')
+                # ConfigParser does not like some values in OS environment variables
+                key_to_delete.append(key)
+
+        os_env_variables_dict = {k: v for k, v in os_env_variables.items() if k not in key_to_delete}
+
+        Global.config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
+        Global.config.optionxform = str
+        Global.config.read_dict({'DEFAULT': os_env_variables_dict})
+
         Global.config.read(config_file)
         os.environ["workspace_dir"] = Global.config.get("cfs", "workspace_dir", fallback="")
 

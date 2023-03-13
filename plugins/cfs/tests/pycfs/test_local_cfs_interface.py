@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -88,7 +88,7 @@ def test_local_cfs_interface_build_cfs_pass(localcfs):
         mock_process = Mock(returncode=0, stdout=['mock build stdout'])
         mock_popen.return_value.__enter__.return_value = mock_process
         assert localcfs.build_cfs()
-        mock_popen.assert_called_once_with('make; make install', cwd='/cfs/build/dir', shell=True,
+        mock_popen.assert_called_once_with('make distclean; make TARGET=lx1 install', cwd='/cfs/build/dir', shell=True,
                                            stdout=PIPE, stderr=STDOUT, universal_newlines=True)
         mock_process.communicate.assert_called_once()
         mock_file.return_value.__enter__.return_value.write.assert_called_once_with('mock build stdout')

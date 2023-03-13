@@ -4,7 +4,7 @@ Unit Test for Test class: Represents a single CTF test.
 """
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -263,6 +263,22 @@ def test_test_run_commands_looping(test_instance_inited, utils):
     Global.goto_instruction_index = None
 
 
+def test_test_run_commands_disabled_instruction(test_instance_inited, utils):
+    """
+    test Test class method: run_commands
+    Run all CTF Instructions in the current test, and test control flow statement
+    """
+    test_instance_inited.test_info = {'test_number': 'CFE-6-7-Plugin-Test-001',
+                                      'description': 'Start CFS, Send TO NOOP command'}
+    Global.current_instruction_index = 0
+    Global.goto_instruction_index = None
+    test_instance_inited.instructions[-1].is_disabled = True
+    test_instance_inited.instructions[4].is_disabled = True
+    with patch("lib.test.Test.execute_verification", return_value=True), \
+            patch("lib.test.Test.execute_instruction", return_value=True):
+        assert test_instance_inited.run_commands() is None
+
+
 def test_test_process_conditional_branch_label(test_instance_inited):
     """
     test Test class method: process_conditional_branch_label
@@ -409,7 +425,11 @@ def test_test_process_control_flow_label_exception(test_instance_inited, utils):
         assert utils.has_log_level('ERROR')
 
     utils.clear_log()
-    test_instance_inited.instructions[18].command["data"]["label"] = "LOOP1"
+
+    for i, ins in enumerate(test_instance_inited.instructions):
+        print(f'{i} {ins.command=}')
+
+    test_instance_inited.instructions[14].command["data"]["label"] = "LOOP1"
     cmd = Instruction(1.0, end_loop, 0, 19, False)
     test_instance_inited.instructions.append(cmd)
     with pytest.raises(CtfTestError):
@@ -417,7 +437,7 @@ def test_test_process_control_flow_label_exception(test_instance_inited, utils):
         assert utils.has_log_level('ERROR')
 
     utils.clear_log()
-    test_instance_inited.instructions[19].command["data"]["label"] = "LOOP1"
+    test_instance_inited.instructions[14].command["data"]["label"] = "LOOP1"
     cmd = Instruction(1.0, label, 0, 20, False)
     test_instance_inited.instructions.append(cmd)
     with pytest.raises(CtfTestError):
@@ -505,6 +525,25 @@ def test_test_process_control_flow_label_exception4(test_instance_inited, utils)
         assert utils.has_log_level('ERROR')
 
 
+def test_test_run_commands_exception_delay(test_instance_inited, utils):
+    """
+    test Test class method: run_commands -- raise exception
+    Run all CTF Instructions in the current test
+    """
+    utils.clear_log()
+    test_instance_inited.test_info = {'test_number': 'CFE-6-7-Plugin-Test-001',
+                                      'description': 'Start CFS, Send TO NOOP command'}
+    test_instance_inited.instructions[0].delay = "s123"
+    with patch("lib.test.Test.process_command_delay") as mock_process_command_delay, \
+            patch("lib.test.Test.execute_verification", return_value=None), \
+            patch("lib.test.Test.execute_instruction", return_value=None):
+        mock_process_command_delay.side_effect = CtfTestError("Raise Exception from process_command_delay")
+        with pytest.raises(CtfTestError):
+            test_instance_inited.run_commands()
+            assert utils.has_log_level('ERROR')
+    test_instance_inited.instructions[0].delay = "1.1"
+
+
 def test_test_run_commands_exception(test_instance_inited, utils):
     """
     test Test class method: run_commands -- raise exception
@@ -517,8 +556,9 @@ def test_test_run_commands_exception(test_instance_inited, utils):
             patch("lib.test.Test.execute_verification", return_value=None), \
             patch("lib.test.Test.execute_instruction", return_value=None):
         mock_process_command_delay.side_effect = CtfTestError("Raise Exception from process_command_delay")
-        assert test_instance_inited.run_commands() is None
-        assert utils.has_log_level('ERROR')
+        with pytest.raises(CtfTestError):
+            test_instance_inited.run_commands()
+            assert utils.has_log_level('ERROR')
 
     # another exception
     with patch("lib.test.Test.process_command_delay") as mock_process_command_delay, \

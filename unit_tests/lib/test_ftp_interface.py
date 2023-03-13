@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -87,21 +87,21 @@ def test_ftp_interface_store_file_ftp_fail(iftp_conn, utils):
     with patch('builtins.open', new_callable=mock_open()) as mock_file:
         # ftp does not exist
         iftp_conn.ftp = None
-        assert not iftp_conn.store_file_ftp('./configs', 'template_config.ini')
+        assert not iftp_conn.store_file_ftp('./configs', 'ci_config.ini')
 
 
 def test_ftp_interface_store_file_ftp(iftp_conn, utils):
     with patch('builtins.open', new_callable=mock_open()) as mock_file:
         # nominal case
-        assert iftp_conn.store_file_ftp('./configs', 'template_config.ini')
+        assert iftp_conn.store_file_ftp('./configs', 'ci_config.ini')
         iftp_conn.ftp.storbinary.assert_called_once()
         assert not utils.has_log_level('WARNING')
-        mock_file.assert_called_once_with(os.path.abspath('./configs/template_config.ini'), 'rb')
+        mock_file.assert_called_once_with(os.path.abspath('./configs/ci_config.ini'), 'rb')
         mock_file.return_value.close.assert_called_once()
 
         # FTP error
         iftp_conn.ftp.storbinary.side_effect = EOFError('mock error')
-        assert not iftp_conn.store_file_ftp('./configs', 'template_config.ini')
+        assert not iftp_conn.store_file_ftp('./configs', 'ci_config.ini')
         assert utils.has_log_level('WARNING')
         utils.clear_log()
 
@@ -116,7 +116,7 @@ def test_ftp_interface_store_file_ftp(iftp_conn, utils):
 
         # FTP is disconnected
         iftp_conn.disconnect_ftp()
-        assert not iftp_conn.store_file_ftp('./configs', 'template_config.ini')
+        assert not iftp_conn.store_file_ftp('./configs', 'ci_config.ini')
         assert utils.has_log_level('WARNING')
 
 
@@ -162,14 +162,14 @@ def test_ftp_interface_get_file_ftp(iftp_conn, utils):
 def test_ftp_interface_upload_ftp_exception(iftp):
     with patch('lib.ftp_interface.ftplib.FTP', spec=ftplib.FTP) as mock_ftp:
         # cwd triggers exception
-        mock_ftp.return_value.cwd.side_effect = [None, OSError('mock error'), OSError('mock error'), None, None, None]
+        mock_ftp.return_value.cwd.side_effect = [OSError('mock error'), None]
         assert not iftp.upload_ftp('./configs', 'localhost', '/remote/path')
 
 
 def test_ftp_interface_upload_ftp(iftp):
     with patch('lib.ftp_interface.ftplib.FTP', spec=ftplib.FTP) as mock_ftp:
         # nominal case, single file
-        assert iftp.upload_ftp('./configs', 'localhost', '/remote/path', 'template_config.ini')
+        assert iftp.upload_ftp('./configs', 'localhost', '/remote/path', 'ci_config.ini')
         # directory
         assert iftp.upload_ftp('./configs', 'localhost', '/remote/path')
         # invalid file
@@ -178,13 +178,13 @@ def test_ftp_interface_upload_ftp(iftp):
         mock_ftp.return_value.mkd.side_effect = OSError('mock error')
         assert iftp.upload_ftp('./configs', 'localhost', '/remote/path')
         # chdir error
-        assert not iftp.upload_ftp('./invalid', 'localhost', '/remote/path', 'template_config.ini')
+        assert not iftp.upload_ftp('./invalid', 'localhost', '/remote/path', 'ci_config.ini')
         # cwd error
         mock_ftp.return_value.cwd.side_effect = [OSError('mock error'), None]
-        assert not iftp.upload_ftp('./configs', 'localhost', '/remote/path', 'template_config.ini')
+        assert not iftp.upload_ftp('./configs', 'localhost', '/remote/path', 'ci_config.ini')
         # connection fail
         mock_ftp.side_effect = OSError('mock error')
-        assert not iftp.upload_ftp('./configs', 'localhost', '/remote/path', 'template_config.ini')
+        assert not iftp.upload_ftp('./configs', 'localhost', '/remote/path', 'ci_config.ini')
 
 
 def test_ftp_interface_download_ftp_exception(iftp):

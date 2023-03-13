@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -103,6 +103,7 @@ class LocalCfsInterface(CfsInterface):
         cwd = self.config.cfs_build_dir
         log.info("Building Mission FSW")
         log_file = os.path.join(Global.current_script_log_dir, "{}_build_cfs_output.txt".format(self.config.name))
+        log.debug("Building FSW cfs_build_cmd: {} cfs_build_dir: {} ".format(self.config.cfs_build_cmd, cwd))
         try:
             with Popen(self.config.cfs_build_cmd, cwd=cwd, shell=True,
                        stdout=PIPE, stderr=STDOUT, universal_newlines=True) as proc, \
@@ -151,7 +152,7 @@ class LocalCfsInterface(CfsInterface):
         }
 
         # check whether CFS Executable has already started
-        pidof_cfs = "pidof {}".format(self.config.cfs_run_cmd)
+        pidof_cfs = "pgrep -f \"{}\"".format(self.config.cfs_run_cmd)
         pid = run(pidof_cfs, stdout=PIPE, stderr=STDOUT, shell=True, check=False).stdout.decode()
         if pid != "":
             log.error("CFS executable {} has already started! its pid is {}".format(self.config.cfs_run_cmd, pid))

@@ -1,6 +1,8 @@
 {
     "test_script_number": "CTF-VV-03",
     "test_script_name": "CTF_VV_03.json",
+    "owner": "CTF",
+    "description": "Comparison with floating minus/plus tolerance values",
     "requirements": {
         "CTF-01": "Partial",
         "CTF-04": "Full",
@@ -8,10 +10,8 @@
         "CTF-06": "Full",
         "CTF-07": "Full"
     },
-    "description": "Comparison with floating minus/plus tolerance values",
-    "owner": "CTF",
-    "test_setup": "Need to run start script first to start cFS instance",
     "ctf_options": {},
+    "test_setup": "Need to run start script first to start cFS instance",
     "import": {},
     "tests": [
         {
@@ -23,9 +23,9 @@
                     "data": {
                         "target": "",
                         "mid": "DUMMY_IO_CMD_MID",
-                        "cc": "DUMMY_IO_SEND_DATA_CC",
+                        "cc": "DUMMY_IO_SEND_MULTI_TYPES_CC",
                         "args": {
-                            "myData[0]": {
+                            "args[0]": {
                                 "myFloat": 45.5
                             }
                         }
@@ -36,27 +36,27 @@
                     "instruction": "CheckTlmValue",
                     "data": {
                         "target": "",
-                        "mid": "DUMMY_IO_OUT_DATA_MID",
+                        "mid": "DUMMY_IO_MULTI_TYPES_TLM_MID",
                         "args": [
                             {
                                 "compare": "==",
-                                "variable": "myData[0].myFloat",
+                                "variable": "payload[0].myFloat",
                                 "value": 45.5,
                                 "tolerance_plus": 0.01
                             }
                         ]
                     },
-                    "wait": 1
+                    "wait": 3
                 },
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
                         "target": "",
-                        "mid": "DUMMY_IO_OUT_DATA_MID",
+                        "mid": "DUMMY_IO_MULTI_TYPES_TLM_MID",
                         "args": [
                             {
                                 "compare": "==",
-                                "variable": "myData[0].myFloat",
+                                "variable": "payload[0].myFloat",
                                 "value": 45.5,
                                 "tolerance_minus": 0.01
                             }
@@ -68,11 +68,11 @@
                     "instruction": "CheckTlmValue",
                     "data": {
                         "target": "",
-                        "mid": "DUMMY_IO_OUT_DATA_MID",
+                        "mid": "DUMMY_IO_MULTI_TYPES_TLM_MID",
                         "args": [
                             {
                                 "compare": "==",
-                                "variable": "myData[0].myFloat",
+                                "variable": "payload[0].myFloat",
                                 "value": 45.5,
                                 "tolerance_minus": 0.01,
                                 "tolerance_plus": 0.01

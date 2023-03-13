@@ -1,15 +1,15 @@
 {
     "test_script_number": "CFE-TIME-Functions-Test",
     "test_script_name": "CfeTimeTest.json",
+    "owner": "CTF",
+    "description": "Example script showing CFE TIME function usage",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Example script showing CFE TIME function usage",
-    "owner": "CTF",
-    "test_setup": "",
     "ctf_options": {
-        "verify_timeout": 4
+        "verify_timeout": 6
     },
+    "test_setup": "",
     "import": {
         "../libs/CfeTimeFunctions.json": [
             "SendCheckCfsTimeNoopCmd",
@@ -33,67 +33,58 @@
     "tests": [
         {
             "test_number": "CFE-TIME-Functions-Test-1",
-            "description": "Start CFS, Send TO NOOP command",
+            "description": "",
             "instructions": [
                 {
-                    "instruction": "StartCfs",
-                    "wait": 1,
-                    "data": {
-                        "target": ""
-                    }
-                },
-                {
-                    "instruction": "EnableCfsOutput",
-                    "wait": 1,
-                    "data": {
-                        "target": ""
-                    }
+                    "function": "SendCheckCfsTimeResetCmd",
+                    "params": {
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 0,
+                        "expectedErrCnt": 0
+                    },
+                    "wait": 1
                 },
                 {
                     "function": "SendCheckCfsTimeNoopCmd",
-                    "wait": 5,
                     "params": {
+                        "cfstgt": "tgt1",
                         "expectedCmdCnt": 1,
                         "expectedErrCnt": 0
-                    }
-                },
-                {
-                    "function": "SendCheckCfsTimeResetCmd",
-                    "wait": 1,
-                    "params": {
-                        "expectedCmdCnt": 0,
-                        "expectedErrCnt": 0
-                    }
+                    },
+                    "wait": 1
                 },
                 {
                     "function": "SendCheckCfsTimeSubDelayCmd",
-                    "wait": 1,
                     "description": "Off-nominal Case. Command gets accepted, but data is invalid",
                     "params": {
-                        "expectedCmdCnt": 0,
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 1,
                         "expectedErrCnt": 1,
                         "sec": 1,
                         "ms": 100
-                    }
+                    },
+                    "wait": 1
                 },
                 {
                     "function": "SendCheckCfsTimeSetStateCmd",
-                    "wait": 1,
                     "params": {
-                        "expectedCmdCnt": 1,
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 2,
                         "expectedErrCnt": 1,
                         "state": 0
-                    }
+                    },
+                    "wait": 1
                 },
                 {
                     "function": "SendCheckCfsTimeSetMetCmd",
-                    "wait": 1,
                     "params": {
-                        "expectedCmdCnt": 2,
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 3,
                         "expectedErrCnt": 1,
                         "sec": 0,
                         "ms": 100
-                    }
+                    },
+                    "wait": 1
                 }
             ]
         }

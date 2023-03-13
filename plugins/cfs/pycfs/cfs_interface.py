@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -182,10 +182,7 @@ class CfsInterface:
                 log.info("Number times Passed:                {}".format(verification.pass_count))
                 log.info("Number times Failed:                {}".format(verification.fail_count))
 
-    def write_tlm_log(self, payload, buf, mid):
-        """
-        Write payload and mid to telemetry log file. if log file does not exist, create one.
-        """
+    def __create_tlm_log_file(self):
         try:
             if self.tlm_log_file is None:
                 tlm_log_file_path = os.path.join(Global.current_script_log_dir, self.config.name + "_tlm_msgs.log")
@@ -193,15 +190,44 @@ class CfsInterface:
                 self.tlm_log_file.write("Time: MID, Data\n")
                 # update build-in variable for ctf tlm folder
                 ctf_utility.set_variable("_CTF_TLM_DIR", "=", os.path.abspath(Global.current_script_log_dir), "string")
+        except IOError:
+            log.error("Failed to create tlm log file {}")
+            log.debug(traceback.format_exc())
 
-            self.tlm_log_file.write("{}: {}\n\t{}\n".format(Global.get_time_manager().exec_time, hex(mid),
-                                                            str(payload).replace("\n", "\n\t")))
+    def write_tlm_log(self, payload, buf, mid, sequence_count):
+        """
+        Write payload and mid to telemetry log file. if log file does not exist, create one.
+        """
+        try:
+            if self.tlm_log_file is None:
+                self.__create_tlm_log_file()
+
+            self.tlm_log_file.write("{}: mid:{} seq: {}\n\t{}\n".format(Global.get_time_manager().exec_time, hex(mid),
+                                                                        sequence_count,
+                                                                        str(payload).replace("\n", "\n\t")))
             if self.config.telemetry_debug:
                 self.tlm_log_file.write("        For MID {} Payload length: {} hex values: 0x{}\n".format(hex(mid),
                                                                                                           len(buf),
                                                                                                           buf.hex()))
         except (IOError, ValueError):
             log.error("Failed to write telemetry packet received for {}".format(hex(mid)))
+            log.debug(traceback.format_exc())
+
+    def write_tlm_error_log(self, mid: str, description: str, buf: bytearray):
+        """
+        Write telemetry error messages to log file. if log file does not exist, create one.
+        """
+        try:
+            if self.tlm_log_file is None:
+                self.__create_tlm_log_file()
+
+            self.tlm_log_file.write("{}: mid:{} \n\t{}\n".format(Global.get_time_manager().exec_time, mid, description))
+
+            if self.config.telemetry_debug:
+                self.tlm_log_file.write("        For MID {} buf hex values: 0x{}\n".format(mid, buf.hex()))
+
+        except (IOError, ValueError):
+            log.error("Failed to write telemetry packet received for {}".format(mid))
             log.debug(traceback.format_exc())
 
     def write_evs_log(self, payload):
@@ -249,12 +275,13 @@ class CfsInterface:
                     log.debug("Invalid header bytes: {}".format(recvd.hex()))
                     continue
 
-                mids_read.append(pheader.get_msg_id())
                 # If the packet is a command packet it is handled differently
                 if pheader.is_command():
-                    self.parse_command_packet(recvd)
+                    mid = self.parse_command_packet(recvd)
                 else:
-                    self.parse_telemetry_packet(recvd)
+                    mid = self.parse_telemetry_packet(recvd)
+                if mid is not None:
+                    mids_read.append(mid)
             except socket.timeout:
                 log.warning("No telemetry received from CFS. Socket timeout...")
                 break
@@ -272,11 +299,11 @@ class CfsInterface:
             mid = header.get_msg_id()
         except ValueError:
             log.debug("Cannot retrieve command header.")
-            return
+            return None
 
         if mid not in self.mid_payload_map:
             self.log_unknown_packet_mid(mid)
-            return
+            return None
 
         cmd_dict = self.mid_payload_map[mid]
         cc_class = None
@@ -292,9 +319,10 @@ class CfsInterface:
             }
         except (ValueError, IOError):
             self.log_invalid_packet(mid)
-            return
+            return None
 
         self.on_packet_received(mid, header, payload)
+        return mid
 
     def parse_telemetry_packet(self, buffer):
         """
@@ -303,13 +331,20 @@ class CfsInterface:
         try:
             header = self.ccsds.CcsdsTelemetry.from_buffer(buffer[0:self.tlm_header_offset])
             mid = header.get_msg_id()
+            sequence_count = header.get_sequence_count()
+            if not header.validate(buffer):
+                log.debug("Telemetry packet is discarded as CRC check fails.")
+                self.write_tlm_error_log(hex(mid), 'CRC check fail', buffer)
+                return None
         except ValueError:
             log.debug("Cannot retrieve telemetry header.")
-            return
+            self.write_tlm_error_log('Unknown', 'Cannot retrieve telemetry header', buffer)
+            return None
 
         if mid not in self.mid_payload_map:
             self.log_unknown_packet_mid(mid)
-            return
+            self.write_tlm_error_log(hex(mid), 'Undefined mid, check ccdd json definition files', buffer)
+            return None
 
         param_class = self.mid_payload_map[mid]
         offset = self.tlm_header_offset if self.should_skip_header else 0
@@ -317,13 +352,15 @@ class CfsInterface:
             payload = param_class.from_buffer(buffer[offset:])
         except ValueError:
             self.log_invalid_packet(mid)
-            return
+            self.write_tlm_error_log(hex(mid), 'Could not build payload, check ccdd json definition files', buffer)
+            return None
 
-        self.write_tlm_log(payload, buffer[offset:], mid)
+        self.write_tlm_log(payload, buffer[offset:], mid, sequence_count)
         self.on_packet_received(mid, header, payload)
         if mid in [self.evs_long_event_msg_mid, self.evs_short_event_msg_mid]:
             # Write this packet to the CFS EVS Log File
             self.write_evs_log(payload)
+        return mid
 
     def log_unknown_packet_mid(self, mid):
         """

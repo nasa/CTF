@@ -1,14 +1,14 @@
 {
     "test_script_number": "CTF-VV-02",
     "test_script_name": "CTF_VV_02.json",
+    "owner": "CTF",
+    "description": "Comparison of string values",
     "requirements": {
         "CTF-01": "Partial",
         "CTF-03": "Full"
     },
-    "description": "Comparison of string values",
-    "owner": "CTF",
-    "test_setup": "Need to run start script first to start cFS instance",
     "ctf_options": {},
+    "test_setup": "Need to run start script first to start cFS instance",
     "import": {},
     "tests": [
         {

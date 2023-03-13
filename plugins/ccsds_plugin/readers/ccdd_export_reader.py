@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -90,6 +90,51 @@ def create_type_class(name, supertype, params):
         log.error("Failed to create type class {}!".format(name))
         log.debug(exception)
         raise CtfTestError("Error in create_type_class") from exception
+
+
+def _compare_field(field_a: tuple, field_b: tuple) -> bool:
+    # pylint: disable=protected-access
+    """
+    Comparison of a single ctypes field of the form (name, type). Returns true IFF both fields have the same
+    name and type.
+    """
+    # compare names
+    if field_a[0] != field_b[0]:
+        return False
+    # compare nested fields
+    if hasattr(field_a[1], '_fields_') or hasattr(field_b[1], '_fields_'):
+        return _compare_ctypes(field_a[1], field_b[1])
+    # compare nested arrays
+    if hasattr(field_a[1], '_length_') or hasattr(field_b[1], '_length_'):
+        return _compare_ctypes(field_a[1], field_b[1])
+    # base case: both simple types
+    return field_a[1]._type_ == field_b[1]._type_
+
+
+def _compare_ctypes(type_a: type, type_b: type) -> bool:
+    # pylint: disable=protected-access
+    """
+    Recursive comparison of fields in two ctypes structures. Returns true IFF both objects have fields
+    with the same count, order, name, and type.
+    """
+    # compare arrays
+    if hasattr(type_a, '_length_') and hasattr(type_b, '_length_'):
+        if hasattr(type_a._type_, '_fields_') or hasattr(type_b._type_, '_fields_'):
+            return _compare_ctypes(type_a._type_, type_b._type_)
+        return type_a._type_ == type_b._type_ and type_a._length_ == type_b._length_
+    # check for mismatched arrays
+    if hasattr(type_a, '_length_') or hasattr(type_b, '_length_'):
+        return False
+    # compare nested fields
+    if hasattr(type_a, '_fields_') and hasattr(type_b, '_fields_'):
+        if len(type_a._fields_) != len(type_b._fields_):
+            return False
+        return all([_compare_field(af, bf) for af, bf in zip(type_a._fields_, type_b._fields_)])
+    # check for mismatched nested fields
+    if hasattr(type_a, '_fields_') or hasattr(type_b, '_fields_'):
+        return False
+    # base case: both simple types
+    return type_a._type_ == type_b._type_
 
 
 class CCDDExportReader(CCSDSInterface):
@@ -307,14 +352,17 @@ class CCDDExportReader(CCSDSInterface):
             else:
                 log.debug("Creating data type {} with no fields.".format(data_type_name))
 
+        data_type = create_type_class(data_type_name, self.ctype_structure, fields)
+
         primary_type_names = ('int8', 'int16', 'int32', 'int64', 'uint8', 'uint16', 'uint32', 'uint64',
                               'float', 'double', 'char', 'string', 'bool', 'boolean', 'address', 'cpuaddr')
-        if data_type_name in primary_type_names and data_type_name in self.type_dict:
-            log.error("Override of primary data type {} may be a CCDD error!".format(data_type_name))
-        elif data_type_name in self.type_dict:
-            log.warning("Data type {} is already created, but will be overridden".format(data_type_name))
+        if data_type_name in self.type_dict:
+            if data_type_name in primary_type_names:
+                log.error("Override of primary data type {} may be a CCDD error!".format(data_type_name))
+            elif not _compare_ctypes(data_type, self.type_dict[data_type_name]):
+                log.error("Override of custom data type {} may be a CCDD error! "
+                          "Compare definitions of this type in other files".format(data_type_name))
 
-        data_type = create_type_class(data_type_name, self.ctype_structure, fields)
         self.type_dict[data_type_name] = data_type
         return data_type, type_enums
 

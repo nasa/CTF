@@ -1,15 +1,15 @@
 {
     "test_script_number": "CTF-VV-29",
     "test_script_name": "CTF_VV_29.json",
+    "owner": "CTF",
+    "description": "Send a command to cFS and verify its receipt in telemetry, then repeat using raw command payloads",
     "requirements": {
         "CTF-56": "Full"
     },
-    "description": "Send a command to cFS and verify its receipt in telemetry, then repeat using raw command payloads",
-    "owner": "CTF",
-    "test_setup": "Need to run start script first to start cFS instance",
     "ctf_options": {
         "verify_timeout": 4
     },
+    "test_setup": "Need to run start script first to start cFS instance",
     "import": {},
     "tests": [
         {
@@ -19,6 +19,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
+                        "target": "",
                         "mid": "CFE_EVS_CMD_MID",
                         "cc": "CFE_EVS_RESET_FILTER_CC",
                         "args": {
@@ -26,8 +27,7 @@
                                 "AppName": "CI",
                                 "EventID": "1"
                             }
-                        },
-                        "target": ""
+                        }
                     },
                     "wait": 1
                 },
@@ -44,15 +44,15 @@
                             }
                         ]
                     },
-                    "wait": 0
+                    "wait": 3
                 },
                 {
-                    "description": "Send the command with an invalid raw binary payload to produce an error",
                     "instruction": "SendCfsCommandWithRawPayload",
+                    "description": "Send the command with an invalid raw binary payload to produce an error",
                     "data": {
                         "mid": "CFE_EVS_CMD_MID",
                         "cc": "CFE_EVS_RESET_FILTER_CC",
-                        "hex_buffer": "4349"
+                        "hex_buffer": "0000000000000000000000000000000000000000010000000ea424c1"
                     }
                 },
                 {
@@ -76,12 +76,12 @@
                     "wait": 1
                 },
                 {
-                    "description": "Repeat the first valid command but with a raw binary payload",
                     "instruction": "SendCfsCommandWithRawPayload",
+                    "description": "Repeat the first valid command but with a raw binary payload",
                     "data": {
                         "mid": "CFE_EVS_CMD_MID",
                         "cc": "CFE_EVS_RESET_FILTER_CC",
-                        "hex_buffer": "43490000000000000000000000000000000000000100"
+                        "hex_buffer": "$hex_variable$"
                     }
                 },
                 {

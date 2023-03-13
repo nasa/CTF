@@ -21,6 +21,87 @@ in the `CTF Documentation` directory of the CTF releases' Assets (https://github
  
 ## Release Notes
 
+### v1.7 
+01/24/2023
+* CTF Core Changes
+    * Improve label resolution in conditional branching and looping instructions.
+
+    * Add a new `test_variable` section in config file to initialize user-defined variables.
+
+    * Fix a bug in importing OS environment variables when reading config files.
+
+    * Fix an error when disabling the last instruction in a test.
+
+    * Minor improvements and bug fixes.
+
+* CTF Plugins Changes
+
+    * Updates to CFS Plugin
+        * Log telemetry packet errors and the raw data to the tlm log file.
+  
+        * Fix killing CFS processes for SSH targets.
+
+        * Fix capturing CFS standard output file in test results for SSH targets.
+
+    * CCSDS Plugin
+      * Add detection of inconsistent data type definitions in CCDD JSON files.
+
+      * Add support for arrays of multi-byte primitives.
+
+    * Updates to Variable Plugin
+        * Add an optional argument `variable_type` to `SetUserVariableFromTlm` and `SetUserVariableFromTlmHeader` instructions for explicit type conversion. 
+
+* CTF Editor Changes
+    * Add tolerance support for the editable fields of `CheckTlmValue` instruction.
+
+
+* CTF Tool and Scripts Changes
+    * Update CTF build environment: replace Anaconda with PyEnv.
+
+    * Provide a script `tools/re_order.py` to order test scripts attributes consistently.
+
+    * Update example test scripts.
+ 
+    * Update sample cFS workspace.
+
+    * Update CTF documents.
+
+
+### v1.6.1 
+09/26/2022
+
+* CTF Core Changes
+    * Allow user-defined variable in `wait` attribute of instructions.
+
+    * Minor improvements and bug fixes.
+
+* CTF Plugins Changes
+    * Updates to Validation Plugin 
+        * Allow `SearchStr` instruction to search text string in binary file.
+
+        * Remove `SaveFileAsText` instruction from the plugin.
+
+        * Add `CheckFileExists` instruction, which checks whether a file or folder exists on the host file system.
+
+    * Updates to Variable Plugin
+        * Allow additional operators on `SetUserVariable` instruction, such as "%", "//", "**", "<<", ">>", "&", "|", "^". 
+            
+    * Updates to CFS Plugin
+        * Change cFS shutdown behavior for Linux and SSH targets to more reliably detect and kill processes.
+
+        * Improve `SendCfsCommand` instruction: the header argument could be any header field name defined by CCSDS packet header.
+
+        * Log tlm header's sequence_count field for debug purpose.
+
+        * Minor improvements and bug fixes. 
+    
+    
+ * CTF Tool and Scripts Changes
+    * Update configs and scripts to work with the current sample cFS workspace.
+
+    * Consolidate and clean up example config files.
+
+
 ### v1.6 
 07/20/2022
 
@@ -531,7 +612,7 @@ Major backend updates to improve reliability/maintainability of CTF.
 
 MSC-26646-1, "Core Flight System Test Framework (CTF)"
 
-Copyright (c) 2019-2022 United States Government as represented by the
+Copyright (c) 2019-2023 United States Government as represented by the
 Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 
 This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,

@@ -1,0 +1,32 @@
+{
+    "test_script_number": "Stop-CFS",
+    "test_script_name": "Test_StopCfs.json",
+    "owner": "CTF",
+    "description": "Shutdown CFS",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "test_setup": "",
+    "environment": {},
+    "functions": {},
+
+    "tests": [
+        {
+            "test_number": "Stop-CFS",
+            "description": "",
+            "instructions": [
+                {
+                    "instruction": "ShutdownCfs",
+                    "data": {
+                        "target": "tgt1"
+                    },
+                    "wait": 1
+                }
+            ]
+        }
+    ]
+}

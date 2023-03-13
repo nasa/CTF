@@ -1,0 +1,25 @@
+{
+    "test_script_number": "CTF-VV-Stop",
+    "test_script_name": "CTF_VV_Stop.json",
+    "owner": "CTF",
+    "description": "Shutdown CFS",
+    "requirements": {},
+    "ctf_options": {},
+    "test_setup": "",
+    "import": {},
+    "tests": [
+        {
+            "test_number": "Stop-CFS",
+            "description": "",
+            "instructions": [
+                {
+                    "instruction": "ShutdownCfs",
+                    "data": {
+                        "target": ""
+                    },
+                    "wait": 1
+                }
+            ]
+        }
+    ]
+}

@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -57,7 +57,7 @@ def test_command_interface_send_command(cmdif):
     with patch.object(cmdif, 'command_socket', spec=socket.socket) as mocksock:
         mocksock.fileno.return_value = 1
         mocksock.sendto.return_value = len(data) + 16
-        assert cmdif.send_command(mid, cc, data)
+        assert cmdif.send_command(mid, cc, data, {"pheader.version_number": 4})
         # TODO compute actual byte array and check called
         mocksock.sendto.assert_called_once()
 

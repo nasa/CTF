@@ -1,51 +1,39 @@
 {
     "test_script_number": "CTF-Control-Flow-Plugin-Test-with-VariableFromTlm",
     "test_script_name": "Test_CTF_Loop_Tlmvalue.json",
+    "owner": "CTF",
+    "description": "CTF Example Script Showing Control Flow Loop with Variables From Tlm",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "CTF Example Script Showing Control Flow Loop with Variables From Tlm",
-    "owner": "CTF",
-    "test_setup": "",
     "ctf_options": {
         "verify_timeout": 4
     },
+    "test_setup": "",
     "import": {},
     "tests": [
         {
             "test_number": "CTF-Control-Flow-Plugin-Test-with-VariableFromTlm-1",
-            "description": "Start CFS, Loop with condition from tlm payload value",
+            "description": "Loop with condition from tlm payload value",
             "instructions": [
-                {
-                    "instruction": "StartCfs",
-                    "data": {
-                        "target": "cfs"
-                    },
-                    "wait": 1
-                },
-                {
-                    "instruction": "EnableCfsOutput",
-                    "data": {
-                        "target": ""
-                    },
-                    "wait": 1,
-                    "description": "Need this to enable the telemetry thread. Enable Output counts as 1 TO cmd"
-                },
                 {
                     "instruction": "SetUserVariableFromTlm",
                     "data": {
-                        "variable_name": "tlm_usCmdCnt",
+                        "target": "tgt1",
                         "mid": "TO_HK_TLM_MID",
+                        "variable_name": "tlm_usCmdCnt",
                         "tlm_variable": "usCmdCnt",
-                        "target": "cfs"
-                    }
+                        "variable_type": "int"
+                    },
+                    "wait": 2
                 },
                 {
                     "instruction": "SetUserVariable",
                     "data": {
                         "variable_name": "my_var",
                         "operator": "=",
-                        "value": 0
+                        "value": 0,
+                        "variable_type": "int"
                     }
                 },
                 {
@@ -53,7 +41,8 @@
                     "data": {
                         "variable_name": "target_name",
                         "operator": "=",
-                        "value": "cfs"
+                        "value": "tgt1",
+                        "variable_type": "string"
                     }
                 },
                 {
@@ -87,7 +76,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "mid": "TO_CMD_MID",
                         "cc": "TO_NOOP_CC",
                         "args": {}
@@ -97,17 +86,18 @@
                 {
                     "instruction": "SetUserVariableFromTlm",
                     "data": {
-                        "variable_name": "tlm_usCmdCnt",
+                        "target": "$target_name$",
                         "mid": "TO_HK_TLM_MID",
+                        "variable_name": "tlm_usCmdCnt",
                         "tlm_variable": "usCmdCnt",
-                        "target": "$target_name$"
+                        "variable_type": "int"
                     },
                     "wait": 1
                 },
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "mid": "TO_HK_TLM_MID",
                         "args": [
                             {
@@ -127,41 +117,20 @@
                         "label": "LOOP_1"
                     },
                     "wait": 1
-                },
-                {
-                    "instruction": "ShutdownCfs",
-                    "data": {
-                        "target": ""
-                    },
-                    "wait": 1
                 }
             ]
         },
         {
             "test_number": "CTF-Control-Flow-Plugin-Test-with-VariableFromTlm-2",
-            "description": "Start CFS, Loop with condition from tlm header value",
+            "description": "Loop with condition from tlm header value",
             "instructions": [
-                {
-                    "instruction": "StartCfs",
-                    "data": {
-                        "target": "cfs"
-                    },
-                    "wait": 1
-                },
-                {
-                    "instruction": "EnableCfsOutput",
-                    "data": {
-                        "target": ""
-                    },
-                    "wait": 1,
-                    "description": "Need this to enable the telemetry thread. Enable Output counts as 1 TO cmd"
-                },
                 {
                     "instruction": "SetUserVariable",
                     "data": {
                         "variable_name": "to_seq_cnt",
                         "operator": "=",
-                        "value": 0
+                        "value": 0,
+                        "variable_type": "int"
                     }
                 },
                 {
@@ -169,7 +138,8 @@
                     "data": {
                         "variable_name": "header_sequence_count",
                         "operator": "=",
-                        "value": "sequence_count"
+                        "value": "sequence_count",
+                        "variable_type": "string"
                     }
                 },
                 {
@@ -189,15 +159,17 @@
                 {
                     "instruction": "SetUserVariableFromTlmHeader",
                     "data": {
-                        "variable_name": "to_seq_cnt",
+                        "target": "tgt1",
                         "mid": "TO_HK_TLM_MID",
-                        "header_variable": "pheader.$header_sequence_count$"
+                        "variable_name": "to_seq_cnt",
+                        "header_variable": "pheader.$header_sequence_count$",
+                        "variable_type": "int"
                     }
                 },
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "mid": "TO_SEND_HK_MID",
                         "cc": "",
                         "args": []
@@ -215,110 +187,6 @@
                         "variable_name": "to_seq_cnt",
                         "operator": ">=",
                         "value": 50
-                    }
-                }
-            ]
-        },
-        {
-            "test_number": "CTF-Control-Flow-Plugin-Test-with-VariableFromTlm-3",
-            "description": "Loop through telemetry data in an array",
-            "instructions": [
-                {
-                    "instruction": "SendCfsCommand",
-                    "comment": "Test nominal values for all types",
-                    "data": {
-                        "mid": "DUMMY_IO_CMD_MID",
-                        "cc": "DUMMY_IO_SEND_DATA_CC",
-                        "args": {
-                            "myData[0]": {
-                                "myArray[0]": 100,
-                                "myArray[1]": 101,
-                                "myArray[2]": 102,
-                                "myArray[3]": 103,
-                                "myArray[4]": 104,
-                                "myArray[5]": 105,
-                                "myArray[6]": 106,
-                                "myArray[7]": 107
-                            }
-                        },
-                        "target": ""
-                    },
-                    "wait": 1
-                },
-                {
-                    "instruction": "SetUserVariable",
-                    "data": {
-                        "variable_name": "loop_cnt",
-                        "operator": "=",
-                        "value": 0
-                    },
-                    "wait": 1
-                },
-                {
-                    "instruction": "SetUserVariable",
-                    "data": {
-                        "variable_name": "array_value",
-                        "operator": "=",
-                        "value": 100
-                    }
-                },
-                {
-                    "instruction": "SetUserVariable",
-                    "data": {
-                        "variable_name": "array_name",
-                        "operator": "=",
-                        "value": "myData[0]"
-                    }
-                },
-                {
-                    "instruction": "BeginLoop",
-                    "data": {
-                        "label": "LOOP_3",
-                        "conditions": [
-                            {
-                                "variable": "loop_cnt",
-                                "compare": "<",
-                                "value": 8
-                            }
-                        ]
-                    }
-                },
-                {
-                    "instruction": "SetUserVariableFromTlm",
-                    "data": {
-                        "variable_name": "tlm_myArray_value",
-                        "mid": "DUMMY_IO_OUT_DATA_MID",
-                        "tlm_variable": "$array_name$.myArray[$loop_cnt$]"
-                    }
-                },
-                {
-                    "instruction": "CheckUserVariable",
-                    "data": {
-                        "variable_name": "tlm_myArray_value",
-                        "operator": "==",
-                        "value": "$array_value$"
-                    }
-                },
-                {
-                    "instruction": "SetUserVariable",
-                    "data": {
-                        "variable_name": "loop_cnt",
-                        "operator": "+",
-                        "value": 1
-                    }
-                },
-                {
-                    "instruction": "SetUserVariable",
-                    "data": {
-                        "variable_name": "array_value",
-                        "operator": "+",
-                        "value": 1
-                    }
-                },
-                {
-                    "instruction": "EndLoop",
-                    "data": {
-                        "label": "LOOP_3"
                     }
                 }
             ]

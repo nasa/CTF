@@ -1,63 +1,58 @@
 {
     "test_script_number": "Intermediate-Cfs-Plugin-Test",
     "test_script_name": "Test_CTF_Intermediate_Example.json",
+    "owner": "CTF",
+    "description": "Intermediate CTF Example Script Showing Commands/Telemetry Verification with variable tolerances, and event checking.",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Intermediate CTF Example Script Showing Commands/Telemetry Verification with variable tolerances, and event checking.",
-    "owner": "CTF",
-    "test_setup": "",
     "ctf_options": {
         "verify_timeout": 4
     },
+    "test_setup": "",
     "import": {},
     "tests": [
         {
             "test_number": "Intermediate-Cfs-Plugin-Test-1",
-            "description": "Start CFS, Send TO NOOP command",
+            "description": "",
             "instructions": [
-                {
-                    "instruction": "StartCfs",
-                    "wait": 1,
-                    "data": {
-                        "target": ""
-                    }
-                },
                 {
                     "instruction": "CheckNoTlmPacket",
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
+                        "mid": "TO_HK_TLM_MID"
+                    },
+                    "disabled": true,
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmPacket",
+                    "data": {
+                        "target": "tgt1",
                         "mid": "TO_HK_TLM_MID"
                     },
                     "wait": 1
                 },
                 {
-                    "instruction": "EnableCfsOutput",
-                    "wait": 1,
+                    "instruction": "SendCfsCommand",
                     "data": {
-                        "target": ""
-                    }
-                },
-                {
-                    "instruction": "CheckTlmPacket",
-                    "data": {
-                        "target": "",
-                        "mid": "TO_HK_TLM_MID"
+                        "target": "tgt1",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_RESET_CC",
+                        "args": {}
                     },
                     "wait": 1
                 },
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "mid": "TO_HK_TLM_MID",
                         "args": [
                             {
                                 "compare": "==",
                                 "variable": "usCmdErrCnt",
-                                "value": [
-                                    0
-                                ]
+                                "value": 0
                             }
                         ]
                     },
@@ -66,7 +61,7 @@
                 {
                     "instruction": "SendCfsCommandWithPayloadLength",
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "mid": "TO_CMD_MID",
                         "cc": "TO_NOOP_CC",
                         "payload_length": 10,
@@ -77,15 +72,13 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "mid": "TO_HK_TLM_MID",
                         "args": [
                             {
                                 "compare": "==",
                                 "variable": "usCmdErrCnt",
-                                "value": [
-                                    1
-                                ]
+                                "value": 1
                             }
                         ]
                     },
@@ -94,7 +87,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "mid": "TO_CMD_MID",
                         "cc": "TO_NOOP_CC",
                         "args": {}
@@ -104,7 +97,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "mid": "TO_CMD_MID",
                         "cc": "TO_NOOP_CC",
                         "args": {}
@@ -114,22 +107,18 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "mid": "TO_HK_TLM_MID",
                         "args": [
                             {
                                 "compare": "==",
                                 "variable": "usCmdErrCnt",
-                                "value": [
-                                    1.0
-                                ]
+                                "value": 1
                             },
                             {
                                 "compare": "==",
                                 "variable": "usCmdCnt",
-                                "value": [
-                                    3.05
-                                ],
+                                "value": 2.05,
                                 "tolerance": 0.1
                             }
                         ]
@@ -139,7 +128,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "mid": "TO_CMD_MID",
                         "cc": "TO_RESET_CC",
                         "args": {}
@@ -148,46 +137,27 @@
                 },
                 {
                     "instruction": "SendCfsCommand",
-                    "disabled": true,
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "mid": "BAD_DATA",
                         "cc": "BAD_DATA",
                         "args": {}
                     },
+                    "disabled": true,
                     "wait": 1
                 },
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "mid": "TO_HK_TLM_MID",
                         "args": [
                             {
                                 "compare": "==",
                                 "variable": "usCmdCnt",
-                                "value": [
-                                    0
-                                ]
+                                "value": 0
                             }
                         ]
-                    },
-                    "wait": 1
-                },
-                {
-                    "instruction": "SendCfsCommand",
-                    "data": {
-                        "target": "",
-                        "mid": "TO_CMD_MID",
-                        "cc": "TO_RESET_CC",
-                        "args": {}
-                    },
-                    "wait": 1
-                },
-                {
-                    "instruction": "ShutdownCfs",
-                    "data": {
-                        "target": ""
                     },
                     "wait": 1
                 }

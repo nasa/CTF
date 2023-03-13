@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -74,6 +74,7 @@ def test_ctf_global_create_arg_parser():
 
 
 def test_ctf_global_load_config():
+    os.environ["xyz_path"] = "xyz$@"
     status = Global.load_config("configs/default_config.ini")
     assert status
     assert Global.config

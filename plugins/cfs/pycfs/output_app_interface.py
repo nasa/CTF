@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -29,7 +29,7 @@ class OutputManager:
     within this class, define the methods that all of the output applications must implement
     """
 
-    def __init__(self, local_ip, local_port, command_interface, ccsds_ver, command_mids=None):
+    def __init__(self, local_ip, local_port, command_interface, ccsds_ver, command_mids=None, name=None):
         """
         Constructor implementation for OutputManager class. It sets up the local_ip, local_port, command_interface,
         ccsds version, command_args, command_mids.
@@ -40,6 +40,7 @@ class OutputManager:
         self.ccsds_ver = ccsds_ver
         self.command_args = None
         self.command_mids = command_mids
+        self.name = name
 
     def enable_output(self):
         """
@@ -50,6 +51,12 @@ class OutputManager:
     def disable_output(self):
         """
         Define abstract disable_output method, the inherited class must implement
+        """
+        raise NotImplementedError
+
+    def on_time_interval(self, exec_time: float) -> None:
+        """
+        Define abstract on_time_interval method, the inherited class must implement
         """
         raise NotImplementedError
 
@@ -72,7 +79,7 @@ class ToApi(OutputManager):
         @param command_interface: An instance of the CommandInterface class (used to send commands to UDP)
         @param ccsds_ver: CCSDS header version (1 or 2)
         """
-        OutputManager.__init__(self, local_ip, local_port, command_interface, ccsds_ver)
+        OutputManager.__init__(self, local_ip, local_port, command_interface, ccsds_ver, mid_map, name)
         for mid, value in mid_map.items():
             if isinstance(value, dict) and TO_ENABLE_OUTPUT in value:
                 self.command_args = value[TO_ENABLE_OUTPUT]["ARG_CLASS"]
@@ -82,8 +89,6 @@ class ToApi(OutputManager):
         if self.command_args is None:
             log.warning("Could not find TO_ENABLE_OUTPUT_CC in MID_Map. Cannot enable output.")
             return
-
-        self.name = name
 
     def disable_output(self):
         """
@@ -117,3 +122,8 @@ class ToApi(OutputManager):
         }
 
         return Global.plugin_manager.find_plugin_for_command_and_execute(instruction)
+
+    def on_time_interval(self, exec_time: float) -> None:
+        """
+        Does nothing, as TO output is a one-time message
+        """

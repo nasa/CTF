@@ -47,7 +47,7 @@ Example:
 </code></pre>
 
 ### SSH_RunRemoteCommand
-Executes a command on the remote host. **ExecutionInitSSH** must be called first to establish an SSH connection.
+Executes a command on the remote host. **SSH_InitSSH** must be called first to establish an SSH connection.
 - **data**: an object where the key is the argument name, and the value is the argument value
    - **name**: A name already registered with `SSH_RegisterTarget` to identify the connection. (Optional)
    - **command**: The shell command to be executed. Can contain multiple commands separated with `;` 
@@ -59,7 +59,7 @@ Example:
         "wait": 1,
         "data": {
             "name": "workstation",
-            "host": "cd lander_fsw_ctf/;rm -rf build; make; make install;"
+            "command": "cd lander_fsw_ctf/;rm -rf build; make; make install;"
          }
     }
 </code></pre>
@@ -78,13 +78,13 @@ Example:
         "wait": 1,
         "data": {
             "name": "workstation",
-            "host": "cd lander_fsw_ctf/;rm -rf build; make; make install;"
+            "command": "cd lander_fsw_ctf/;rm -rf build; make; make install;"
          }
     }
 </code></pre>
 
 ### SSH_CheckOutput
-Compares the output of the most recently executed command. **ExecutionRunRemoteCommand** or **ExecutionRunLocalCommand** must be called first.
+Compares the output of the most recently executed command. **SSH_RunRemoteCommand** or **SSH_RunLocalCommand** must be called first.
 - **data**: an object where the key is the argument name, and the value is the argument value
    - **name**: A name already registered with `SSH_RegisterTarget` to identify the connection. (Optional)
    - **output_contains** (optional): A substring that must be contained in stdout. (Example: "PASS")

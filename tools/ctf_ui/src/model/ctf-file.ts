@@ -18,6 +18,8 @@ export interface CtfComparisonType {
     variable: string;
     compare: string;
     value: string[];
+    tolerance_minus: string;
+    tolerance_plus: string;
 }
 
 export interface CtfEventType {

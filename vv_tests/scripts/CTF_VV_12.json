@@ -1,14 +1,14 @@
 {
     "test_script_number": "CTF-VV-12",
     "test_script_name": "CTF_VV_12.json",
+    "owner": "CTF",
+    "description": "Wait for user input to decide whether to continue the execution of a test case with 'disable' attribute",
     "requirements": {
         "CTF-23": "Full",
         "CTF-25": "Inspection"
     },
-    "description": "Wait for user input to decide whether to continue the execution of a test case with 'disable' attribute",
-    "owner": "CTF",
-    "test_setup": "N/A",
     "ctf_options": {},
+    "test_setup": "N/A",
     "import": {},
     "tests": [
         {
@@ -17,18 +17,18 @@
             "instructions": [
                 {
                     "instruction": "WaitForUserInput",
-                    "disabled": true,
                     "data": {
                         "prompt": "  "
                     },
+                    "disabled": true,
                     "wait": 1
                 },
                 {
                     "instruction": "WaitForUserInput",
-                    "disabled": false,
                     "data": {
                         "prompt": "  "
                     },
+                    "disabled": false,
                     "wait": 1
                 }
             ]

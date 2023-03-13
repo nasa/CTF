@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -15,7 +15,7 @@
 import ctypes
 import os
 import shutil
-from unittest.mock import Mock, patch, mock_open
+from unittest.mock import Mock, patch, mock_open, call
 
 import pytest
 
@@ -50,6 +50,7 @@ def _cfs_controller_instance_inited():
     config.cfs_run_cmd = 'tail -f /dev/null'
     controller = CfsController(config)
     controller.initialize()
+    controller.cfs_pid = 42
     return controller
 
 
@@ -66,6 +67,7 @@ def _remote_controller_instance_inited():
     controller = RemoteCfsController(config)
     with patch('plugins.ssh.ssh_plugin.SshController.init_connection', return_value=True):
         controller.initialize()
+        controller.cfs_pid = 42
     return controller
 
 
@@ -111,6 +113,7 @@ def test_cfs_controller_initialize_pass(cfs_controller):
     assert cfs_controller.ccsds.CcsdsPrimaryHeader is not None
     assert cfs_controller.ccsds.CcsdsCommand is not None
     assert cfs_controller.ccsds.CcsdsTelemetry is not None
+    assert cfs_controller.cfs.command.command_socket.getsockname() == ('0.0.0.0', 5011)
 
 
 def test_cfs_controller_initialize_fail(cfs_controller, utils):
@@ -200,20 +203,22 @@ def test_cfs_controller_enable_cfs_output(cfs_controller):
 def test_cfs_controller_send_cfs_command(cfs_controller):
     with patch('plugins.cfs.pycfs.cfs_controllers.LocalCfsInterface'):
         cfs_controller.initialize()
-        bytes_TO = b'127.0.0.1\x00\x00\x00\x00\x00\x00\x00\x93\x13\x00\x00\x00\x00\x00\x00'
+        bytes_TO = b'127.0.0.1\x00\x00\x00\x00\x00\x00\x00\x93\x13\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
         bytes_ES = b'hostname\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
                    b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
                    b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
                    b'\x00\x00\x00\x00/cf/test_output.txt\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
                    b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-                   b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+                   b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        TO_CMD_MID = 0x2A8B
+        CFE_ES_CMD_MID = 0x2081
 
         # simple case
         cfs_controller.cfs.send_command.reset_mock()
         assert cfs_controller.send_cfs_command('TO_CMD_MID',
                                                'TO_ENABLE_OUTPUT_CC',
                                                {'cDestIp': '127.0.0.1', 'usDestPort': 5011})
-        cfs_controller.cfs.send_command.assert_called_once_with(10891, 2, bytes_TO, None)
+        cfs_controller.cfs.send_command.assert_called_once_with(TO_CMD_MID, 2, bytes_TO, None)
 
         # nested payload
         cfs_controller.cfs.send_command.reset_mock()
@@ -222,61 +227,62 @@ def test_cfs_controller_send_cfs_command(cfs_controller):
                                                {"Payload": {
                                                    "CmdString": "hostname", "OutputFilename": "/cf/test_output.txt"
                                                }})
-        cfs_controller.cfs.send_command.assert_called_once_with(8321, 3, bytes_ES, None)
+        cfs_controller.cfs.send_command.assert_called_once_with(CFE_ES_CMD_MID, 3, bytes_ES, None)
 
         # ctype args
-        assert cfs_controller.send_cfs_command(10891,
+        assert cfs_controller.send_cfs_command(TO_CMD_MID,
                                                'TO_ENABLE_OUTPUT_CC',
                                                cfs_controller.mid_map
                                                ['TO_CMD_MID']['CC']['TO_ENABLE_OUTPUT_CC']['ARG_CLASS'](),
                                                ctype_args=True)
-        cfs_controller.cfs.send_command.assert_called_with(10891, 2, bytearray(24), None)
+        cfs_controller.cfs.send_command.assert_called_with(TO_CMD_MID, 2, bytearray(28), None)
 
         # specify length shorter
         assert cfs_controller.send_cfs_command('TO_CMD_MID',
                                                'TO_ENABLE_OUTPUT_CC',
                                                {'cDestIp': '127.0.0.1', 'usDestPort': 5011},
                                                payload_length=8)
-        cfs_controller.cfs.send_command.assert_called_with(10891, 2, bytes_TO[0:8], None)
+        cfs_controller.cfs.send_command.assert_called_with(TO_CMD_MID, 2, bytes_TO[0:8], None)
 
         # specify length longer
-        assert cfs_controller.send_cfs_command('TO_CMD_MID', 'TO_NOOP_CC', {}, payload_length=4)
-        cfs_controller.cfs.send_command.assert_called_with(10891, 0, bytearray(4), None)
+        assert cfs_controller.send_cfs_command('TO_CMD_MID', 'TO_NOOP_CC', {}, payload_length=6)
+        cfs_controller.cfs.send_command.assert_called_with(TO_CMD_MID, 0, bytearray(6), None)
 
         # no args provided
         cfs_controller.cfs.send_command.reset_mock()
-        assert cfs_controller.send_cfs_command(10891, 'TO_ENABLE_OUTPUT_CC', [])
-        cfs_controller.cfs.send_command.assert_called_once_with(10891, 2, bytearray(24), None)
+        assert cfs_controller.send_cfs_command(TO_CMD_MID, 'TO_ENABLE_OUTPUT_CC', [])
+        cfs_controller.cfs.send_command.assert_called_once_with(TO_CMD_MID, 2, bytearray(28), None)
 
         # noop with empty args
         cfs_controller.cfs.send_command.reset_mock()
         assert cfs_controller.send_cfs_command('TO_CMD_MID', 0, {})
-        cfs_controller.cfs.send_command.assert_called_once_with(10891, 0, bytearray(), None)
+        cfs_controller.cfs.send_command.assert_called_once_with(TO_CMD_MID, 0, bytearray(4), None)
 
         # int mid and cc
         cfs_controller.cfs.send_command.reset_mock()
-        assert cfs_controller.send_cfs_command(10891, 2, {'cDestIp': '127.0.0.1', 'usDestPort': 5011})
-        cfs_controller.cfs.send_command.assert_called_once_with(10891, 2, bytes_TO, None)
+        assert cfs_controller.send_cfs_command(TO_CMD_MID, 2, {'cDestIp': '127.0.0.1', 'usDestPort': 5011})
+        cfs_controller.cfs.send_command.assert_called_once_with(TO_CMD_MID, 2, bytes_TO, None)
 
         # stringified mid and cc
         cfs_controller.cfs.send_command.reset_mock()
-        assert cfs_controller.send_cfs_command('10891', '2', {'cDestIp': '127.0.0.1', 'usDestPort': 5011})
-        cfs_controller.cfs.send_command.assert_called_once_with(10891, 2, bytes_TO, None)
+        assert cfs_controller.send_cfs_command('0x2A8B', '2', {'cDestIp': '127.0.0.1', 'usDestPort': 5011})
+        cfs_controller.cfs.send_command.assert_called_once_with(TO_CMD_MID, 2, bytes_TO, None)
 
 
 def test_cfs_controller_send_cfs_command_args_indexed_struct(cfs_controller):
+    DUMMY_IO_CMD_MID = 0x2A8E
     with patch('plugins.cfs.pycfs.cfs_controllers.LocalCfsInterface'):
         cfs_controller.initialize()
 
         # myData populated
-        bytes_io = b'\x00\x00\x00\x00*\x00\x00\x04m\xda\x03\x00\xea\x16\xb0L\x02\x00\x00\x00' \
+        bytes_io = b'*\x00\x00\x04m\xda\x03\x00\xea\x16\xb0L\x02\x00\x00\x00' \
                    b'D\x17AT\xfb!\t@\x00\x00`@a\x01\x00\x00\x00\x00\x00\x00' \
-                   b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+                   b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
         cfs_controller.cfs.send_command.reset_mock()
         assert cfs_controller.send_cfs_command('DUMMY_IO_CMD_MID',
-                                               'DUMMY_IO_SEND_DATA_CC',
+                                               'DUMMY_IO_SEND_MULTI_TYPES_CC',
                                                {
-                                                    "myData[0]": {
+                                                    "args[0]": {
                                                         "myByte": 42,
                                                         "myShort": 1024,
                                                         "myInt": 252525,
@@ -286,92 +292,94 @@ def test_cfs_controller_send_cfs_command_args_indexed_struct(cfs_controller):
                                                         "myChar": "a",
                                                         "myBool": 1
                                                     }})
-        cfs_controller.cfs.send_command.assert_called_once_with(0x2A8E, 2, bytes_io, None)
+        cfs_controller.cfs.send_command.assert_called_once_with(DUMMY_IO_CMD_MID, 2, bytes_io, None)
 
         # myArray populated
-        bytes_io = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
+        bytes_io = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
                    b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x00' \
-                   b'\x00\x00\x00\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+                   b'\x00\x00\x00\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
         cfs_controller.cfs.send_command.reset_mock()
         assert cfs_controller.send_cfs_command('DUMMY_IO_CMD_MID',
-                                               'DUMMY_IO_SEND_DATA_CC',
+                                               'DUMMY_IO_SEND_MULTI_TYPES_CC',
                                                {
-                                                    "myData[0]": {
+                                                    "args[0]": {
                                                         "myArray[0]": 0,
                                                         "myArray[1]": 1,
                                                         "myArray[7]": 7,
                                                         "myArray[2]": 2
                                                     }})
-        cfs_controller.cfs.send_command.assert_called_once_with(0x2A8E, 2, bytes_io, None)
+        cfs_controller.cfs.send_command.assert_called_once_with(DUMMY_IO_CMD_MID, 2, bytes_io, None)
 
         # myArray default value
-        bytes_io = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
+        bytes_io = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
                    b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x02\x02\x02' \
-                   b'\x02\x02\x02\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+                   b'\x02\x02\x02\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
         cfs_controller.cfs.send_command.reset_mock()
         assert cfs_controller.send_cfs_command('DUMMY_IO_CMD_MID',
-                                               'DUMMY_IO_SEND_DATA_CC',
+                                               'DUMMY_IO_SEND_MULTI_TYPES_CC',
                                                {
-                                                    "myData[0]": {
+                                                    "args[0]": {
                                                         "myArray": 2
                                                     }})
-        cfs_controller.cfs.send_command.assert_called_once_with(0x2A8E, 2, bytes_io, None)
+        cfs_controller.cfs.send_command.assert_called_once_with(DUMMY_IO_CMD_MID, 2, bytes_io, None)
 
         # no args provided
         cfs_controller.cfs.send_command.reset_mock()
-        assert cfs_controller.send_cfs_command('DUMMY_IO_CMD_MID', 'DUMMY_IO_SEND_DATA_CC', [])
-        cfs_controller.cfs.send_command.assert_called_once_with(0x2A8E, 2, bytearray(60), None)
+        assert cfs_controller.send_cfs_command('DUMMY_IO_CMD_MID', 'DUMMY_IO_SEND_MULTI_TYPES_CC', [])
+        cfs_controller.cfs.send_command.assert_called_once_with(DUMMY_IO_CMD_MID, 2, bytearray(60), None)
 
 
 def test_cfs_controller_send_cfs_command_args_nested_chars(cfs_controller):
+    DUMMY_IO_CMD_MID = 0x2A8E
     with patch('plugins.cfs.pycfs.cfs_controllers.LocalCfsInterface'):
         cfs_controller.initialize()
 
         # myString nominal case
-        bytes_io = bytes(44) + b'a string\x00\x00\x00\x00\x00\x00\x00\x00'
+        bytes_io = bytes(40) + b'a string\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
         cfs_controller.cfs.send_command.reset_mock()
         assert cfs_controller.send_cfs_command('DUMMY_IO_CMD_MID',
-                                               'DUMMY_IO_SEND_DATA_CC',
+                                               'DUMMY_IO_SEND_MULTI_TYPES_CC',
                                                {
-                                                    "myData[0]": {
+                                                    "args[0]": {
                                                         "myString": "a string"
                                                     }})
-        cfs_controller.cfs.send_command.assert_called_once_with(0x2A8E, 2, bytes_io, None)
+        cfs_controller.cfs.send_command.assert_called_once_with(DUMMY_IO_CMD_MID, 2, bytes_io, None)
 
         # myString with special characters
-        bytes_io = bytes(44) + b'../../\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        bytes_io = bytes(40) + b'../../\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
         cfs_controller.cfs.send_command.reset_mock()
         assert cfs_controller.send_cfs_command('DUMMY_IO_CMD_MID',
-                                               'DUMMY_IO_SEND_DATA_CC',
+                                               'DUMMY_IO_SEND_MULTI_TYPES_CC',
                                                {
-                                                    "myData[0]": {
+                                                    "args[0]": {
                                                         "myString": "../../"
                                                     }})
-        cfs_controller.cfs.send_command.assert_called_once_with(0x2A8E, 2, bytes_io, None)
+        cfs_controller.cfs.send_command.assert_called_once_with(DUMMY_IO_CMD_MID, 2, bytes_io, None)
 
         # myString with a number
-        bytes_io = bytes(44) + b'12345\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        bytes_io = bytes(40) + b'12345\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
         cfs_controller.cfs.send_command.reset_mock()
         assert cfs_controller.send_cfs_command('DUMMY_IO_CMD_MID',
-                                               'DUMMY_IO_SEND_DATA_CC',
+                                               'DUMMY_IO_SEND_MULTI_TYPES_CC',
                                                {
-                                                    "myData[0]": {
+                                                    "args[0]": {
                                                         "myString": "12345"
                                                     }})
-        cfs_controller.cfs.send_command.assert_called_once_with(0x2A8E, 2, bytes_io, None)
+        cfs_controller.cfs.send_command.assert_called_once_with(DUMMY_IO_CMD_MID, 2, bytes_io, None)
 
 
 def test_cfs_controller_send_cfs_command_args_bitfield(cfs_controller):
+    # define SET1_CFS_GRP1_DUMMY_IO_CMD_MID                 0x2A8E
     with patch('plugins.cfs.pycfs.cfs_controllers.LocalCfsInterface'):
         cfs_controller.initialize()
 
         # bitfields populated
-        bytes_io = bytes(52) + b'\x11\x00\x00\x00\x00\x00\x21\x80'
+        bytes_io = bytes(46) + b'\x00\x00\x11\x00\x00\x00\x21\x80\x00\x00\x00\x00\x00\x00'
         cfs_controller.cfs.send_command.reset_mock()
         assert cfs_controller.send_cfs_command('DUMMY_IO_CMD_MID',
-                                               'DUMMY_IO_SEND_DATA_CC',
+                                               'DUMMY_IO_SEND_MULTI_TYPES_CC',
                                                {
-                                                    "myData[0]": {
+                                                    "args[0]": {
                                                         "myBitfield8a": 1,
                                                         "myBitfield8b": 1,
                                                         "myBitfield16a": 1,
@@ -403,8 +411,9 @@ def test_cfs_controller_send_cfs_command_errors(cfs_controller):
 
         # invalid args
         cfs_controller.cfs.send_command.reset_mock()
+        # define SET1_CFS_GRP1_TO_CMD_MID   0x2A8B
         with pytest.raises(CtfTestError):
-            cfs_controller.send_cfs_command(10891,
+            cfs_controller.send_cfs_command(0x2A8B,
                                             'TO_ENABLE_OUTPUT_CC',
                                             {'DestIp': '127.0.0.1', 'DestPort': 5011})
         cfs_controller.cfs.send_command.assert_not_called()
@@ -417,6 +426,7 @@ def test_cfs_controller_send_cfs_command_errors(cfs_controller):
 
 
 def test_send_cfs_raw_command(cfs_controller):
+    TO_CMD_MID = 0x2A8B
     with patch('plugins.cfs.pycfs.cfs_controllers.LocalCfsInterface'):
         cfs_controller.initialize()
 
@@ -427,30 +437,30 @@ def test_send_cfs_raw_command(cfs_controller):
             "3132372e302e302e31000000000000009313000000000000",
             {})
         cfs_controller.cfs.send_command.assert_called_once_with(
-            10891,
+            TO_CMD_MID,
             2,
             b'127.0.0.1\x00\x00\x00\x00\x00\x00\x00\x93\x13\x00\x00\x00\x00\x00\x00',
             {})
 
         # int mid
-        assert cfs_controller.send_raw_cfs_command(10891, "TO_ENABLE_OUTPUT_CC", "ABCDEF")
-        cfs_controller.cfs.send_command.assert_called_with(10891, 2, b'\xab\xcd\xef', None)
+        assert cfs_controller.send_raw_cfs_command(TO_CMD_MID, "TO_ENABLE_OUTPUT_CC", "ABCDEF")
+        cfs_controller.cfs.send_command.assert_called_with(TO_CMD_MID, 2, b'\xab\xcd\xef', None)
 
         # int cc
         assert cfs_controller.send_raw_cfs_command("TO_CMD_MID", 2, "ABCDEF")
-        cfs_controller.cfs.send_command.assert_called_with(10891, 2, b'\xab\xcd\xef', None)
+        cfs_controller.cfs.send_command.assert_called_with(TO_CMD_MID, 2, b'\xab\xcd\xef', None)
 
         # both int
-        assert cfs_controller.send_raw_cfs_command(10891, 2, "ABCDEF")
-        cfs_controller.cfs.send_command.assert_called_with(10891, 2, b'\xab\xcd\xef', None)
+        assert cfs_controller.send_raw_cfs_command(TO_CMD_MID, 2, "ABCDEF")
+        cfs_controller.cfs.send_command.assert_called_with(TO_CMD_MID, 2, b'\xab\xcd\xef', None)
 
         # empty payload
         assert cfs_controller.send_raw_cfs_command(10000, 12, "")
         cfs_controller.cfs.send_command.assert_called_with(10000, 12, b'', None)
 
         # leading 0x
-        assert cfs_controller.send_raw_cfs_command(10891, 2, "0xABCDEF")
-        cfs_controller.cfs.send_command.assert_called_with(10891, 2, b'\xab\xcd\xef', None)
+        assert cfs_controller.send_raw_cfs_command(TO_CMD_MID, 2, "0xABCDEF")
+        cfs_controller.cfs.send_command.assert_called_with(TO_CMD_MID, 2, b'\xab\xcd\xef', None)
 
 
 def test_send_cfs_raw_command_errors(cfs_controller, utils):
@@ -481,6 +491,18 @@ def test_send_cfs_raw_command_errors(cfs_controller, utils):
         assert not cfs_controller.send_raw_cfs_command("TO_CMD_MID", "TO_ENABLE_OUTPUT_CC", "ABCDEF")
         cfs_controller.cfs.send_command.assert_called_once()
         assert utils.has_log_level("ERROR")
+
+
+def test_cfs_controller_encode_ctypes_to_bytes_array(cfs_controller):
+    from plugins.ccsds_plugin.readers.ccdd_export_reader import create_type_class
+    with patch('plugins.cfs.pycfs.cfs_controllers.LocalCfsInterface'):
+        cfs_controller.initialize()
+        arr16_type = (ctypes.c_uint16 * 4)
+        struct_type = create_type_class("arr16type", cfs_controller.ccsds_reader.ctype_structure,
+                                     [("arr16", arr16_type)])
+        struct = struct_type(arr16_type(64, 128, 256, 512))
+        buf = cfs_controller.encode_ctypes_to_bytes(struct)
+        assert buf == bytearray(b'\x40\x00\x80\x00\x00\x01\x00\x02')
 
 
 def test_cfs_controller_resolve_macros(cfs_controller_inited):
@@ -625,14 +647,15 @@ def test_cfs_controller_check_tlm_continuous_not_in_packet(cfs_controller_inited
         Test CfsController class check_tlm_continuous method:
         Implementation of CFS plugin instructions check_tlm_continuous. When CFS plugin instructions
         (check_tlm_continuous) is executed, it calls CfsController instance's check_tlm_continuous function.
-        """
+        #define SET1_CFS_GRP1_TO_HK_TLM_MID                    0x2A0D
+    """
     v_id = 'no_error'
     mid = 'TO_HK_TLM_MID'
     args = [{'compare': '==', 'variable': 'usCmdErrCnt', 'value': [0.0]}]
 
     # remove messages into received_mid_packets_dic. should return False
     utils.clear_log()
-    cfs_controller_inited.cfs.received_mid_packets_dic.pop(10765)
+    cfs_controller_inited.cfs.received_mid_packets_dic.pop(0x2A0D)
     assert not cfs_controller_inited.check_tlm_continuous(v_id, mid, args)
     assert utils.has_log_level("ERROR")
 
@@ -670,7 +693,7 @@ def test_cfs_controller_check_tlm_value(cfs_controller_inited, utils):
     # remove messages into received_mid_packets_dic. should return False
     with patch.object(Global, 'current_verification_stage', CtfVerificationStage.first_ver):
         utils.clear_log()
-        cfs_controller_inited.cfs.received_mid_packets_dic.pop(8193)
+        cfs_controller_inited.cfs.received_mid_packets_dic.pop(0x2001)
         assert not cfs_controller_inited.check_tlm_value(mid, args)
         assert utils.has_log_level("ERROR")
 
@@ -762,6 +785,8 @@ def test_cfs_controller_check_event(cfs_controller_inited):
     Checks for an EVS event message in the telemetry packet history,
     assuming a particular structure for CFE_EVS_LongEventTlm_t.
     This can be generified in the future to determine the structure from the MID map.
+    #define SET1_CFE_EVS_LONG_EVENT_MSG_MID                0x2006
+    #define SET1_CFE_EVS_SHORT_EVENT_MSG_MID               0x2007
     """
     app = 'TO'
     event_id = 3
@@ -783,13 +808,13 @@ def test_cfs_controller_check_event(cfs_controller_inited):
             {"compare": "streq", "variable": "Payload.Message", "value": msg}
         ]
         assert cfs_controller_inited.check_event(app, event_id, msg, is_regex)
-        mock_check.assert_called_with(8198, args, discard_old_packets=False)
+        mock_check.assert_called_with(0x2006, args, discard_old_packets=False)
         mock_check.reset_mock()
         # pass with short event
         mock_check.side_effect = None
         mock_check.return_value = True
         assert cfs_controller_inited.check_event(app, event_id, msg, is_regex)
-        mock_check.assert_called_once_with(8199, args[:2], discard_old_packets=False)
+        mock_check.assert_called_once_with(0x2007, args[:2], discard_old_packets=False)
 
 
 def test_cfs_controller_convert_archive_cfs_files_exception(cfs_controller_inited, utils):
@@ -842,21 +867,42 @@ def test_cfs_controller_shutdown_cfs(cfs_controller_inited):
     with patch('os.system') as mock_system:
         mock_system.return_value = 0
         assert cfs_controller_inited.shutdown_cfs()
+        mock_system.assert_any_call('kill -9 42')
+        mock_system.assert_called_with('pkill -fe -9 "tail -f /dev/null"')
     assert not cfs_controller_inited.cfs.is_running
 
 
-def test_cfs_controller_shutdown_cfs_fail(cfs_controller_inited):
+def test_cfs_controller_shutdown_cfs_fail_pid(cfs_controller_inited, utils):
     """
     Test CfsController class shutdown_cfs method: os.system call returns an error code for one process
     Implementation of CFS plugin instructions shutdown_cfs. When CFS plugin instructions
     (shutdown_cfs) is executed, it calls CfsController instance's shutdown_cfs function.
     """
-    with patch('os.system') as mock_system, \
-         patch('plugins.cfs.pycfs.cfs_controllers.run') as mock_run:
-        mock_system.return_value = 255
-        mock_run.stdout = "0"
+    # case: no cfs pid
+    with patch('os.system') as mock_system:
+        mock_system.return_value = 0
+        cfs_controller_inited.cfs_pid = None
         assert not cfs_controller_inited.shutdown_cfs()
         assert not cfs_controller_inited.cfs.is_running
+        assert utils.has_log_level("ERROR")
+
+
+def test_cfs_controller_shutdown_cfs_fail_ps(cfs_controller_inited, utils):
+    # case: ps fails
+    with patch('os.system') as mock_system:
+        mock_system.return_value = 1
+        assert not cfs_controller_inited.shutdown_cfs()
+        assert not cfs_controller_inited.cfs.is_running
+        assert utils.has_log_level("ERROR")
+
+
+def test_cfs_controller_shutdown_cfs_fail_kill(cfs_controller_inited, utils):
+    # case: kill and pkill fail
+    with patch('os.system') as mock_system:
+        mock_system.side_effect = [0, 1, 1]
+        assert not cfs_controller_inited.shutdown_cfs()
+        assert not cfs_controller_inited.cfs.is_running
+        assert utils.has_log_level("ERROR")
 
 
 def test_cfs_controller_shutdown(cfs_controller_inited):
@@ -989,6 +1035,7 @@ def test_remote_cfs_controller_initialize_pass(remote_controller):
          patch('plugins.cfs.pycfs.cfs_controllers.RemoteCfsInterface') as mock_remotecfsinterface:
         mock_remotecfsinterface.return_value.init_passed = True
         assert remote_controller.initialize()
+        assert mock_remotecfsinterface.call_args.args[2].command_socket.getsockname() == ('0.0.0.0', 5011)
 
     # another case: start_cfs
     with patch('plugins.ssh.ssh_plugin.SshController.init_connection', return_value=True), \
@@ -1012,15 +1059,24 @@ def test_remote_cfs_controller_initialize_exception(remote_controller, utils):
         assert utils.has_log_level("ERROR")
 
 
-def test_remote_cfs_controller_shutdown_cfs(remote_controller_inited):
+def test_remote_cfs_controller_shutdown_cfs(remote_controller_inited, utils):
     """
     Test RemoteCfsController class shutdown_cfs method:
     Implementation of CFS plugin instructions shutdown_cfs. When CFS plugin instructions
     (shutdown_cfs) is executed, it calls RemoteCfsController instance's shutdown_cfs function.
     """
-    with patch('plugins.ssh.ssh_plugin.SshController.run_command', return_value=True):
+    with patch('plugins.ssh.ssh_plugin.SshController.run_command', return_value=True) as mock_command, \
+         patch('plugins.ssh.ssh_plugin.SshController.get_file', return_value=True) as mock_get:
+        utils.clear_log()
+        temp_dir = Global.current_script_log_dir
+        Global.current_script_log_dir = '~/fsw/ctf_tests/results/'
+        remote_controller_inited.cfs.cfs_std_out_path = '/tmp/ssh_out.txt'
         assert remote_controller_inited.shutdown_cfs()
         assert not remote_controller_inited.cfs.is_running
+        mock_command.assert_has_calls([call("kill -9 42",), call("rm /tmp/ssh_out.txt",)]),
+        mock_get.assert_called_once_with('/tmp/ssh_out.txt', '~/fsw/ctf_tests/results/ssh_out.txt', {'delete': True})
+        assert not utils.has_log_level("ERROR")
+        Global.current_script_log_dir = temp_dir
 
 
 def test_remote_cfs_controller_shutdown_cfs_fail(remote_controller_inited, utils):
@@ -1029,63 +1085,43 @@ def test_remote_cfs_controller_shutdown_cfs_fail(remote_controller_inited, utils
     Implementation of CFS plugin instructions shutdown_cfs. When CFS plugin instructions
     (shutdown_cfs) is executed, it calls RemoteCfsController instance's shutdown_cfs function.
     """
-    with patch('plugins.ssh.ssh_plugin.SshController.run_command') as mock_run_command:
+    with patch('plugins.ssh.ssh_plugin.SshController.run_command', return_value=False), \
+         patch('plugins.ssh.ssh_plugin.SshController.get_file', return_value=True):
         utils.clear_log()
-        mock_run_command.return_value = False
+        remote_controller_inited.cfs.cfs_std_out_path = '/tmp/ssh_out.txt'
+        assert not remote_controller_inited.shutdown_cfs()
+        assert utils.has_log_level("ERROR")
+        assert not remote_controller_inited.cfs.is_running
+
+
+def test_remote_cfs_controller_shutdown_cfs_fail_get_file(remote_controller_inited, utils):
+    """
+    Test RemoteCfsController class shutdown_cfs method: remote command fails
+    Implementation of CFS plugin instructions shutdown_cfs. When CFS plugin instructions
+    (shutdown_cfs) is executed, it calls RemoteCfsController instance's shutdown_cfs function.
+    """
+    with patch('plugins.ssh.ssh_plugin.SshController.run_command', return_value=True) as mock_run_command, \
+         patch('plugins.ssh.ssh_plugin.SshController.get_file', return_value=False):
+        utils.clear_log()
+        remote_controller_inited.cfs.cfs_std_out_path = '/tmp/ssh_out.txt'
         assert not remote_controller_inited.shutdown_cfs()
         mock_run_command.assert_called_once()
         assert utils.has_log_level("ERROR")
         assert not remote_controller_inited.cfs.is_running
 
 
-def test_remote_cfs_controller_shutdown(remote_controller):
-    """
-    Test RemoteCfsController class shutdown method:
-    This function will shut down the CFS application being tested even if the JSON test file does not
-    include the shutdown test command
-    """
-    with patch('plugins.ssh.ssh_plugin.SshController.init_connection', return_value=True):
-        remote_controller.initialize()
-        temp_dir = Global.current_script_log_dir
-        Global.current_script_log_dir = '~/sample_cfs_workspace/ctf_tests/results/'
-        remote_controller.cfs.cfs_std_out_path = 'local_ssh_output.txt'
-        assert remote_controller.shutdown() is None
-        assert not remote_controller.cfs
-        Global.current_script_log_dir = temp_dir
-
-
-def test_remote_cfs_controller_shutdown_exception(remote_controller_inited, utils):
-    """
-    Test RemoteCfsController class shutdown method: raise exception from shutdown_cfs
-    This function will shut down the CFS application being tested even if the JSON test file does not
-    include the shutdown test command
-    """
-    with patch('plugins.cfs.pycfs.cfs_controllers.RemoteCfsController.shutdown_cfs') as mock_shutdown:
-        mock_shutdown.side_effect = CtfTestError("Raise Exception for shutdown_cfs")
+def test_remote_cfs_controller_shutdown_cfs_fail_no_pid(remote_controller_inited, utils):
+    # case: no cfs pid
+    with patch('plugins.ssh.ssh_plugin.SshController.run_command') as mock_run_command, \
+         patch('plugins.ssh.ssh_plugin.SshController.get_file', return_value=True):
         utils.clear_log()
-        temp_dir = Global.current_script_log_dir
-        Global.current_script_log_dir = '~/sample_cfs_workspace/ctf_tests/results/'
-        remote_controller_inited.cfs.cfs_std_out_path = 'local_ssh_output.txt'
-        remote_controller_inited.cfs.is_running = True
-        assert remote_controller_inited.shutdown() is None
-        mock_shutdown.assert_called_once()
-        Global.current_script_log_dir = temp_dir
+        mock_run_command.return_value = False
+        remote_controller_inited.cfs_pid = None
+        remote_controller_inited.cfs.cfs_std_out_path = '/tmp/ssh_out.txt'
+        assert not remote_controller_inited.shutdown_cfs()
+        mock_run_command.assert_called_once_with("rm /tmp/ssh_out.txt")
         assert utils.has_log_level("ERROR")
-
-
-def test_remote_cfs_controller_shutdown_pass(remote_controller_inited):
-    """
-     Test RemoteCfsController class shutdown method:
-     This function will shut down the CFS application being tested even if the JSON test file does not
-     include the shutdown test command
-     """
-    with patch('plugins.ssh.ssh_plugin.SshController.get_file', return_value=True):
-        temp_dir = Global.current_script_log_dir
-        Global.current_script_log_dir = '~/sample_cfs_workspace/ctf_tests/results/'
-        remote_controller_inited.cfs.cfs_std_out_path = 'local_ssh_output.txt'
-        assert remote_controller_inited.shutdown() is None
-        assert not remote_controller_inited.cfs
-        Global.current_script_log_dir = temp_dir
+        assert not remote_controller_inited.cfs.is_running
 
 
 def test_remote_cfs_controller_archive_cfs_files_pass(remote_controller_inited):

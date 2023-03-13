@@ -5,7 +5,7 @@ Logger configuration and initialization for CTF logging
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -91,7 +91,7 @@ def init_logger(config):
     if colorlog:
         # Install colorlog (pip install colorlog) to use colored logs for console
         log_colors = {'DEBUG': 'white',
-                      'INFO': 'blue',
+                      'INFO': 'cyan',
                       'WARNING': 'bold_yellow',
                       'ERROR': 'bold_red',
                       'CRITICAL': 'bold_red',

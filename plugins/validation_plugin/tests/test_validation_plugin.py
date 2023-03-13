@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -48,10 +48,10 @@ def test_validation_plugin_commandmap(validation_plugin):
     assert len(validation_plugin.command_map) == 6
     assert "DeleteFiles" in validation_plugin.command_map
     assert "CopyFiles" in validation_plugin.command_map
-    assert "SaveFileAsText" in validation_plugin.command_map
     assert "SearchStr" in validation_plugin.command_map
     assert "SearchNoStr" in validation_plugin.command_map
     assert "InsertUserComment" in validation_plugin.command_map
+    assert "CheckFileExists" in validation_plugin.command_map
 
 
 def test_validation_plugin_verify_required_commands(validation_plugin):
@@ -168,6 +168,16 @@ def test_validation_plugin_interpret_binary_data(validation_plugin):
 def test_validation_plugin_interpret_event_log_fail(validation_plugin, utils):
     utils.clear_log()
     assert not validation_plugin.interpret_event_log('file_not_exist.txt', 'evs.txt', 'EVS')
+    assert utils.has_log_level("ERROR")
+
+
+def test_validation_plugin_check_file_exists(validation_plugin):
+    assert validation_plugin.check_file_exists('./ctf')
+
+
+def test_validation_plugin_check_file_exists_fail(validation_plugin, utils):
+    utils.clear_log()
+    assert not validation_plugin.check_file_exists('invalid_file')
     assert utils.has_log_level("ERROR")
 
 

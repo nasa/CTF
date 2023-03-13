@@ -1,31 +1,26 @@
 {
     "test_script_number": "Continuous-Verification-Test",
     "test_script_name": "Test_Continuous_Verification.json",
+    "owner": "CTF",
+    "description": "",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "",
-    "owner": "CTF",
+    "ctf_options": {
+        "verify_timeout": 4
+    },
     "test_setup": "",
-    "ctf_options": {},
     "import": {},
     "tests": [
         {
             "test_number": "Continuous-Verification-Test-1",
-            "description": "Start CFS, Send TO NOOP command",
+            "description": "",
             "instructions": [
                 {
-                    "instruction": "StartCfs",
-                    "data": {
-                        "target": ""
-                    },
-                    "wait": 1
-                },
-                {
                     "instruction": "CheckTlmContinuous",
-                    "description": "Change 'name' to 'cfs_name' for all instructions",
+                    "description": "",
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "verification_id": "no_error",
                         "mid": "TO_HK_TLM_MID",
                         "args": [
@@ -41,33 +36,19 @@
                     "wait": 1
                 },
                 {
-                    "instruction": "EnableCfsOutput",
+                    "instruction": "SendCfsCommand",
                     "data": {
-                        "target": ""
+                        "target": "tgt1",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_RESET_CC",
+                        "args": {}
                     },
-                    "wait": 1,
-                    "description": "Need this to enable the telemetry thread. Enable Output counts as 1 TO cmd"
-                },
-                {
-                    "instruction": "CheckEvent",
-                    "data": {
-                        "args": [
-                            {
-                                "app_name": "TO",
-                                "event_id": "3",
-                                "event_str": "TO - ENABLE_OUTPUT cmd succesful for  routeMask:0x00000001",
-                                "event_str_args": ""
-                            }
-                        ],
-                        "target": ""
-                    },
-                    "wait": 1,
-                    "description": "Need this to enable the telemetry thread. Enable Output counts as 1 TO cmd"
+                    "wait": 1
                 },
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "mid": "TO_CMD_MID",
                         "cc": "TO_NOOP_CC",
                         "args": {}
@@ -77,24 +58,22 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "mid": "TO_HK_TLM_MID",
                         "args": [
                             {
                                 "compare": "==",
                                 "variable": "usCmdCnt",
-                                "value": [
-                                    2.0
-                                ]
+                                "value": 1
                             }
                         ]
                     },
-                    "wait": 1
+                    "wait": 3
                 },
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "mid": "TO_CMD_MID",
                         "cc": "TO_RESET_CC",
                         "args": {}
@@ -104,15 +83,13 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "mid": "TO_HK_TLM_MID",
                         "args": [
                             {
                                 "compare": "==",
                                 "variable": "usCmdCnt",
-                                "value": [
-                                    0.0
-                                ]
+                                "value": 0
                             }
                         ]
                     },
@@ -121,7 +98,7 @@
                 {
                     "instruction": "RemoveCheckTlmContinuous",
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "verification_id": "no_error"
                     },
                     "wait": 1

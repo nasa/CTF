@@ -1,7 +1,7 @@
 {
     "test_script_number": "Local-SSH-Registered-Config-Test",
     "test_script_name": "Local_SSH_Registered_Config_Test.json",
-    "test_setup": "Requires the use of configs/cfe_6_7_config_examples.ini or another that defines a target 'local_ssh'",
+    "test_setup": "Requires the use of configs/default_config.ini or another that defines a target 'local_ssh'",
     "description": "Demonstrates the use of target 'local_ssh' from the config, using the SSH protocol.",
     "requirements": {
         "MyRequirement": "N/A"

@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -123,16 +123,39 @@ def test_cfs_interface_write_tlm_log(cfs, utils):
     assert not utils.has_log_level('ERROR')
     with patch('builtins.open', new_callable=mock_open()) as mock_file:
         cfs.config.telemetry_debug = True
-        cfs.write_tlm_log('payload1', bytearray('payload1', 'utf-8'), 100)
+        cfs.write_tlm_log('payload1', bytearray('payload1', 'utf-8'), 100, 1)
         assert cfs.tlm_log_file is mock_file.return_value
         mock_file.assert_called_once_with('./cfs_tlm_msgs.log', 'a+')
         assert mock_file.return_value.write.call_count == 3
         mock_file.return_value.write.reset_mock()
-        cfs.write_tlm_log('payload2', bytearray('payload2', 'utf-8'), 200)
+        cfs.write_tlm_log('payload2', bytearray('payload2', 'utf-8'), 200, 2)
         assert mock_file.return_value.write.call_count == 2
         mock_file.return_value.write.reset_mock()
         mock_file.return_value.write.side_effect = IOError('mock error')
-        cfs.write_tlm_log('payload3', bytearray('payload3', 'utf-8'), 300)
+        cfs.write_tlm_log('payload3', bytearray('payload3', 'utf-8'), 300, 3)
+        assert utils.has_log_level('ERROR')
+
+
+def test_cfs_interface_write_tlm_error_log_io_error(cfs, utils):
+    assert cfs.tlm_log_file is None
+    assert not utils.has_log_level('ERROR')
+    with patch('builtins.open', new_callable=mock_open()) as mock_file:
+        cfs.config.telemetry_debug = True
+        mock_file.return_value.write.side_effect = IOError('mock error')
+        cfs.write_tlm_error_log(hex(100), 'Undefined mid' , bytearray('payload1', 'utf-8'))
+        assert utils.has_log_level('ERROR')
+
+
+def test_cfs_interface_write_tlm_error_log(cfs, utils):
+    assert cfs.tlm_log_file is None
+    assert not utils.has_log_level('ERROR')
+    with patch('builtins.open', new_callable=mock_open()) as mock_file:
+        cfs.config.telemetry_debug = True
+        cfs.write_tlm_error_log(hex(100), 'Undefined mid' , bytearray('payload1', 'utf-8'))
+        assert cfs.tlm_log_file is mock_file.return_value
+        mock_file.return_value.write.reset_mock()
+        mock_file.return_value.write.side_effect = IOError('mock error')
+        cfs.write_tlm_error_log(hex(100), 'Undefined mid' , bytearray('payload1', 'utf-8'))
         assert utils.has_log_level('ERROR')
 
 

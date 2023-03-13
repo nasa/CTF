@@ -1,13 +1,13 @@
 {
     "test_script_number": "CTF-VV-26",
     "test_script_name": "CTF_VV_26.json",
+    "owner": "CTF",
+    "description": "Execute different sets of test instructions based on test conditions",
     "requirements": {
         "CTF-27": "Full"
     },
-    "description": "Execute different sets of test instructions based on test conditions",
-    "owner": "CTF",
-    "test_setup": "",
     "ctf_options": {},
+    "test_setup": "",
     "import": {},
     "tests": [
         {
@@ -19,21 +19,22 @@
                     "data": {
                         "variable_name": "my_var",
                         "operator": "=",
-                        "value": 1
+                        "value": 1,
+                        "variable_type": "int"
                     },
                     "wait": 0
                 },
                 {
                     "instruction": "IfCondition",
                     "data": {
+                        "label": "label_1",
                         "conditions": [
                             {
                                 "variable": "my_var",
                                 "compare": "==",
                                 "value": 1
                             }
-                        ],
-                        "label": "label_1"
+                        ]
                     },
                     "wait": 0
                 },
@@ -42,7 +43,8 @@
                     "data": {
                         "variable_name": "my_var",
                         "operator": "=",
-                        "value": 10
+                        "value": 10,
+                        "variable_type": "int"
                     },
                     "wait": 0
                 },
@@ -58,7 +60,8 @@
                     "data": {
                         "variable_name": "my_var",
                         "operator": "=",
-                        "value": -10
+                        "value": -10,
+                        "variable_type": "int"
                     },
                     "wait": 0
                 },
@@ -89,21 +92,22 @@
                     "data": {
                         "variable_name": "my_var",
                         "operator": "=",
-                        "value": 0
+                        "value": 0,
+                        "variable_type": "int"
                     },
                     "wait": 0
                 },
                 {
                     "instruction": "IfCondition",
                     "data": {
+                        "label": "label_1",
                         "conditions": [
                             {
                                 "variable": "my_var",
                                 "compare": "==",
                                 "value": 1
                             }
-                        ],
-                        "label": "label_1"
+                        ]
                     },
                     "wait": 0
                 },
@@ -112,7 +116,8 @@
                     "data": {
                         "variable_name": "my_var",
                         "operator": "=",
-                        "value": 10
+                        "value": 10,
+                        "variable_type": "int"
                     },
                     "wait": 0
                 },
@@ -128,7 +133,8 @@
                     "data": {
                         "variable_name": "my_var",
                         "operator": "=",
-                        "value": -10
+                        "value": -10,
+                        "variable_type": "int"
                     },
                     "wait": 0
                 },

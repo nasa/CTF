@@ -6,7 +6,7 @@ The module defines SshPlugin class and SshConfig, SshController helper class.
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -256,7 +256,7 @@ class SshPlugin(Plugin):
     def check_output(self, output_contains=None, output_does_not_contain=None, exit_code=0, name="default"):
         """
         Compares the output of the most recently executed command.
-        ExecutionRunRemoteCommand or ExecutionRunLocalCommand must be called first.
+        SSH_RunRemoteCommand or SSH_RunLocalCommand must be called first.
 
         @param name: A name already registered with SSH_RegisterTarget to identify the connection. (Optional)
         @param output_contains: A substring that must be contained in stdout. (Example: "PASS") (Optional)
@@ -497,9 +497,9 @@ class SshController():
                     result = self.connection.run(command,
                                                  hide=(not self.config.print_stdout),
                                                  timeout=self.config.command_timeout)
-                except (invoke.exceptions.UnexpectedExit, invoke.exceptions.CommandTimedOut):
+                except (invoke.exceptions.UnexpectedExit, invoke.exceptions.CommandTimedOut) as ex:
                     result = invoke.Result(exited=1)
-                    log.error("Remote run command {} failed".format(command))
+                    log.error("Remote run command {} failed: {}".format(command, ex.reason))
         if self.config.log_stdout:
             log.info("Remote {cmd} complete with result:\n {res}\n Exit Code = {code}"
                      .format(cmd=command, res=result.stdout.strip(), code=result.exited))

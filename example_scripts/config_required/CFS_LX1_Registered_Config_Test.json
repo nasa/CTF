@@ -1,7 +1,7 @@
 {
     "test_script_number": "CFS_LX1_Registered_Config_Test",
     "test_script_name": "CFS_LX1_Registered_Config_Test.json",
-    "test_setup": "Requires the use of configs/cfe_6_7_config_examples.ini or another that defines a target 'cfs_LX1'",
+    "test_setup": "Requires the use of configs/example_lx1_lx2_config.ini or another that defines a target 'cfs_LX1'",
     "description": "Demonstrates the use of target 'cfs_LX1' from the config, using the local protocol.",
     "requirements": {
         "MyRequirement": "N/A"

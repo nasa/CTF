@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -59,10 +59,10 @@ class ValidationPlugin(Plugin):
         self.command_map = {
             "DeleteFiles": (self.delete_file, [ArgTypes.string]),
             "CopyFiles": (self.copy_file, [ArgTypes.string] * 2),
-            "SaveFileAsText": (self.save_file_as_text, [ArgTypes.string] * 4),
             "SearchStr": (self.search_txt_file, [ArgTypes.string] * 2),
             "SearchNoStr": (self.search_no_txt_file, [ArgTypes.string] * 2),
-            "InsertUserComment": (self.insert_comment, [ArgTypes.string])
+            "InsertUserComment": (self.insert_comment, [ArgTypes.string]),
+            "CheckFileExists": (self.check_file_exists, [ArgTypes.string])
         }
 
     @staticmethod
@@ -90,7 +90,7 @@ class ValidationPlugin(Plugin):
     def delete_file(path: str) -> bool:
         """
         Delete a file / folder on the host file system
-        @return bool: True, unless the delete fails.
+        @return bool: True, unless delete file fails.
         """
         file_path = Path(path)
         status = True
@@ -139,6 +139,7 @@ class ValidationPlugin(Plugin):
 
         return status
 
+    # Deprecated method
     def save_file_as_text(self, input_file: str, output_file: str, file_type: str, target: str = None) -> bool:
         """
         Interpret a Cfs (binary) file and convert it to a human readable text file.
@@ -192,6 +193,7 @@ class ValidationPlugin(Plugin):
 
         return microsecs2print
 
+    # Deprecated method
     def interpret_binary_data(self, event_data, entry_id, offset, endianess_of_target, os_max_api_name) -> str:
         """
         Helper function: interpret each line of the binary cFE Event Log data to a human readable message
@@ -233,6 +235,7 @@ class ValidationPlugin(Plugin):
 
         return message
 
+    # Deprecated method
     def interpret_event_log(self, input_file: str, output_file: str, target: str = None) -> bool:
         """
         Interpret the cFE Event Log file (binary file created via the CFE_EVS_WRITE_LOG_DATA_FILE_CC command)
@@ -304,7 +307,7 @@ class ValidationPlugin(Plugin):
         return file_data
 
     @staticmethod
-    def check_str(file_data:str, search_str: str, is_regex: bool = False) -> bool:
+    def check_str(file_data: str, search_str: str, is_regex: bool = False) -> bool:
         """
         Helper method: Check whether a given text string is in text data.
         @return bool: True, if text string is found; False otherwise.
@@ -321,13 +324,26 @@ class ValidationPlugin(Plugin):
         return status
 
     @staticmethod
-    def search_txt_file(file: str, search_str: str, is_regex: bool = False) -> bool:
+    def _resolve_macros(args: str, target: str = None) -> str:
+        if target is None:
+            return args
+
+        if target in Global.plugins_available['CFS Plugin'].targets:
+            cfs_controller = Global.plugins_available['CFS Plugin'].targets[target]
+            args = cfs_controller.resolve_macros(args)
+
+        return args
+
+    @staticmethod
+    def search_txt_file(file: str, search_str: str, is_regex: bool = False, target: str = None) -> bool:
         """
         Search a text file for a given text string.
         @return bool: True, if text string is found; False otherwise.
         """
         file = resolve_variable(file)
         search_str = resolve_variable(search_str)
+        search_str = ValidationPlugin._resolve_macros(search_str, target)
+        log.debug("search_str is evaluated to '{}'".format(search_str))
 
         file_data = ValidationPlugin.read_file(file)
         if not file_data:
@@ -340,13 +356,15 @@ class ValidationPlugin(Plugin):
         return status
 
     @staticmethod
-    def search_no_txt_file(file: str, search_str: str, is_regex: bool = False) -> bool:
+    def search_no_txt_file(file: str, search_str: str, is_regex: bool = False, target: str = None) -> bool:
         """
         Search a text file for a given text string. It has the reversed logic of search_txt_file.
         @return bool: True, if text string is NOT found; False otherwise
         """
         file = resolve_variable(file)
         search_str = resolve_variable(search_str)
+        search_str = ValidationPlugin._resolve_macros(search_str, target)
+        log.debug("search_str is evaluated to '{}'".format(search_str))
 
         file_data = ValidationPlugin.read_file(file)
         if not file_data:
@@ -357,6 +375,20 @@ class ValidationPlugin(Plugin):
             log.error("String value {} Found".format(search_str))
 
         return not status
+
+    @staticmethod
+    def check_file_exists(file: str) -> bool:
+        """
+        Check whether a file or folder exists on local file system.
+        @return bool: True, if a file or folder exists; False otherwise
+        """
+        file = resolve_variable(file)
+        file_path = Path(file)
+        if not file_path.exists():
+            log.error("File {} does not exist".format(file_path.resolve()))
+            return False
+        log.info("File {} exists ".format(file_path.resolve()))
+        return True
 
     def shutdown(self):
         """

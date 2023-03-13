@@ -1,20 +1,21 @@
 {
     "test_script_number": "Nominal-CI-Commands",
     "test_script_name": "CiFunctions.json",
+    "owner": "CTF",
+    "description": "Nominal CI Functions",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Nominal CI Functions",
-    "owner": "CTF",
-    "test_setup": "",
     "ctf_options": {
         "verify_timeout": 4
     },
+    "test_setup": "",
     "import": {},
     "functions": {
         "SendCheckCiNoopCmd": {
             "description": "Send and check CI_NOOP_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt"
             ],
@@ -22,7 +23,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CI_CMD_MID",
                         "cc": "CI_NOOP_CC",
                         "args": {}
@@ -32,7 +33,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CI_HK_TLM_MID",
                         "args": [
                             {
@@ -58,6 +59,7 @@
         "SendCheckCiResetCmd": {
             "description": "Send and check CI_RESET_COUNTER_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt"
             ],
@@ -65,7 +67,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CI_CMD_MID",
                         "cc": "CI_RESET_CC",
                         "args": {}
@@ -75,7 +77,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CI_HK_TLM_MID",
                         "args": [
                             {
@@ -101,6 +103,7 @@
         "SendCheckCiEnableToCmd": {
             "description": "Send and check CI_ENABLE_TO_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "destIp",
@@ -112,7 +115,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CI_CMD_MID",
                         "cc": "CI_ENABLE_TO_CC",
                         "args": {
@@ -127,7 +130,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CI_HK_TLM_MID",
                         "args": [
                             {

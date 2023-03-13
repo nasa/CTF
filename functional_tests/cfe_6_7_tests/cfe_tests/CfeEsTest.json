@@ -1,15 +1,15 @@
 {
     "test_script_number": "CFE-ES-Functions-Test",
     "test_script_name": "CfeEsTest.json",
+    "owner": "CTF",
+    "description": "Example script showing ES function usage",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Example script showing ES function usage",
-    "owner": "CTF",
-    "test_setup": "",
     "ctf_options": {
-        "verify_timeout": 4
+        "verify_timeout": 6
     },
+    "test_setup": "",
     "import": {
         "../libs/CfeEsFunctions.json": [
             "SendCheckCfeEsNoopCmd",
@@ -42,84 +42,80 @@
     "functions": {},
     "tests": [
         {
-            "test_number": "CFE-ES-Functions-Test-1",
-            "description": "Start CFS, Send TO NOOP command",
+            "test_number": "CFE-ES-Functions-Test",
+            "description": "",
             "instructions": [
                 {
-                    "instruction": "StartCfs",
-                    "wait": 1,
-                    "data": {
-                        "target": ""
-                    }
-                },
-                {
-                    "instruction": "EnableCfsOutput",
-                    "wait": 1,
-                    "data": {
-                        "target": ""
-                    }
+                    "function": "SendCheckCfeEsResetCounterCmd",
+                    "description": "Nominal case",
+                    "params": {
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 0,
+                        "expectedErrCnt": 0
+                    },
+                    "wait": 1
                 },
                 {
                     "function": "SendCheckCfeEsNoopCmd",
-                    "wait": 5,
+                    "description": "Nominal case",
                     "params": {
+                        "cfstgt": "tgt1",
                         "expectedCmdCnt": 1,
                         "expectedErrCnt": 0
-                    }
-                },
-                {
-                    "function": "SendCheckCfeEsResetCounterCmd",
-                    "wait": 1,
-                    "params": {
-                        "expectedCmdCnt": 0,
-                        "expectedErrCnt": 0
-                    }
+                    },
+                    "wait": 1
                 },
                 {
                     "function": "SendCheckCfeEsRestartCmd",
-                    "wait": 1,
-                    "description": "Testing Off Nominal Case, CFS Outputs Invalid Restart Type",
+                    "description": "Off-Nominal Case, CFS Outputs Invalid Restart Type",
                     "params": {
-                        "expectedCmdCnt": 0,
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 1,
                         "expectedErrCnt": 1,
                         "restartType": 0
-                    }
+                    },
+                    "wait": 1
                 },
                 {
                     "function": "SendCheckCfeEsShellCmd",
-                    "wait": 1,
+                    "description": "Off-Nominal case; command doesn't exist",
                     "params": {
-                        "expectedCmdCnt": 0,
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 1,
                         "expectedErrCnt": 2,
                         "cmdString": "pwd",
                         "outputFile": "CfeEsTest_SendCheckCfeEsShellCmd_Output.txt"
-                    }
+                    },
+                    "wait": 1
                 },
                 {
                     "function": "SendCheckCfeEsStartPerfDataAppCmd",
-                    "wait": 1,
+                    "description": "Nominal case",
                     "params": {
-                        "expectedCmdCnt": 1,
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 2,
                         "expectedErrCnt": 2,
                         "triggerMode": 0
-                    }
+                    },
+                    "wait": 1
                 },
                 {
                     "function": "SendCheckCfeEsStopPerfDataAppCmd",
-                    "wait": 1,
                     "description": "Nominal case - filename length < 64",
                     "params": {
-                        "expectedCmdCnt": 2,
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 3,
                         "expectedErrCnt": 2,
                         "fileName": "CfeEsTest_SendCheckCfeEsStopPerfDataAppCmd_Output.txt"
-                    }
+                    },
+                    "wait": 1
                 },
                 {
                     "function": "SendCheckCfeEsStartAppCmd",
-                    "wait": 1,
                     "description": "Off-nominal Case due to mismatch between fileName size on CFS vs JSON",
                     "params": {
-                        "expectedCmdCnt": 2,
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 3,
                         "expectedErrCnt": 3,
                         "app": "SOME_APP",
                         "entryPoint": "SOME_ENTRY",
@@ -127,15 +123,8 @@
                         "stackSize": 12345,
                         "exceptionAction": 0,
                         "priority": 0
-                    }
-                },
-                {
-                    "function": "SendCheckCfeEsResetCounterCmd",
-                    "wait": 10,
-                    "params": {
-                        "expectedCmdCnt": 0,
-                        "expectedErrCnt": 0
-                    }
+                    },
+                    "wait": 1
                 }
             ]
         }

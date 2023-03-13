@@ -1,6 +1,8 @@
+#!/usr/bin/env python
+
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -118,6 +120,13 @@ def update_ini_file(filepath):
             )
             count += 1
 
+        if 'cfs_protocol' in config[section] and 'send_crc' not in config[section]:
+            config[section]["send_crc"] = "false"
+            config[section].comments.update(
+                {"send_crc": ["", "CFS command includes crc checksum? "]}
+            )
+            count += 1
+
         if config[section].get('cfs_protocol') == 'sp0':
             if "stop_command" not in config[section]:
                 config[section]["stop_command"] = "reboot()"
@@ -150,8 +159,8 @@ def update_ini_file(filepath):
 
 if __name__ == '__main__':
     if not len(sys.argv) > 1:
-        print('This script will find and update .json and .ini files under the provided paths to comply with CTF v1.4')
-        print("Usage: python upgrade_v1_4.py [ROOTPATH ...]")
+        print('This script will find and update .json and .ini files under the provided paths to comply with CTF v1.7')
+        print("Usage: python upgrade_v1_7.py [ROOTPATH ...]")
     if not ConfigObj:
         print("Python package configobj not found: INI files will not be updated. Install with 'pip install configobj'")
     if sys.version_info < (3, 8):

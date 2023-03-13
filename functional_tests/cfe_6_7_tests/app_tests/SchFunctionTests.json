@@ -1,15 +1,15 @@
 {
     "test_script_number": "CFS-SCH-Functions-Test",
     "test_script_name": "SchFunctionTests.json",
+    "owner": "CTF",
+    "description": "Example script showing SCH function usage",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Example script showing SCH function usage",
-    "owner": "CTF",
-    "test_setup": "",
     "ctf_options": {
         "verify_timeout": 4
     },
+    "test_setup": "",
     "import": {
         "../libs/SchFunctions.json": [
             "SendCheckSchNoopCmd",
@@ -26,19 +26,14 @@
     "tests": [
         {
             "test_number": "SCH-Function-Test-1",
-            "description": "Start CFS, enable CFS output",
+            "description": "Test SCH RESET command",
             "instructions": [
                 {
-                    "instruction": "StartCfs",
-                    "data": {
-                        "target": ""
-                    },
-                    "wait": 1
-                },
-                {
-                    "instruction": "EnableCfsOutput",
-                    "data": {
-                        "target": ""
+                    "function": "SendCheckSchResetCmd",
+                    "params": {
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 0,
+                        "expectedErrCnt": 0
                     },
                     "wait": 1
                 }
@@ -50,71 +45,61 @@
             "instructions": [
                 {
                     "function": "SendCheckSchNoopCmd",
-                    "wait": 5,
                     "params": {
+                        "cfstgt": "tgt1",
                         "expectedCmdCnt": 1,
                         "expectedErrCnt": 0
-                    }
+                    },
+                    "wait": 5
                 }
             ]
         },
         {
             "test_number": "SCH-Function-Test-3",
-            "description": "Test SCH RESET command",
+            "description": "Test SendCheckSchEnableCmd function",
             "instructions": [
                 {
-                    "function": "SendCheckSchResetCmd",
-                    "wait": 1,
+                    "function": "SendCheckSchEnableCmd",
                     "params": {
-                        "expectedCmdCnt": 0,
-                        "expectedErrCnt": 0
-                    }
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 2,
+                        "expectedErrCnt": 0,
+                        "slotNumber": 0,
+                        "entryNumber": 0
+                    },
+                    "wait": 1
                 }
             ]
         },
         {
             "test_number": "SCH-Function-Test-4",
-            "description": "Test SendCheckSchEnableCmd function",
+            "description": "Test SendCheckSchDisableCmd function",
             "instructions": [
                 {
-                    "function": "SendCheckSchEnableCmd",
-                    "wait": 1,
+                    "function": "SendCheckSchDisableCmd",
                     "params": {
-                        "expectedCmdCnt": 1,
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 3,
                         "expectedErrCnt": 0,
                         "slotNumber": 0,
                         "entryNumber": 0
-                    }
+                    },
+                    "wait": 1
                 }
             ]
         },
         {
             "test_number": "SCH-Function-Test-5",
-            "description": "Test SendCheckSchDisableCmd function",
-            "instructions": [
-                {
-                    "function": "SendCheckSchDisableCmd",
-                    "wait": 1,
-                    "params": {
-                        "expectedCmdCnt": 2,
-                        "expectedErrCnt": 0,
-                        "slotNumber": 0,
-                        "entryNumber": 0
-                    }
-                }
-            ]
-        },
-        {
-            "test_number": "SCH-Function-Test-6",
             "description": "Test SendCheckSchEnableSyncCmd function",
             "instructions": [
                 {
                     "function": "SendCheckSchEnableSyncCmd",
-                    "wait": 3,
                     "params": {
-                        "expectedCmdCnt": 3,
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 4,
                         "expectedErrCnt": 0
-                    }
+                    },
+                    "wait": 3
                 }
             ]
         }

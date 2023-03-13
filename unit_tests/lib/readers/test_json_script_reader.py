@@ -6,7 +6,7 @@ Unit Test for JSONScriptReader class: Loads and validates input CTF test scripts
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -133,6 +133,40 @@ def test_json_script_reader_process_functions_with_function():
     assert 'SendCheckCiEnableToCmd' in reader.functions
 
 
+def test_json_script_reader_resolve_labels():
+    """
+    test JSONScriptReader class method : resolve_labels
+    Perform in-line label name update for resolved functions. CTF requires unique label names for 'BeginLoop',
+    'EndLoop', 'IfCondition', 'ElseCondition', 'EndCondition' per test script.
+    """
+    input_script_path = 'functional_tests/cfe_6_7_tests/app_tests/CiFunctionTests.json'
+    reader = JSONScriptReader(input_script_path)
+    assert reader.label_cnt == 0
+    commands = [{'instruction': 'IfCondition', 'data':
+        {'conditions': [{'variable': 'my_var', 'compare': '<', 'value': 1}], 'label': 'label_1'}},
+        {'instruction': 'EndCondition', 'data': {'label': 'label_1'}}]
+    assert reader.resolve_labels(commands) is None
+    assert reader.label_cnt == 1
+
+
+def test_json_script_reader_resolve_labels_exception(utils):
+    """
+    test JSONScriptReader class method : resolve_labels - raise exception
+    Perform in-line label name update for resolved functions. CTF requires unique label names for 'BeginLoop',
+    'EndLoop', 'IfCondition', 'ElseCondition', 'EndCondition' per test script.
+    """
+    input_script_path = 'functional_tests/cfe_6_7_tests/app_tests/CiFunctionTests.json'
+    reader = JSONScriptReader(input_script_path)
+    assert reader.label_cnt == 0
+    commands = [{'instruction': 'IfCondition', 'data':
+        {'conditions': [{'variable': 'my_var', 'compare': '<', 'value': 1}], }},
+        {'instruction': 'EndCondition', 'data': {'label': 'label_1'}}]
+    utils.clear_log()
+    assert reader.resolve_labels(commands) is None
+    assert reader.label_cnt == 1
+    assert utils.has_log_level('ERROR')
+
+
 def test_json_script_reader_process_functions_exception(utils):
     """
     test JSONScriptReader class method : process_functions  -- raise exception when calling json.load
@@ -225,6 +259,27 @@ def test_json_script_reader_process_tests():
         assert reader.process_tests() is None
 
 
+def test_json_script_reader_process_tests_command_dict_type_exception(json_script_reader):
+    """
+    test JSONScriptReader class method process_tests : 'command is not dictionary type' exception
+    """
+    assert json_script_reader.script.input_file == 'Test_CTF_All_Instructions.json'
+    json_script_reader.raw_data['tests'][0]['instructions'].append([{'instruction': 'TestCommand', 'data':
+        {'arg1': 'Hello', 'arg2': 'World'}, 'wait': 1}])
+    with pytest.raises(CtfTestError):
+        json_script_reader.process_tests()
+
+
+def test_json_script_reader_process_tests_params_not_defined_exception(json_script_reader):
+    """
+    test JSONScriptReader class method process_tests : 'params' attribute is not defined in function exception
+    """
+    assert json_script_reader.script.input_file == 'Test_CTF_All_Instructions.json'
+    json_script_reader.raw_data['tests'][0]['instructions'].append({"function": "StartCfsFunc"})
+    with pytest.raises(CtfTestError):
+        json_script_reader.process_tests()
+
+
 def test_json_script_reader_process_tests_no_commands_in_function():
     """
     test JSONScriptReader class method : process_tests - No commands in function
@@ -281,6 +336,84 @@ def test_json_script_reader_resolve_function(json_script_reader):
          'wait': 0}]
 
 
+def test_json_script_reader_resolve_function_inside_func_nominal(json_script_reader):
+    """
+    test JSONScriptReader class method : resolve_function
+    Perform in-line replacement of function calls with the set of instructions within the function definition
+    """
+    name = 'SendCheckCiEnableToCmd'
+    params = {'expectedCmdCnt': 1, 'expectedErrCnt': 0, 'destIp': '127.0.0.1', 'destPort': 5011, 'routeMask': 0,
+              'fileDesc': 0}
+    functions = {'SendCheckCiEnableToCmd': {'description': 'Send and check CI_ENABLE_TO_CC',
+                                            'varlist': ['expectedCmdCnt', 'expectedErrCnt', 'destIp', 'destPort',
+                                                        'routeMask', 'fileDesc'], 'instructions': [
+            {'instruction': 'SendCfsCommand',
+             'data': {'target': '', 'mid': 'CI_CMD_MID', 'cc': 'CI_ENABLE_TO_CC',
+                      'args': {'cDestIp': 'destIp', 'usDestPort': 'destPort', 'usRouteMask': 'routeMask',
+                               'iFileDesc': 'fileDesc'}}, 'wait': 0},
+            {'function': 'SendCheckCiEnableToCmd_2',
+             "params": {'expectedCmdCnt': 1, 'expectedErrCnt': 0, 'destIp': "127.0.0.1",
+                        'destPort': 88, 'routeMask': 0, 'fileDesc': 0}
+             },
+            {'instruction': 'CheckTlmValue', 'data': {'target': '', 'mid': 'CI_HK_TLM_MID',
+                                                      'args': [
+                                                          {'value': ['expectedCmdCnt'], 'compare': '=='},
+                                                          {'variable': 'usCmdErrCnt',
+                                                           'value': ['expectedErrCnt'], 'compare': '=='}]},
+             'wait': 0}]},
+                 'SendCheckCiEnableToCmd_2': {'description': 'Send and check CI_ENABLE_TO_CC',
+                                              'varlist': ['expectedCmdCnt', 'expectedErrCnt', 'destIp', 'destPort',
+                                                          'routeMask', 'fileDesc'], 'instructions': [
+                         {'instruction': 'SendCfsCommand',
+                          'data': {'target': '', 'mid': 'CI_CMD_MID', 'cc': 'CI_ENABLE_TO_CC',
+                                   'args': {'cDestIp': 'destIp', 'usDestPort': 'destPort', 'usRouteMask': 'routeMask',
+                                            'iFileDesc': 'fileDesc'}}, 'wait': 0},
+                     ]
+                                              }
+                 }
+
+    assert json_script_reader.resolve_function(name, params, functions) is not None
+
+
+def test_json_script_reader_resolve_function_inside_func_invalid(json_script_reader):
+    """
+    test JSONScriptReader class method : resolve_function
+    Perform in-line replacement of function calls with the set of instructions within the function definition
+    """
+    name = 'SendCheckCiEnableToCmd'
+    params = {'expectedCmdCnt': 1, 'expectedErrCnt': 0, 'destIp': '127.0.0.1', 'destPort': 5011, 'routeMask': 0,
+              'fileDesc': 0}
+    functions = {'SendCheckCiEnableToCmd': {'description': 'Send and check CI_ENABLE_TO_CC',
+                                            'varlist': ['expectedCmdCnt', 'expectedErrCnt', 'destIp', 'destPort',
+                                                        'routeMask', 'fileDesc'], 'instructions': [
+            {'instruction': 'SendCfsCommand',
+             'data': {'target': '', 'mid': 'CI_CMD_MID', 'cc': 'CI_ENABLE_TO_CC',
+                      'args': {'cDestIp': 'destIp', 'usDestPort': 'destPort', 'usRouteMask': 'routeMask',
+                               'iFileDesc': 'fileDesc'}}, 'wait': 0},
+            {'function': 'SendCheckCiEnableToCmd_2',
+             "params": {'expectedCmdCnt': 1, 'expectedErrCnt': 0, 'destIp': "127.0.0.1",
+                        'destPort': 88, 'routeMask': 0, 'fileDesc': 0}
+             },
+            {'instruction': 'CheckTlmValue', 'data': {'target': '', 'mid': 'CI_HK_TLM_MID',
+                                                      'args': [
+                                                          {'value': ['expectedCmdCnt'], 'compare': '=='},
+                                                          {'variable': 'usCmdErrCnt',
+                                                           'value': ['expectedErrCnt'], 'compare': '=='}]},
+             'wait': 0}]},
+                 'SendCheckCiEnableToCmd_3': {'description': 'Send and check CI_ENABLE_TO_CC',
+                                              'varlist': ['expectedCmdCnt', 'expectedErrCnt', 'destIp', 'destPort',
+                                                          'routeMask', 'fileDesc'], 'instructions': [
+                         {'instruction': 'SendCfsCommand',
+                          'data': {'target': '', 'mid': 'CI_CMD_MID', 'cc': 'CI_ENABLE_TO_CC',
+                                   'args': {'cDestIp': 'destIp', 'usDestPort': 'destPort', 'usRouteMask': 'routeMask',
+                                            'iFileDesc': 'fileDesc'}}, 'wait': 0},
+                     ]
+                                              }
+                 }
+
+    assert json_script_reader.resolve_function(name, params, functions) is None
+
+
 def test_json_script_reader_resolve_function_inside_func(json_script_reader):
     """
     test JSONScriptReader class method : resolve_function
@@ -316,7 +449,8 @@ def test_json_script_reader_resolve_function_inside_func(json_script_reader):
                                               }
                  }
 
-    assert json_script_reader.resolve_function(name, params, functions) is None
+    with pytest.raises(CtfTestError):
+        json_script_reader.resolve_function(name, params, functions)
 
 
 def test_json_script_reader_resolve_function_mismatch(json_script_reader):
@@ -340,8 +474,59 @@ def test_json_script_reader_resolve_function_mismatch(json_script_reader):
                                                            'value': ['expectedErrCnt'], 'compare': '=='}]},
              'wait': 0}]}}
 
+    # 'invalid_cmd' is not in functions.keys(), return None
     assert json_script_reader.resolve_function('invalid_cmd', params, functions) is None
-    assert json_script_reader.resolve_function(name, params, functions) is None
+
+    with pytest.raises(CtfTestError):
+        json_script_reader.resolve_function(name, params, functions)
+
+
+def test_json_script_reader_resolve_function_type_list_exception(json_script_reader):
+    """
+    test JSONScriptReader class method : resolve_function  -- varlist not list type
+    """
+    name = 'SendCheckCiEnableToCmd'
+    params = {'expectedCmdCnt': 1, 'expectedErrCnt': 0, 'destIp': '127.0.0.1', 'destPort': 5011, }
+    functions = {'SendCheckCiEnableToCmd': {'description': 'Send and check CI_ENABLE_TO_CC',
+                                            'varlist': {'expectedCmdCnt', 'expectedErrCnt', 'destIp', 'destPort',
+                                                        'routeMask', 'fileDesc'}, 'instructions': [
+            {'instruction': 'SendCfsCommand',
+             'data': {'target': '', 'mid': 'CI_CMD_MID', 'cc': 'CI_ENABLE_TO_CC',
+                      'args': {'cDestIp': 'destIp', 'usDestPort': 'destPort', 'usRouteMask': 'routeMask',
+                               'iFileDesc': 'fileDesc'}}, 'wait': 0},
+            {'instruction': 'CheckTlmValue', 'data': {'target': '', 'mid': 'CI_HK_TLM_MID',
+                                                      'args': [
+                                                          {'value': ['expectedCmdCnt'], 'compare': '=='},
+                                                          {'variable': 'usCmdErrCnt',
+                                                           'value': ['expectedErrCnt'], 'compare': '=='}]},
+             'wait': 0}]}}
+
+    with pytest.raises(CtfTestError):
+        json_script_reader.resolve_function(name, params, functions)
+
+
+def test_json_script_reader_resolve_function_type_dict_exception(json_script_reader):
+    """
+    test JSONScriptReader class method : resolve_function  -- params is not dict type
+    """
+    name = 'SendCheckCiEnableToCmd'
+    params = [{'expectedCmdCnt': 1, 'expectedErrCnt': 0, 'destIp': '127.0.0.1', 'destPort': 5011}]
+    functions = {'SendCheckCiEnableToCmd': {'description': 'Send and check CI_ENABLE_TO_CC',
+                                            'varlist': ['expectedCmdCnt', 'expectedErrCnt', 'destIp', 'destPort',
+                                                        'routeMask', 'fileDesc'], 'instructions': [
+            {'instruction': 'SendCfsCommand',
+             'data': {'target': '', 'mid': 'CI_CMD_MID', 'cc': 'CI_ENABLE_TO_CC',
+                      'args': {'cDestIp': 'destIp', 'usDestPort': 'destPort', 'usRouteMask': 'routeMask',
+                               'iFileDesc': 'fileDesc'}}, 'wait': 0},
+            {'instruction': 'CheckTlmValue', 'data': {'target': '', 'mid': 'CI_HK_TLM_MID',
+                                                      'args': [
+                                                          {'value': ['expectedCmdCnt'], 'compare': '=='},
+                                                          {'variable': 'usCmdErrCnt',
+                                                           'value': ['expectedErrCnt'], 'compare': '=='}]},
+             'wait': 0}]}}
+
+    with pytest.raises(CtfTestError):
+        json_script_reader.resolve_function(name, params, functions)
 
 
 def test_json_script_reader_resolve_function_exception(json_script_reader, utils):

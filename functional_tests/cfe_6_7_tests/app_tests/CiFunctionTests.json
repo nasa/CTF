@@ -1,15 +1,15 @@
 {
     "test_script_number": "CFS-CI-Functions-Test",
     "test_script_name": "CiFunctionTests.json",
+    "owner": "CTF",
+    "description": "Example script showing CI function usage",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Example script showing CI function usage",
-    "owner": "CTF",
-    "test_setup": "",
     "ctf_options": {
         "verify_timeout": 4
     },
+    "test_setup": "",
     "import": {
         "../libs/CiFunctions.json": [
             "SendCheckCiResetCmd",
@@ -21,6 +21,7 @@
         "SendShellCommand": {
             "description": "No description",
             "varlist": [
+                "cfstgt",
                 "instruction",
                 "output_file",
                 "expected_cmd_cnt",
@@ -30,6 +31,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
+                        "target": "cfstgt",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_SHELL_CC",
                         "args": {
@@ -37,14 +39,14 @@
                                 "CmdString": "instruction",
                                 "OutputFilename": "output_file"
                             }
-                        },
-                        "target": ""
+                        }
                     },
                     "wait": 1
                 },
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
+                        "target": "cfstgt",
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {
@@ -61,8 +63,7 @@
                                 ],
                                 "compare": "=="
                             }
-                        ],
-                        "target": ""
+                        ]
                     },
                     "wait": 1
                 }
@@ -75,51 +76,48 @@
             "description": "Test CI Enable TO command",
             "instructions": [
                 {
-                    "instruction": "StartCfs",
-                    "data": {
-                        "target": ""
-                    },
-                    "wait": 1
-                },
-                {
                     "function": "SendCheckCiEnableToCmd",
-                    "wait": 1,
                     "params": {
+                        "cfstgt": "tgt1",
                         "expectedCmdCnt": 1,
                         "expectedErrCnt": 0,
                         "destIp": "127.0.0.1",
                         "destPort": 5011,
                         "routeMask": 0,
                         "fileDesc": 0
-                    }
+                    },
+                    "disabled": true,
+                    "wait": 1
                 }
             ]
         },
         {
             "test_number": "CI-Function-Test-2",
-            "description": "Test CI NOOP command",
+            "description": "Test CI Reset command",
             "instructions": [
                 {
-                    "function": "SendCheckCiNoopCmd",
-                    "wait": 5,
+                    "function": "SendCheckCiResetCmd",
                     "params": {
-                        "expectedCmdCnt": 2,
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 0,
                         "expectedErrCnt": 0
-                    }
+                    },
+                    "wait": 1
                 }
             ]
         },
         {
             "test_number": "CI-Function-Test-3",
-            "description": "Test CI Reset command",
+            "description": "Test CI NOOP command",
             "instructions": [
                 {
-                    "function": "SendCheckCiResetCmd",
-                    "wait": 1,
+                    "function": "SendCheckCiNoopCmd",
                     "params": {
-                        "expectedCmdCnt": 0,
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 1,
                         "expectedErrCnt": 0
-                    }
+                    },
+                    "wait": 5
                 }
             ]
         },
@@ -127,9 +125,20 @@
             "test_number": "Shell-Function-Test-1",
             "description": "No description",
             "instructions": [
+		{
+		    "instruction": "SendCfsCommand",
+		    "data": {
+		        "target": "tgt1",
+		        "mid": "CFE_ES_CMD_MID",
+		        "cc": "CFE_ES_RESET_COUNTERS_CC",
+		        "args": {}
+		    },
+		    "wait": 1
+		},
                 {
                     "function": "SendShellCommand",
                     "params": {
+                        "cfstgt": "tgt1",
                         "instruction": "hostname",
                         "output_file": "/cf/test_output.txt",
                         "expected_cmd_cnt": 0,

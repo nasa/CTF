@@ -1,6 +1,8 @@
 {
     "test_script_number": "CTF-VV-04",
     "test_script_name": "CTF_VV_04.json",
+    "owner": "CTF",
+    "description": "Build and start a cFS instance",
     "requirements": {
         "CTF-08": "Full",
         "CTF-09": "Full",
@@ -8,10 +10,8 @@
         "CTF-30": "Full",
         "CTF-31": "Full"
     },
-    "description": "Build and start a cFS instance",
-    "owner": "CTF",
-    "test_setup": "",
     "ctf_options": {},
+    "test_setup": "",
     "import": {},
     "tests": [
         {

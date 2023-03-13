@@ -5,7 +5,7 @@ The Variable Plugin module allows users to set / update / check variables define
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -101,9 +101,9 @@ class VariablePlugin(Plugin):
 
         # exclude default variables from os.environ
         variables_defined = [item for item in Global.config.items("test_variable")
-                             if item not in Global.config.defaults().items()]
+                             if item[0] not in Global.config.defaults().keys()]
 
-        log.debug("Test variables defined in section 'test_variables' : {}".format(variables_defined))
+        log.debug("Test variables defined in section 'test_variable' : {}".format(variables_defined))
         casted_types = {int: "int", float: "float", str: "string", bool: "boolean"}
 
         for key, value in variables_defined:
@@ -141,7 +141,7 @@ class VariablePlugin(Plugin):
 
     @staticmethod
     def set_user_variable_from_tlm(variable_name: str, mid: str, tlm_variable: str,
-                                   target: str = None, is_header: bool = False):
+                                   target: str = None, is_header: bool = False, variable_type: str = None):
         """
         Get the latest telemetry value from queue, and set it to the specified variable.
         @return bool: True if successful, False otherwise.
@@ -153,16 +153,18 @@ class VariablePlugin(Plugin):
         resolved_target = resolve_variable(target)
         cfs_plugin = Global.plugin_manager.find_plugin_for_command("StartCfs")
         tlm_value = cfs_plugin.get_tlm_value(resolved_mid, resolved_tlm_variable, is_header, resolved_target)
-        status = VariablePlugin.set_user_defined_variable(resolved_variable_name, "=", tlm_value)
+        status = VariablePlugin.set_user_defined_variable(resolved_variable_name, "=", tlm_value, variable_type)
         return status
 
     @staticmethod
-    def set_user_variable_from_tlm_header(variable_name: str, mid: str, header_variable: str, target: str = None):
+    def set_user_variable_from_tlm_header(variable_name: str, mid: str, header_variable: str,
+                                          target: str = None, variable_type: str = None):
         """
         Get the latest telemetry header value from queue, and set it to the specified variable.
         @return bool: True if successful, False otherwise.
         """
-        return VariablePlugin.set_user_variable_from_tlm(variable_name, mid, header_variable, target, True)
+        return VariablePlugin.set_user_variable_from_tlm(variable_name, mid, header_variable, target,
+                                                         True, variable_type)
 
     @staticmethod
     def set_label(label: str) -> bool:

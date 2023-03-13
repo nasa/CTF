@@ -1,15 +1,15 @@
 {
     "test_script_number": "CTF-EVS-Log-Test",
     "test_script_name": "Test_CTF_EVS_Log.json",
+    "owner": "CTF",
+    "description": "Basic CTF Example Script To Search string in EVS Binary File",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Basic CTF Example Script To Save EVS Binary File to Txt File",
-    "owner": "CTF",
-    "test_setup": "",
     "ctf_options": {
         "verify_timeout": 4
     },
+    "test_setup": "",
     "import": {},
     "tests": [
         {
@@ -17,18 +17,33 @@
             "description": "Register CFS, Save EVS Log File as Text File",
             "instructions": [
                 {
-                    "instruction": "RegisterCfs",
+                    "instruction": "SendCfsCommand",
                     "data": {
-                        "target": ""
-                    }
+                        "target": "tgt1",
+                        "mid": "CFE_EVS_CMD_MID",
+                        "cc": "CFE_EVS_WRITE_LOG_DATA_FILE_CC",
+                        "args": {
+                            "Payload": {
+                                "LogFilename": "/ram/example_EVS.bin"
+                            }
+                        }
+                    },
+                    "wait": 5
                 },
                 {
-                    "instruction": "SaveFileAsText",
+                    "instruction": "SearchStr",
                     "data": {
-                        "input_file": "./plugins/validation_plugin/tests/evs.bin",
-                        "output_file": "./testArtifacts/evs_log.txt",
-                        "file_type": "EVS",
-                        "target": ""
+                        "file": "/dev/shm/osal:RAM/example_EVS.bin",
+                        "search_str": "cFE SB Initialized:  cFE DEVELOPMENT BUILD v7.0.0-rc4"
+                    },
+                    "wait": 5
+                },
+                {
+                    "instruction": "SearchNoStr",
+                    "data": {
+                        "target":"tgt1",
+                        "file": "/dev/shm/osal:RAM/example_EVS.bin",
+                        "search_str": "cFE SB Initialized: #SCH_ENA_GRP_CMD_ERR_EID# "
                     }
                 }
             ]

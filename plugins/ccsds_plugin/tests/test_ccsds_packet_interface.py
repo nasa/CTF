@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -79,6 +79,15 @@ def test_ccsdspacketinterface_get_function_code(packet_interface):
     """
     with pytest.raises(NotImplementedError):
         packet_interface.get_function_code()
+
+
+def test_ccsdspacketinterface_get_sequence_count(packet_interface):
+    """
+    Test CcsdsPacketInterface class method: get_sequence_count
+    Convenience method to get sequence_count from the packet header
+    """
+    with pytest.raises(NotImplementedError):
+        packet_interface.get_sequence_count()
 
 
 def test_ccsdspacketinterface_set_function_code(packet_interface):

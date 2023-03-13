@@ -6,7 +6,7 @@
     },
     "description": "Basic CTF Two Targets Verification Test Example",
     "owner": "CTF",
-    "test_setup": "N/A",
+    "test_setup": "Requires the use of configs/example_lx1_lx2_config.ini or another that defines a target 'cfs_LX1'",
     "ctf_options": {
         "verify_timeout": 4
     },

@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -64,7 +64,7 @@ def test_add_variables_from_config(variable_plugin):
     assert Global.variable_store["variable_3"] == 5.0
     assert Global.variable_store["variable_4"] == 'abc'
     Global.variable_store.clear()
-    Global.load_config("./configs/lx1_lx2_config.ini")
+    Global.load_config("./configs/example_lx1_lx2_config.ini")
     assert variable_plugin.add_variables_from_config() is None
     assert "variable_1" not in Global.variable_store
     assert "variable_2" not in Global.variable_store

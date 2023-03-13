@@ -1,15 +1,15 @@
 {
     "test_script_number": "Advanced-Cfs-Plugin-Test",
     "test_script_name": "Test_CTF_Advanced_Example.json",
+    "owner": "CTF",
+    "description": "Advanced CTF Example Script Showing Commands/Telemetry Verification with variable tolerances, event checking, and function usage",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Advanced CTF Example Script Showing Commands/Telemetry Verification with variable tolerances, event checking, and function usage",
-    "owner": "CTF",
-    "test_setup": "",
     "ctf_options": {
         "verify_timeout": 4
     },
+    "test_setup": "",
     "import": {},
     "functions": {
         "Increment Event": {
@@ -86,13 +86,13 @@
                     "wait": 1
                 },
                 {
-                    "description": "Enable output via a raw command payload rather than args",
                     "instruction": "SendCfsCommandWithRawPayload",
+                    "description": "Enable output via a raw command payload rather than args",
                     "data": {
                         "target": "",
                         "mid": "TO_CMD_MID",
                         "cc": "TO_ENABLE_OUTPUT_CC",
-                        "hex_buffer": "3132372e302e302e31000000000000009313000000000000"
+                        "hex_buffer": "3132372e302e302e3100000000000000931300000000000000000000"
                     },
                     "wait": 1
                 },
@@ -126,9 +126,10 @@
                     "wait": 1
                 },
                 {
-                    "description": "This will format the first message with msg_args and then check for a regex match",
                     "instruction": "CheckEvent",
+                    "description": "This will format the first message with msg_args and then check for a regex match",
                     "data": {
+                        "target": "",
                         "args": [
                             {
                                 "app_name": "TO",
@@ -143,11 +144,10 @@
                                 "event_str": "TO_VerifyPtrAndCmdLength\\(\\) - Rcvd invalid msgLen for MID:*",
                                 "is_regex": true
                             }
-                        ],
-                        "target": ""
+                        ]
                     },
-                    "wait": 0,
-                    "verify_timeout": 2.0
+                    "verify_timeout": 2.0,
+                    "wait": 0
                 },
                 {
                     "instruction": "CheckTlmValue",
@@ -164,7 +164,7 @@
                             }
                         ]
                     },
-                    "wait": 1
+                    "wait": 60
                 },
                 {
                     "function": "Increment Event",
@@ -208,8 +208,8 @@
                     "wait": 1
                 },
                 {
-                    "description": "Demonstrate numeric values for MID and CC to execute a TO reset command",
                     "instruction": "SendCfsCommand",
+                    "description": "Demonstrate numeric values for MID and CC to execute a TO reset command",
                     "data": {
                         "target": "",
                         "mid": 10891,
@@ -236,27 +236,27 @@
                     "wait": 1
                 },
                 {
-                    "description": "Demonstrate the use of header parameters (has no effect in default CCSDS implementation)",
                     "instruction": "SendCfsCommand",
+                    "description": "Demonstrate the use of header parameters (has no effect in default CCSDS implementation)",
                     "data": {
                         "target": "",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_SHELL_CC",
                         "args": {
                             "Payload": {
-                                "CmdString": "hostname",
-                                "OutputFilename": "/cf/test_output.txt"
+                                "CmdString": "pwd",
+                                "OutputFilename": "/ram/test_output.txt"
                             }
                         },
                         "header": {
-                            "field_name": "value"
+                            "pheader.version_number": 4
                         }
                     },
                     "wait": 1
                 },
                 {
-                    "description": "Demonstrate the use of macros in command args",
                     "instruction": "SendCfsCommand",
+                    "description": "Demonstrate the use of macros in command args",
                     "data": {
                         "target": "",
                         "mid": "SCH_CMD_MID",

@@ -5,7 +5,7 @@ Loads and validates input CTF test scripts. Manages execution of loaded test scr
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -60,6 +60,7 @@ class JSONScriptReader:
         self.script.input_file = os.path.basename(input_script_path)
 
         self.functions = dict()
+        self.label_cnt = 0
 
         # ENHANCE - validate file against a schema
         try:
@@ -183,6 +184,9 @@ class JSONScriptReader:
             test_number = curr_test.get("case_number") or curr_test.get("test_number")
             default_index = -1
             for _, command in enumerate(commands):
+                if not isinstance(command, dict):
+                    log.error("{} is not dictionary type".format(command))
+                    raise CtfTestError("{} is not dictionary type".format(command))
                 data = command.get("data")
                 args = None if data is None else data.get("args")
                 args = self.sanitize_args(args)
@@ -190,10 +194,13 @@ class JSONScriptReader:
                     command["args"] = args
 
                 if "function" in command:
-                    params = None if command is None else command.get("params")
+                    if "params" not in command:
+                        log.error("'params' attribute is not defined in function {}".format(command))
+                        raise CtfTestError("'params' attribute is not defined in function {}".format(command))
+
+                    params = command.get("params")
                     params = self.sanitize_args(params)
-                    if params is not None:
-                        command["params"] = params
+                    command["params"] = params
 
                     inline_commands = self.resolve_function(command["function"], command["params"], self.functions)
                     if inline_commands is None:
@@ -207,6 +214,8 @@ class JSONScriptReader:
                         function_call_delay = command["wait"]
                     else:
                         function_call_delay = 1.0
+
+                    self.resolve_labels(inline_commands)
 
                     function_disabled = bool(command.get('disabled', False))
                     for c_index, c_inline in enumerate(inline_commands):
@@ -232,28 +241,56 @@ class JSONScriptReader:
             test_list.append(test)
         self.script.set_tests(test_list)
 
+    def resolve_labels(self, commands):
+        """
+        Perform in-line label name update for resolved functions. CTF requires unique label names for 'BeginLoop',
+        'EndLoop', 'IfCondition', 'ElseCondition', 'EndCondition' per test script.
+        """
+        log.debug("Resolve labels defined in functions {}".format(commands))
+        label_defined = {}
+        label_resolved = False
+        for command in commands:
+            if command.get("instruction", None) in ("BeginLoop","EndLoop","IfCondition","ElseCondition","EndCondition"):
+                try:
+                    label = command["data"]["label"]
+                    if label not in label_defined:
+                        self.label_cnt += 1
+                        label_defined[label] = label + "_"+str(self.label_cnt)
+                    command["data"]["label"] = label_defined[label]
+                    label_resolved = True
+                    log.debug("Label {} is resolved to {}".format(label, label_defined[label]))
+                except KeyError as exception:
+                    log.error("Could not resolve label in command {}, exception {}".format(command, exception))
+
+        if label_resolved:
+            log.debug("Labels are resolved in {}".format(commands))
+
     def resolve_function(self, name, params, functions):
         """
         Perform in-line replacement of function calls with the set of instructions within the function definition
         """
         try:
             if name not in functions.keys():
-                log.error("Function %s not found in JSON input file", name)
+                log.error("Function {} not found in JSON input file".format(name))
                 return None
 
             commands = copy.deepcopy(functions[name]["instructions"])
             varlist = functions[name]["varlist"]
-            if len(varlist) > 0 and len(params.keys()) > 0:
-                if set(varlist) != set(params.keys()):
-                    log.error("Function %s parameter mismatch", name)
-                    return None
+
+            if not isinstance(varlist, list):
+                log.error("{} is not list type".format(varlist))
+                raise CtfTestError("{} is not list type".format(varlist))
+
+            if not isinstance(params, dict):
+                log.error("{} is not dict type".format(params))
+                raise CtfTestError("{} is not dict type".format(params))
+
+            if set(varlist) != set(params):
+                log.error("Function {} parameter mismatch".format(name))
+                raise CtfTestError("Function {} parameter mismatch".format(name))
 
             for index, command in enumerate(commands):
                 if "function" in command:
-                    for key, value in command["params"].items():
-                        if key in varlist:
-                            value = params[key]
-                            command["params"][key] = value
                     resolved_cmds = self.resolve_function(command["function"], command["params"], functions)
                     if not resolved_cmds:
                         log.error("Command %s not resolved", name)

@@ -1,12 +1,16 @@
 {
     "test_script_number": "CTF-Check-Event-Test",
     "test_script_name": "Test_CTF_Check_Event.json",
-    "test_setup": "",
-    "description": "",
     "owner": "CTF",
-    "ctf_options": {},
+    "description": "",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "test_setup": "",
     "environment": {},
-    "requirements": {},
     "functions": {},
     "tests": [
         {
@@ -14,39 +18,35 @@
             "description": "",
             "instructions": [
                 {
-                    "instruction": "StartCfs",
+                    "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
-                        "run_args": ""
-                    },
-                    "wait": 1
-                },
-                {
-                    "instruction": "EnableCfsOutput",
-                    "data": {
-                        "target": ""
+                        "target": "tgt1",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_NOOP_CC",
+                        "args": {}
                     },
                     "wait": 1
                 },
                 {
                     "instruction": "CheckEvent",
                     "data": {
+                        "target": "tgt1",
                         "args": [
                             {
                                 "app_name": "TO",
                                 "event_id": 3,
-                                "event_str": "TO - ENABLE_OUTPUT cmd succesful for  routeMask:0x00000001",
+                                "event_str": "TO - Rcvd NOOP cmd (0). Version 1.2.0.0",
                                 "event_str_args": "",
                                 "is_regex": false
                             }
-                        ],
-                        "target": ""
+                        ]
                     },
-                    "wait": 0
+                    "wait": 1
                 },
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
+                        "target": "tgt1",
                         "mid": "CFE_EVS_CMD_MID",
                         "cc": "CFE_EVS_SET_EVENT_FORMAT_MODE_CC",
                         "args": {
@@ -54,33 +54,35 @@
                                 "MsgFormat": 0,
                                 "Spare": 0
                             }
-                        },
-                        "target": ""
+                        }
                     },
                     "wait": 1
                 },
                 {
-                    "instruction": "EnableCfsOutput",
+                    "instruction": "SendCfsCommand",
                     "data": {
-                        "target": ""
+                        "target": "tgt1",
+                        "mid": "CI_CMD_MID",
+                        "cc": "CI_NOOP_CC",
+                        "args": {}
                     },
-                    "wait": 5
+                    "wait": 1
                 },
                 {
                     "instruction": "CheckEvent",
                     "data": {
+                        "target": "tgt1",
                         "args": [
                             {
-                                "app_name": "TO",
+                                "app_name": "CI",
                                 "event_id": 3,
-                                "event_str": "TO - ENABLE_OUTPUT cmd succesful for  routeMask:0x00000001",
+                                "event_str": "CI - Rcvd NOOP cmd (0). Version 1.2.0.0",
                                 "event_str_args": "",
                                 "is_regex": false
                             }
-                        ],
-                        "target": ""
+                        ]
                     },
-                    "wait": 0
+                    "wait": 1
                 }
             ]
         }

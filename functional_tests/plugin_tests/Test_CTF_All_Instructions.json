@@ -1,12 +1,16 @@
 {
     "test_script_number": "CTF-Plugin-All-Instruction-Test",
     "test_script_name": "Test_CTF_All_Instructions.json",
-    "test_setup": "",
+    "owner": "CTF",
     "description": "CTF Test Script to verify all plugin instructions.",
-    "owner": "No Owner",
-    "ctf_options": {},
+    "requirements": {
+         "MyRequirement": "N/A"
+    },
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "test_setup": "",
     "environment": {},
-    "requirements": {},
     "functions": {},
     "tests": [
         {
@@ -33,37 +37,25 @@
             "description": "No description",
             "instructions": [
                 {
-                    "instruction": "StartCfs",
-                    "data": {
-                        "target": ""
-                    },
-                    "wait": 1
-                },
-                {
-                    "instruction": "EnableCfsOutput",
-                    "wait": 1,
-                    "data": {
-                        "target": ""
-                    }
-                },
-                {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_NOOP_CC",
                         "args": {}
                     },
-                    "wait": 1
+                    "wait": 2
                 },
                 {
                     "instruction": "SetUserVariableFromTlm",
                     "data": {
-                        "variable_name": "tlm_usCmdCnt",
+                        "target": "tgt1",
                         "mid": "CFE_ES_HK_TLM_MID",
-                        "tlm_variable": "Payload.CommandCounter"
+                        "variable_name": "tlm_usCmdCnt",
+                        "tlm_variable": "Payload.CommandCounter",
+                        "variable_type": "int"
                     },
-                    "wait": 1
+                    "wait": 3
                 },
                 {
                     "instruction": "InsertUserComment",
@@ -72,11 +64,24 @@
                     }
                 },
                 {
+                    "instruction": "CheckFileExists",
+                    "data": {
+                        "file": "functional_tests/plugin_tests/Test_CTF_All_Instructions.json"
+                    }
+                },
+                {
+                    "instruction": "CheckFileExists",
+                    "data": {
+                        "file": "$_CTF_LOG_DIR$/Test_CTF_All_Instructions.json.log"
+                    }
+                },
+                {
                     "instruction": "SetUserVariableFromTlm",
                     "data": {
-                        "variable_name": "MaxProcessorResets",
                         "mid": "CFE_ES_HK_TLM_MID",
-                        "tlm_variable": "Payload.MaxProcessorResets"
+                        "variable_name": "MaxProcessorResets",
+                        "tlm_variable": "Payload.MaxProcessorResets",
+                        "variable_type": "int"
                     },
                     "wait": 1
                 },
@@ -96,71 +101,9 @@
             "description": "Start cFS, send each command",
             "instructions": [
                 {
-                    "instruction": "SendCfsCommandWithPayloadLength",
-                    "data": {
-                        "target": "",
-                        "mid": "TO_CMD_MID",
-                        "cc": "TO_NOOP_CC",
-                        "args": {},
-                        "payload_length": 10
-                    },
-                    "wait": 1
-                },
-                {
-                    "instruction": "CheckTlmValue",
-                    "data": {
-                        "target": "",
-                        "mid": "TO_HK_TLM_MID",
-                        "args": [
-                            {
-                                "variable": "usCmdErrCnt",
-                                "value": [
-                                    1
-                                ],
-                                "compare": "=="
-                            }
-                        ]
-                    },
-                    "wait": 1
-                },
-                {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
-                        "mid": "TO_CMD_MID",
-                        "cc": "TO_NOOP_CC",
-                        "args": {}
-                    },
-                    "wait": 1
-                },
-                {
-                    "instruction": "CheckTlmValue",
-                    "data": {
-                        "target": "",
-                        "mid": "TO_HK_TLM_MID",
-                        "args": [
-                            {
-                                "variable": "usCmdErrCnt",
-                                "value": [
-                                    1
-                                ],
-                                "compare": "=="
-                            },
-                            {
-                                "variable": "usCmdCnt",
-                                "value": [
-                                    2
-                                ],
-                                "compare": "=="
-                            }
-                        ]
-                    },
-                    "wait": 1
-                },
-                {
-                    "instruction": "SendCfsCommand",
-                    "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "mid": "TO_CMD_MID",
                         "cc": "TO_RESET_CC",
                         "args": {}
@@ -168,9 +111,58 @@
                     "wait": 1
                 },
                 {
-                    "instruction": "ShutdownCfs",
+                    "instruction": "SendCfsCommandWithPayloadLength",
                     "data": {
-                        "target": ""
+                        "target": "tgt1",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_NOOP_CC",
+                        "payload_length": 10,
+                        "args": {}
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "tgt1",
+                        "mid": "TO_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "usCmdErrCnt",
+                                "value": 1,
+                                "compare": "=="
+                            }
+                        ]
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "tgt1",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_NOOP_CC",
+                        "args": {}
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "tgt1",
+                        "mid": "TO_HK_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "usCmdErrCnt",
+                                "value": 1,
+                                "compare": "=="
+                            },
+                            {
+                                "variable": "usCmdCnt",
+                                "value": 1,
+                                "compare": "=="
+                            }
+                        ]
                     },
                     "wait": 1
                 }

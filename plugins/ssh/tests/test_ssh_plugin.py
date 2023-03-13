@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -107,7 +107,7 @@ def test_ssh_plugin_init_connection_exception(ssh_plugin_instance):
 def test_ssh_plugin_run_command(ssh_plugin_instance):
     """
     Test SSH plugin run_command method:
-    Executes a command on the remote host. ExecutionInitSSH must be called first to establish an SSH connection.
+    Executes a command on the remote host. SSH_InitSSH must be called first to establish an SSH connection.
     """
     ssh_plugin_instance.initialize()
 
@@ -121,7 +121,7 @@ def test_ssh_plugin_run_command(ssh_plugin_instance):
 def test_ssh_plugin_run_command_exception(ssh_plugin_instance, utils):
     """
     Test SSH plugin run_command method with exception:
-    Executes a command on the remote host. ExecutionInitSSH must be called first to establish an SSH connection.
+    Executes a command on the remote host. SSH_InitSSH must be called first to establish an SSH connection.
     """
     ssh_plugin_instance.initialize()
     utils.clear_log()
@@ -138,7 +138,7 @@ def test_ssh_plugin_run_command_exception(ssh_plugin_instance, utils):
 def test_ssh_plugin_run_command_wrong_name(ssh_plugin_instance):
     """
     Test SSH plugin run_command method:
-    Executes a command on the remote host. ExecutionInitSSH must be called first to establish an SSH connection.
+    Executes a command on the remote host. SSH_InitSSH must be called first to establish an SSH connection.
     Call run_command with a wrong name
     """
     ssh_plugin_instance.initialize()
@@ -184,7 +184,7 @@ def test_ssh_plugin_check_output(ssh_plugin_instance):
     """
     Test SSH plugin check_output method:
     Compares the output of the most recently executed command.
-    ExecutionRunRemoteCommand or ExecutionRunLocalCommand must be called first
+    SSH_RunRemoteCommand or SSH_RunLocalCommand must be called first
     """
     assert ssh_plugin_instance.initialize()
 
@@ -199,7 +199,7 @@ def test_ssh_plugin_check_output_connection2(ssh_plugin_instance):
     """
     Test SSH plugin check_output method: test 2 registered targets
     Compares the output of the most recently executed command.
-    ExecutionRunRemoteCommand or ExecutionRunLocalCommand must be called first
+    SSH_RunRemoteCommand or SSH_RunLocalCommand must be called first
     """
     assert ssh_plugin_instance.initialize()
     with patch('plugins.ssh.ssh_plugin.SshController.init_connection', return_value=True):
@@ -217,7 +217,7 @@ def test_ssh_plugin_check_output_wrong_name(ssh_plugin_instance, utils):
     """
     Test SSH plugin check_output method: Call check_output with a wrong name
     Compares the output of the most recently executed command.
-    ExecutionRunRemoteCommand or ExecutionRunLocalCommand must be called first
+    SSH_RunRemoteCommand or SSH_RunLocalCommand must be called first
     """
     assert ssh_plugin_instance.initialize()
     with patch('plugins.ssh.ssh_plugin.SshController.init_connection', return_value=True):
@@ -233,7 +233,7 @@ def test_ssh_plugin_check_output_without_register(ssh_plugin_instance):
     """
     Test SSH plugin check_output method: test output without registering target
     Compares the output of the most recently executed command.
-    ExecutionRunRemoteCommand or ExecutionRunLocalCommand must be called first
+    SSH_RunRemoteCommand or SSH_RunLocalCommand must be called first
     """
     ssh_plugin_instance.initialize()
 

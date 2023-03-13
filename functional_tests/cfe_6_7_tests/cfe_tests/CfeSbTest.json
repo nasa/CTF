@@ -1,15 +1,15 @@
 {
     "test_script_number": "CFE-SB-Functions-Test",
     "test_script_name": "CfeSbTest.json",
+    "owner": "CTF",
+    "description": "Example script showing SB function usage",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Example script showing SB function usage",
-    "owner": "CTF",
-    "test_setup": "",
     "ctf_options": {
-        "verify_timeout": 4
+        "verify_timeout": 6
     },
+    "test_setup": "",
     "import": {
         "../libs/CfeSbFunctions.json": [
             "SendCheckCfeSbNoopCmd",
@@ -28,71 +28,62 @@
     "functions": {},
     "tests": [
         {
-            "test_number": "CFE-6-7-CFE-SB-Test-1",
-            "description": "Start CFS, Send SB NOOP, Reset commands, and 3 commands with arguments",
+            "test_number": "CFE-6-7-CFE-SB-Test",
+            "description": "",
             "instructions": [
                 {
-                    "instruction": "StartCfs",
-                    "wait": 1,
-                    "data": {
-                        "target": ""
-                    }
-                },
-                {
-                    "instruction": "EnableCfsOutput",
-                    "wait": 1,
-                    "data": {
-                        "target": ""
-                    }
+                    "function": "SendCheckCfeSbResetCounterCmd",
+                    "description": "Reset will set the counters to 0.",
+                    "params": {
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 0,
+                        "expectedErrCnt": 0
+                    },
+                    "wait": 1
                 },
                 {
                     "function": "SendCheckCfeSbNoopCmd",
-                    "wait": 5,
                     "params": {
+                        "cfstgt": "tgt1",
                         "expectedCmdCnt": 1,
                         "expectedErrCnt": 0
-                    }
-                },
-                {
-                    "function": "SendCheckCfeSbResetCounterCmd",
-                    "wait": 1,
-                    "description": "Reset will set the counters to 0.",
-                    "params": {
-                        "expectedCmdCnt": 0,
-                        "expectedErrCnt": 0
-                    }
+                    },
+                    "wait": 5
                 },
                 {
                     "function": "SendCheckCfeSbSendRoutingInfoCmd",
-                    "wait": 1,
                     "description": "Nominal Case - File name length < 64",
                     "params": {
-                        "expectedCmdCnt": 1,
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 2,
                         "expectedErrCnt": 0,
                         "fileName": "SendCheckCfeSbSendRoutingInfoCmdParam.txt"
-                    }
+                    },
+                    "wait": 1
                 },
                 {
                     "function": "SendCheckCfeSbSendMapInfoCmd",
-                    "wait": 1,
                     "description": "Nominal Case - File name length < 64",
                     "params": {
-                        "expectedCmdCnt": 2,
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 3,
                         "expectedErrCnt": 0,
                         "fileName": "SendCheckCfeSbSendMapInfoCmdParam.txt"
-                    }
+                    },
+                    "wait": 1
                 },
                 {
                     "function": "SendCheckCfeSbEnableRouteCmd",
-                    "wait": 1,
                     "description": "Off-Nominal Case - 'Enbl Route Cmd:Invalid Param.Msg 0x2006,Pipe 112'",
                     "params": {
-                        "expectedCmdCnt": 2,
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 3,
                         "expectedErrCnt": 1,
                         "msgId": 8198,
                         "pipe": 0,
                         "spare": 0
-                    }
+                    },
+                    "wait": 1
                 }
             ]
         }

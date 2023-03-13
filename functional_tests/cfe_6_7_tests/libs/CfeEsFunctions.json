@@ -1,20 +1,21 @@
 {
     "test_script_number": "Nominal-CFE-ES-Commands",
     "test_script_name": "CfeEsFunctions.json",
+    "owner": "CTF",
+    "description": "Nominal CFE-ES Functions",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Nominal CFE-ES Functions",
-    "owner": "CTF",
-    "test_setup": "",
     "ctf_options": {
         "verify_timeout": 4
     },
+    "test_setup": "",
     "import": {},
     "functions": {
         "SendCheckCfeEsNoopCmd": {
             "description": "Send and check CFS_ES_NOOP_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt"
             ],
@@ -22,7 +23,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_NOOP_CC",
                         "args": {}
@@ -32,7 +33,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {
@@ -58,6 +59,7 @@
         "SendCheckCfeEsResetCounterCmd": {
             "description": "Send and check CFS_ES_RESET_COUNTER_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt"
             ],
@@ -65,7 +67,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_RESET_COUNTERS_CC",
                         "args": {}
@@ -75,7 +77,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {
@@ -94,13 +96,14 @@
                             }
                         ]
                     },
-                    "wait": 0
+                    "wait": 1
                 }
             ]
         },
         "SendCheckCfeEsRestartCmd": {
             "description": "Send and check CFE_ES_RESTART_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "restartType"
@@ -109,7 +112,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_RESTART_CC",
                         "args": {
@@ -123,7 +126,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {
@@ -149,6 +152,7 @@
         "SendCheckCfeEsShellCmd": {
             "description": "Send and check CFE_ES_SHELL_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "cmdString",
@@ -158,7 +162,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_SHELL_CC",
                         "args": {
@@ -173,7 +177,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {
@@ -199,6 +203,7 @@
         "SendCheckCfeEsStartAppCmd": {
             "description": "Send and check CFE_ES_START_APP_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "app",
@@ -212,7 +217,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_START_APP_CC",
                         "args": {
@@ -231,7 +236,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {
@@ -257,6 +262,7 @@
         "SendCheckCfeEsStopAppCmd": {
             "description": "Send and check CFE_ES_STOP_APP_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "app"
@@ -265,7 +271,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_STOP_APP_CC",
                         "args": {
@@ -279,7 +285,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {
@@ -305,6 +311,7 @@
         "SendCheckCfeEsRestartAppCmd": {
             "description": "Send and check CFE_ES_RESTART_APP_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "app"
@@ -313,7 +320,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_RESTART_APP_CC",
                         "args": {
@@ -327,7 +334,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {
@@ -353,6 +360,7 @@
         "SendCheckCfeEsReloadAppCmd": {
             "description": "Send and check CFE_ES_RELOAD_APP_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "app"
@@ -361,7 +369,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_RELOAD_APP_CC",
                         "args": {
@@ -376,7 +384,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {
@@ -402,6 +410,7 @@
         "SendCheckCfeEsQueryOneAppCmd": {
             "description": "Send and check CFE_ES_QUERY_ONE_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "app"
@@ -410,7 +419,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_QUERY_ONE_CC",
                         "args": {
@@ -424,7 +433,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {
@@ -450,6 +459,7 @@
         "SendCheckCfeEsQueryAllAppCmd": {
             "description": "Send and check CFE_ES_QUERY_ALL_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "fileName"
@@ -458,7 +468,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_QUERY_ALL_CC",
                         "args": {
@@ -472,7 +482,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {
@@ -498,6 +508,7 @@
         "SendCheckCfeEsClearSyslogAppCmd": {
             "description": "Send and check CFE_ES_CLEAR_SYSLOG_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt"
             ],
@@ -505,7 +516,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_CLEAR_SYSLOG_CC",
                         "args": {}
@@ -515,7 +526,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {
@@ -541,6 +552,7 @@
         "SendCheckCfeEsWriteSyslogAppCmd": {
             "description": "Send and check CFE_ES_WRITE_SYSLOG_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "fileName"
@@ -549,7 +561,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_WRITE_SYSLOG_CC",
                         "args": {
@@ -563,7 +575,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {
@@ -589,6 +601,7 @@
         "SendCheckCfeEsClearErLogAppCmd": {
             "description": "Send and check CFE_ES_CLEAR_ER_LOG_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt"
             ],
@@ -596,7 +609,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_CLEAR_ER_LOG_CC",
                         "args": {}
@@ -606,7 +619,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {
@@ -632,6 +645,7 @@
         "SendCheckCfeEsWriteErLogAppCmd": {
             "description": "Send and check CFE_ES_WRITE_ER_LOG_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "fileName"
@@ -640,7 +654,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_WRITE_ER_LOG_CC",
                         "args": {
@@ -654,7 +668,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {
@@ -680,6 +694,7 @@
         "SendCheckCfeEsStartPerfDataAppCmd": {
             "description": "Send and check CFE_ES_START_PERF_DATA_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "triggerMode"
@@ -688,7 +703,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_START_PERF_DATA_CC",
                         "args": {
@@ -702,7 +717,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {
@@ -728,6 +743,7 @@
         "SendCheckCfeEsStopPerfDataAppCmd": {
             "description": "Send and check CFE_ES_STOP_PERF_DATA_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "fileName"
@@ -736,7 +752,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_STOP_PERF_DATA_CC",
                         "args": {
@@ -750,7 +766,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {
@@ -776,6 +792,7 @@
         "SendCheckCfeEsSetPerfFilterMaskAppCmd": {
             "description": "Send and check CFE_ES_SET_PERF_FILTER_MASK_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "filterMaskNum",
@@ -785,7 +802,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_SET_PERF_FILTER_MASK_CC",
                         "args": {
@@ -800,7 +817,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {
@@ -826,6 +843,7 @@
         "SendCheckCfeEsSetPerfTriggerMaskAppCmd": {
             "description": "Send and check CFE_ES_SET_PERF_TRIGGER_MASK_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "triggerMaskNum",
@@ -835,7 +853,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_SET_PERF_TRIGGER_MASK_CC",
                         "args": {
@@ -850,7 +868,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {
@@ -876,6 +894,7 @@
         "SendCheckCfeEsOverwriteSyslogAppCmd": {
             "description": "Send and check CFE_ES_OVER_WRITE_SYSLOG_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "mode"
@@ -884,7 +903,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_OVER_WRITE_SYSLOG_CC",
                         "args": {
@@ -898,7 +917,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {
@@ -924,6 +943,7 @@
         "SendCheckCfeEsResetPrCountAppCmd": {
             "description": "Send and check CFE_ES_RESET_PR_COUNT_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt"
             ],
@@ -931,7 +951,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_RESET_PR_COUNT_CC",
                         "args": {}
@@ -941,7 +961,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {
@@ -967,6 +987,7 @@
         "SendCheckCfeEsSetMaxPrCountAppCmd": {
             "description": "Send and check CFE_ES_SET_MAX_PR_COUNT_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "maxCount"
@@ -975,7 +996,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_SET_MAX_PR_COUNT_CC",
                         "args": {
@@ -989,7 +1010,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {
@@ -1015,6 +1036,7 @@
         "SendCheckCfeEsDeleteCdsAppCmd": {
             "description": "Send and check CFE_ES_DELETE_CDS_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "cdsName"
@@ -1023,7 +1045,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_DELETE_CDS_CC",
                         "args": {
@@ -1037,7 +1059,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {
@@ -1063,6 +1085,7 @@
         "SendCheckCfeSendMemPoolStatsAppCmd": {
             "description": "Send and check CFE_ES_SEND_MEM_POOL_STATS_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "app",
@@ -1072,7 +1095,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_SEND_MEM_POOL_STATS_CC",
                         "args": {
@@ -1087,7 +1110,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {
@@ -1113,6 +1136,7 @@
         "SendCheckCfeDumpCdsRegistryAppCmd": {
             "description": "Send and check CFE_ES_DUMP_CDS_REGISTRY_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "fileName"
@@ -1121,7 +1145,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_DUMP_CDS_REGISTRY_CC",
                         "args": {
@@ -1135,7 +1159,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {
@@ -1161,6 +1185,7 @@
         "SendCheckCfeQueryAllTasksAppCmd": {
             "description": "Send and check CFE_ES_QUERY_ALL_TASKS_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "fileName"
@@ -1169,7 +1194,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_QUERY_ALL_TASKS_CC",
                         "args": {
@@ -1183,7 +1208,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {

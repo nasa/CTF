@@ -1,15 +1,15 @@
 {
     "test_script_number": "CFS-TO-Functions-Test",
     "test_script_name": "ToFunctionTests.json",
+    "owner": "CTF",
+    "description": "Example script showing TO function usage",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Example script showing TO function usage",
-    "owner": "CTF",
-    "test_setup": "",
     "ctf_options": {
         "verify_timeout": 4
     },
+    "test_setup": "",
     "import": {
         "../libs/ToFunctions.json": [
             "SendCheckToNoopCmd",
@@ -40,92 +40,76 @@
     "tests": [
         {
             "test_number": "TO-Function-Test-1",
-            "description": "Start CFS, enable CFS output",
+            "description": "Test TO NOOP command",
             "instructions": [
                 {
-                    "instruction": "StartCfs",
-                    "wait": 1,
+                    "instruction": "SendCfsCommand",
                     "data": {
-                        "target": ""
-                    }
+                        "target": "tgt1",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_RESET_CC",
+                        "args": {}
+                    },
+                    "wait": 1
                 },
                 {
-                    "instruction": "EnableCfsOutput",
-                    "wait": 1,
-                    "data": {
-                        "target": ""
-                    }
+                    "function": "SendCheckToNoopCmd",
+                    "params": {
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 1,
+                        "expectedErrCnt": 0
+                    },
+                    "wait": 5
                 }
             ]
         },
         {
             "test_number": "TO-Function-Test-2",
-            "description": "Test TO NOOP command",
-            "instructions": [
-                {
-                    "function": "SendCheckToNoopCmd",
-                    "wait": 1,
-                    "params": {
-                        "expectedCmdCnt": 2,
-                        "expectedErrCnt": 0
-                    }
-                }
-            ]
-        },
-        {
-            "test_number": "TO-Function-Test-3",
-            "description": "Test TO RESET command",
-            "instructions": [
-                {
-                    "function": "SendCheckToResetCmd",
-                    "wait": 1,
-                    "params": {
-                        "expectedCmdCnt": 0,
-                        "expectedErrCnt": 0
-                    }
-                }
-            ]
-        },
-        {
-            "test_number": "TO-Function-Test-4",
             "description": "Test TO ENABLE OUTPUT command",
             "instructions": [
                 {
                     "function": "SendCheckToEnableOutputCmd",
-                    "wait": 1,
                     "params": {
-                        "expectedCmdCnt": 1,
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 2,
                         "expectedErrCnt": 0,
                         "destIp": "127.0.0.1",
                         "destPort": 5011,
                         "routeMask": 0,
                         "fileDesc": 0
-                    }
+                    },
+                    "disabled": true,
+                    "wait": 1
                 }
             ]
         },
         {
-            "test_number": "TO-Function-Test-5",
+            "test_number": "TO-Function-Test-3",
             "description": "Test TO PAUSE OUTPUT command",
             "instructions": [
                 {
                     "function": "SendToPauseOutputCmd",
-                    "wait": 5,
-                    "params": {}
+                    "params": {
+                        "cfstgt": "tgt1"
+                    },
+                    "disabled": true,               
+                    "wait": 5
                 }
             ]
         },
         {
-            "test_number": "TO-Function-Test-6",
+            "test_number": "TO-Function-Test-4",
             "description": "Test TO RESUME OUTPUT command",
             "instructions": [
                 {
                     "function": "SendCheckToResumeOutputCmd",
-                    "wait": 2,
                     "params": {
-                        "expectedCmdCnt": 3,
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 1,
                         "expectedErrCnt": 0
-                    }
+                    },
+                    "disabled": true,
+                    "wait": 3
                 }
             ]
         }

@@ -29,32 +29,6 @@
       ]
     },
     {
-      "name": "SaveFileAsText",
-      "description": "",
-      "parameters": [
-        {
-          "name": "input_file",
-          "description": "",
-          "type": "string"
-        },
-        {
-          "name": "output_file",
-          "description": "",
-          "type": "string"
-        },
-        {
-          "name": "file_type",
-          "description": "",
-          "type": "string"
-        },
-        {
-          "name": "target",
-          "description": "",
-          "type": "string"
-        }
-      ]
-    },
-    {
       "name": "SearchStr",
       "description": "",
       "parameters": [
@@ -92,6 +66,17 @@
       "parameters": [
         {
           "name": "comment",
+          "description": "",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "CheckFileExists",
+      "description": "",
+      "parameters": [
+        {
+          "name": "file",
           "description": "",
           "type": "string"
         }

@@ -1,35 +1,30 @@
 {
     "test_script_number": "CTF-Control-Flow-Plugin-Test",
     "test_script_name": "Test_CTF_Control_Flow_Loop.json",
+    "owner": "CTF",
+    "description": "Basic CTF Example Script Showing Simple Control Flow (Looping)",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Basic CTF Example Script Showing Simple Control Flow (Looping)",
-    "owner": "CTF",
-    "test_setup": "",
     "ctf_options": {
         "verify_timeout": 4
     },
+    "test_setup": "",
     "import": {},
     "tests": [
         {
             "test_number": "CTF-Control-Flow-Plugin-Test-1",
-            "description": "Start CFS, Send TO NOOP command, And Conduct Two Loops",
+            "description": "Conduct Two Loops",
             "instructions": [
                 {
-                    "instruction": "StartCfs",
+                    "instruction": "SendCfsCommand",
                     "data": {
-                        "target": ""
+                        "target": "tgt1",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_RESET_CC",
+                        "args": {}
                     },
-                    "wait": 1
-                },
-                {
-                    "instruction": "EnableCfsOutput",
-                    "data": {
-                        "target": ""
-                    },
-                    "wait": 1,
-                    "description": "Need this to enable the telemetry thread. Enable Output counts as 1 TO cmd"
+                    "wait": 3
                 },
                 {
                     "instruction": "SetUserVariable",
@@ -73,18 +68,9 @@
                     "wait": 0
                 },
                 {
-                    "instruction": "SetUserVariable",
-                    "data": {
-                        "variable_name": "my_var",
-                        "operator": "+",
-                        "value": 1
-                    },
-                    "wait": 0
-                },
-                {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "mid": "TO_HK_TLM_MID",
                         "args": [
                             {
@@ -97,9 +83,17 @@
                     "wait": 1
                 },
                 {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "+",
+                        "value": 1
+                    }
+                },
+                {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "mid": "TO_CMD_MID",
                         "cc": "TO_NOOP_CC",
                         "args": {}
@@ -109,7 +103,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_SHELL_CC",
                         "args": {
@@ -131,7 +125,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "mid": "TO_CMD_MID",
                         "cc": "TO_NOOP_CC",
                         "args": {}
@@ -182,7 +176,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "mid": "TO_CMD_MID",
                         "cc": "TO_NOOP_CC",
                         "args": {}
@@ -246,7 +240,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "mid": "TO_CMD_MID",
                         "cc": "TO_NOOP_CC",
                         "args": {}
@@ -298,13 +292,6 @@
                         "label": "OUTER_LOOP"
                     },
                     "wait": 0
-                },
-                {
-                    "instruction": "ShutdownCfs",
-                    "data": {
-                        "target": ""
-                    },
-                    "wait": 1
                 }
             ]
         }

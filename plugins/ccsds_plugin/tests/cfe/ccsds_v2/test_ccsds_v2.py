@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -191,5 +191,11 @@ def test_ccsds_v2_cmd_packet_get_function_code(ccsds_v2_cmd_packet):
     """
     Test CcsdsV2CmdPacket class method: get_function_code & set_function_code
     """
-    ccsds_v2_cmd_packet.get_function_code()
+    assert ccsds_v2_cmd_packet.get_function_code() == 2
     ccsds_v2_cmd_packet.set_function_code(100)
+    assert ccsds_v2_cmd_packet.validate(bytearray([1, 2, 3, 4]))
+    assert ccsds_v2_cmd_packet.get_sequence_count() == 0
+
+
+def test_ccsds_v2_cmd_packet_crc(ccsds_v2_cmd_packet):
+    assert ccsds_v2_cmd_packet.get_crc_flag() == 0

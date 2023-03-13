@@ -1,20 +1,21 @@
 {
     "test_script_number": "Nominal-CFE-SB-Commands",
     "test_script_name": "CfeSbFunctions.json",
+    "owner": "CTF",
+    "description": "Nominal CFE-SB Functions",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Nominal CFE-SB Functions",
-    "owner": "CTF",
-    "test_setup": "",
     "ctf_options": {
         "verify_timeout": 4
     },
+    "test_setup": "",
     "import": {},
     "functions": {
         "SendCheckCfeSbNoopCmd": {
             "description": "Send and check CFE_SB_NOOP_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt"
             ],
@@ -22,7 +23,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_SB_CMD_MID",
                         "cc": "CFE_SB_NOOP_CC",
                         "args": {}
@@ -32,7 +33,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_SB_HK_TLM_MID",
                         "args": [
                             {
@@ -58,6 +59,7 @@
         "SendCheckCfeSbResetCounterCmd": {
             "description": "Send and check CFE_SB_RESET_COUNTERS_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt"
             ],
@@ -65,7 +67,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_SB_CMD_MID",
                         "cc": "CFE_SB_RESET_COUNTERS_CC",
                         "args": {}
@@ -75,7 +77,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_SB_HK_TLM_MID",
                         "args": [
                             {
@@ -101,6 +103,7 @@
         "SendCheckCfeSbSendSbStatsCmd": {
             "description": "Send and check CFE_SB_SEND_SB_STATS_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt"
             ],
@@ -108,7 +111,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_SB_CMD_MID",
                         "cc": "CFE_SB_SEND_SB_STATS_CC",
                         "args": {}
@@ -118,7 +121,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_SB_HK_TLM_MID",
                         "args": [
                             {
@@ -144,6 +147,7 @@
         "SendCheckCfeSbSendRoutingInfoCmd": {
             "description": "Send and check CFE_SB_SEND_ROUTING_INFO_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "fileName"
@@ -152,7 +156,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_SB_CMD_MID",
                         "cc": "CFE_SB_SEND_ROUTING_INFO_CC",
                         "args": {
@@ -166,7 +170,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_SB_HK_TLM_MID",
                         "args": [
                             {
@@ -192,6 +196,7 @@
         "SendCheckCfeSbEnableRouteCmd": {
             "description": "Send and check CFE_SB_ENABLE_ROUTE_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "msgId",
@@ -202,7 +207,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_SB_CMD_MID",
                         "cc": "CFE_SB_ENABLE_ROUTE_CC",
                         "args": {
@@ -218,7 +223,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_SB_HK_TLM_MID",
                         "args": [
                             {
@@ -244,6 +249,7 @@
         "SendCheckCfeSbDisableRouteCmd": {
             "description": "Send and check CFE_SB_DISABLE_ROUTE_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "msgId",
@@ -253,7 +259,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_SB_CMD_MID",
                         "cc": "CFE_SB_DISABLE_ROUTE_CC",
                         "args": {
@@ -268,7 +274,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_SB_HK_TLM_MID",
                         "args": [
                             {
@@ -294,6 +300,7 @@
         "SendCheckCfeSbSendPipeInfoCmd": {
             "description": "Send and check CFE_SB_SEND_PIPE_INFO_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "fileName"
@@ -302,7 +309,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_SB_CMD_MID",
                         "cc": "CFE_SB_SEND_PIPE_INFO_CC",
                         "args": {
@@ -316,7 +323,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_SB_HK_TLM_MID",
                         "args": [
                             {
@@ -342,6 +349,7 @@
         "SendCheckCfeSbSendMapInfoCmd": {
             "description": "Send and check CFE_SB_SEND_MAP_INFO_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "fileName"
@@ -350,7 +358,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_SB_CMD_MID",
                         "cc": "CFE_SB_SEND_MAP_INFO_CC",
                         "args": {
@@ -364,7 +372,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_SB_HK_TLM_MID",
                         "args": [
                             {
@@ -390,6 +398,7 @@
         "SendCheckCfeSbEnableSubReportingCmd": {
             "description": "Send and check CFE_SB_ENABLE_SUB_REPORTING_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt"
             ],
@@ -397,7 +406,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_SB_CMD_MID",
                         "cc": "CFE_SB_ENABLE_SUB_REPORTING_CC",
                         "args": {}
@@ -407,7 +416,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_SB_HK_TLM_MID",
                         "args": [
                             {
@@ -433,6 +442,7 @@
         "SendCheckCfeSbDisableSubReportingCmd": {
             "description": "Send and check CFE_SB_DISABLE_SUB_REPORTING_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt"
             ],
@@ -440,7 +450,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_SB_CMD_MID",
                         "cc": "CFE_SB_DISABLE_SUB_REPORTING_CC",
                         "args": {}
@@ -450,7 +460,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_SB_HK_TLM_MID",
                         "args": [
                             {
@@ -476,6 +486,7 @@
         "SendCheckCfeSbSendPrevSubsCmd": {
             "description": "Send and check CFE_SB_SEND_PREV_SUBS_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt"
             ],
@@ -483,7 +494,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_SB_CMD_MID",
                         "cc": "CFE_SB_SEND_PREV_SUBS_CC",
                         "args": {}
@@ -493,7 +504,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_SB_HK_TLM_MID",
                         "args": [
                             {

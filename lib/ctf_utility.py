@@ -5,7 +5,7 @@ Utility library functions
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -37,6 +37,15 @@ operator_map = {
     ">=": operator.ge,
     "==": operator.eq,
     "!=": operator.ne,
+    "%": operator.mod,
+    "**": operator.pow,
+    "//": operator.floordiv,
+    "&": operator.and_,
+    "|": operator.or_,
+    "^": operator.xor,
+    "~": operator.invert,
+    "<<": operator.lshift,
+    ">>": operator.rshift,
 }
 
 type_map = {
@@ -56,7 +65,7 @@ def expand_path(path):
     return os.path.expanduser(os.path.expandvars(path))
 
 
-def switch_to_cft_directory():
+def switch_to_ctf_directory():
     """
     Switch the working directory to ctf directory, return ctf directory path
     """
@@ -86,6 +95,11 @@ def set_variable(variable_name, op_code, value, variable_type=None):
     @ note - variables and values may be converted to other types even if variable_type is not specified
     """
     value = resolve_variable(value)
+
+    user_passed_type = None
+    if variable_type and variable_type in type_map:
+        user_passed_type = type_map[variable_type]
+
     if op_code == "=":
         if variable_type:
             if variable_type in type_map:
@@ -113,16 +127,23 @@ def set_variable(variable_name, op_code, value, variable_type=None):
             log.error("Variable {} does not exist.".format(variable_name))
             return False
 
-        if not isinstance(variable, type(value)):
-            var_type = float if isinstance(variable, int) else type(variable)
-            log.info("Converting value {} to type {}".format(value, var_type.__name__))
+        if user_passed_type and not isinstance(value, user_passed_type):
+            log.info("Converting value {} to type {}".format(value, user_passed_type.__name__))
+            # add a special case for int hex conversion
+            if isinstance(value, str) and variable_type == "int" and ("x" in value or "X" in value):
+                value = int(value, 16)
             try:
-                value = var_type(value)
+                value = user_passed_type(value)
             except ValueError:
-                log.error("Cannot convert {} to {}! The operation will likely fail.".format(value, var_type.__name__))
+                log.error("Cannot convert {} to {}! The operation will likely fail.".format(value,
+                                                                                            user_passed_type.__name__))
 
         try:
             new_value = op_function(variable, value)
+            # set the type of the new value, if variable_type is valid
+            if user_passed_type:
+                new_value = user_passed_type(new_value)
+
             Global.variable_store[variable_name] = new_value
             log.info("Set Variable {} = '{}' {}".format(variable_name, op_code, value))
             log.debug("New value of {} is {} ({})".format(variable_name, new_value, type(new_value).__name__))
@@ -196,3 +217,21 @@ def rgetattr(obj, attr, *args):
         return getattr(obj, attr, *args)
 
     return functools.reduce(_getattr, [obj] + attr.split('.'))
+
+
+def set_nested_attr(obj, nested_attr, value):
+    """
+    Set the attribute of the nested object. If the attr is not valid, raise CtfParameterError exception.
+    """
+    split_attrs = nested_attr.split('.')
+    # Check the attribute
+    for i in range(len(split_attrs) - 1):
+        if hasattr(obj, split_attrs[i]):
+            obj = getattr(obj, split_attrs[i])
+        else:
+            raise CtfParameterError("Could not find the attribute {} in object".format(nested_attr), nested_attr)
+
+    if hasattr(obj, split_attrs[-1]) and type(getattr(obj, split_attrs[-1])) is type(value):
+        setattr(obj, split_attrs[-1], value)
+    else:
+        raise CtfParameterError("Could not find the attribute {} in object {}".format(nested_attr, obj), nested_attr)

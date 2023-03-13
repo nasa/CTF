@@ -1,0 +1,47 @@
+{
+    "test_script_number": "Start-CFS-and-Enable-Output",
+    "test_script_name": "Test_StartCfsEnableOutput.json",
+    "owner": "CTF",
+    "description": "Register, start CFS target, and enable its Telemetry Output",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "test_setup": "",
+    "environment": {},
+    "functions": {},
+
+    "tests": [
+        {
+            "test_number": "Start-CFS-and-Enable-Output",
+            "description": "",
+            "instructions": [
+                {
+                    "instruction": "RegisterCfs",
+                    "data": {
+                        "target": "tgt1"
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "StartCfs",
+                    "data": {
+                        "target": "tgt1"
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "EnableCfsOutput",
+                    "description": "",
+                    "data": {
+                        "target": "tgt1"
+                    },
+                    "wait": 30
+                }
+            ]
+        }
+    ]
+}

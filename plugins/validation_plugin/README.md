@@ -1,37 +1,16 @@
 # Validation Plugin
 
-The Validation Plugin provides functionality to interpret a cFE binary event log to a human-readable text file, and search for a text string in a file. 
-It also allows the user to delete files/folders and copy files/folders on the local host machine.
+The Validation Plugin provides the functionality to copy, delete the files/folders on the host file system, check file/folder existence, and search a file for text string. 
 
-### SaveFileAsText
-
-Save the cFE event log file (binary file created via the CFE_EVS_WRITE_LOG_DATA_FILE_CC command) to a human-readable text file
-
-- **input_file**: path of the binary event log file.
-- **output_file**: path of the output text file.
-- **file_type**: currently only supports 'EVS' file type.
-- **target**: cfs target, optional 
-
-Example:
-<pre><code>
-{
-    "instruction":"SaveFileAsText",
-    "data":{
-        "input_file": "/dev/shm/osal:RAM/event_log.bin",
-        "output_file": "./testArtifacts/event_log.txt",
-        "file_type": "EVS",
-        "target": "cfs"
-    }
- }
-</code></pre>
 
 ### SearchStr
 
-Search a text file for a given text string. If the string is found, return True, otherwise return False.
+Search a file for a given text string. If the string is found, return True, otherwise return False.
 
-- **file**: path of the text file.
+- **file**: path of the file.
 - **search_str**: text string to be searched for.
-- **is_regex**: (Optional) True if `search_str` is to be used for a regex match instead of string search.
+- **is_regex**: (Optional) True if `search_str` is to be used for a regex match instead of string search. default is False.
+- **target**: (Optional) the section name in the config file, if `search_str` includes macros defined in the section's CCSDS Data Directory json files. 
 
 Example:
 <pre><code>
@@ -47,19 +26,21 @@ Example:
 
 ### SearchNoStr
 
-Search a text file for a given text string. If the string is NOT found, return True, otherwise return False.
+Search a file for a given text string. If the string is NOT found, return True, otherwise return False.
 
-- **file**: path of the text file.
+- **file**: path of the file.
 - **search_str**: text string to be searched for.
-- **is_regex**: (Optional) True if `search_str` is to be used for a regex match instead of string search.
+- **is_regex**: (Optional) True if `search_str` is to be used for a regex match instead of string search. default is False.
+- **target**: (Optional) the section name in the config file, if `search_str` includes macros defined in the section's CCSDS Data Directory json files. 
 
 Example:
 <pre><code>
 {
     "instruction":"SearchNoStr",
      "data":{
+         "target":"cfs",
          "file": "/testArtifacts/event_log.txt",
-         "search_str": "cFE SCH Initial"                                                  
+         "search_str": "cFE SCH #SCH_ENA_GRP_CMD_ERR_EID# Initial"                                                  
      }        
 }
 </code></pre>
@@ -113,3 +94,20 @@ Example:
      }             
 }
 </code></pre>
+
+### CheckFileExists
+
+Check whether a file or folder exists on the host file system.  
+
+- **file**: path of the file.
+
+Example:
+<pre><code>
+{
+     "instruction": "CheckFileExists",
+     "data": {
+         "file": "/testArtifacts/event_log.txt"
+     }             
+}
+</code></pre>
+

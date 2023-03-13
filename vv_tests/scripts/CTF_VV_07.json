@@ -1,6 +1,8 @@
 {
     "test_script_number": "CTF-VV-07",
     "test_script_name": "CTF_VV_07.json",
+    "owner": "CTF",
+    "description": "Update non-continuous verification item with periodic telemetry during run-time",
     "requirements": {
         "CTF-12": "Full",
         "CTF-13": "Full",
@@ -8,10 +10,8 @@
         "CTF-18": "Full",
         "CTF-20": "Full"
     },
-    "description": "Update non-continuous verification item with periodic telemetry during run-time",
-    "owner": "CTF",
-    "test_setup": "Need to run start script first to start cFS instance",
     "ctf_options": {},
+    "test_setup": "Need to run start script first to start cFS instance",
     "import": {},
     "tests": [
         {

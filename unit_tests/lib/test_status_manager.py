@@ -4,7 +4,7 @@ Unit Test for StatusManager: Publishes CTF status messages over a UDP socket (ut
 """
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -79,11 +79,12 @@ def test_status_manager_set_scripts(status_manager_instance):
 
     status_manager_instance.set_scripts(script_list)
 
-    assert status_manager_instance.status['scripts'][0]['tests'][0]['test_number'] == 'CFE-ES-Functions-Test-1'
+    assert status_manager_instance.status['scripts'][0]['tests'][0]['test_number'] == 'CFE-ES-Functions-Test'
     assert status_manager_instance.status['scripts'][0]['tests'][0]['status'] == 'waiting'
-    assert status_manager_instance.status['scripts'][0]['tests'][0]['instructions'][0]['instruction'] == 'StartCfs'
-    assert status_manager_instance.status['scripts'][0]['tests'][0]['instructions'][1][
-               'instruction'] == 'EnableCfsOutput'
+    assert status_manager_instance.status['scripts'][0]['tests'][0]['instructions'][0]['instruction'] == \
+           'SendCfsCommand'
+    assert status_manager_instance.status['scripts'][0]['tests'][0]['instructions'][1]['instruction'] == \
+           'CheckTlmValue'
 
 
 def test_status_manager_update_suite_status(status_manager_instance):

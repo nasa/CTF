@@ -36,6 +36,17 @@ const mapVehicleDataToTelemetryFields = (
         .flat();
 };
 
+const mapVehicleDataToTelemetryFieldsType = (
+    vehicleData: VehicleData,
+    midFilter?: string
+): string[] => {
+    return vehicleData.telemetry
+        .filter(t => midFilter && t.mid === midFilter && midFilter.length > 0)
+        .map(t => t.params.filter(p => p !== undefined)).flat()
+        .reduce( (acc, cur) => { acc[cur.name] = cur.data_type ;  return acc; }, {} );
+
+};
+
 const mapVehicleDataToTelemetryFieldEnums = (
     vehicleData: VehicleData,
     midFilter: string
@@ -140,10 +151,20 @@ export const Comparison = ({
     tlmMid?: string;
     onChange?: (next: CtfComparisonType) => void;
 }) => {
-    const changeHandler = (update: object) => {
-        const newCompare = Object.assign({}, comparison, update);
+    const changeHandler = (update: object, rm_tolerance: boolean) => {
+        let newCompare = Object.assign({}, comparison, update);
+        if (rm_tolerance === true) {
+            let { tolerance,tolerance_plus,tolerance_minus, ...newCompare_2} = newCompare;
+            newCompare = newCompare_2;
+        }
         if (onChange) onChange(newCompare);
     };
+
+    const tlm_fields_types = mapVehicleDataToTelemetryFieldsType(context.vehicleData, tlmMid);
+
+    const comp_var = comparison.variable ?  comparison.variable : 'undefined';
+    const comp_var_type = tlm_fields_types[comp_var];
+
     const dataSource = [
         {
             label: "Telemetry",
@@ -173,6 +194,11 @@ export const Comparison = ({
     ];
     if (tlmMid && tlmMid.length === 0) tlmMid = undefined;
 
+    let float_compare = false;
+    if ( comparison.compare.includes("==") || comparison.compare.includes("!=") )
+          float_compare = true;
+
+
     return (
         <div className={className} style={style}>
             <Input.Group compact>
@@ -180,12 +206,26 @@ export const Comparison = ({
                     dataSource={dataSource}
                     placeholder=""
                     defaultValue={comparison.variable}
-                    onChange={value => changeHandler({ variable: value })}
+                    onChange={value => {
+                        let rm_tolerance = false;
+                        if (  ! (comp_var_type == undefined || comp_var_type == 'double' || comp_var_type == 'float') ) {
+                            rm_tolerance = true;
+                        }
+                        changeHandler({ variable: value }, rm_tolerance);
+                      }
+                    }
                 />
                 <Select
                     size="small"
                     defaultValue={[comparison.compare]}
-                    onChange={value => changeHandler({ compare: value })}
+                    onChange={  value => {
+                        let rm_tolerance = false;
+                        if ( !(value === '==' || value === '!=') ) {
+                            rm_tolerance = true;
+                        }
+                        changeHandler({ compare: value }, rm_tolerance);
+                      }
+                    }
                     style={{ width: 100 }}
                 >
                     <Option key="==">==</Option>
@@ -198,12 +238,54 @@ export const Comparison = ({
                     <Option key="strneq">strneq</Option>
                     <Option key="regex">regex</Option>
                 </Select>
-                <AutoCompleteField
-                    dataSource={[]}
-                    placeholder=""
-                    defaultValue={comparison.value !== undefined ? comparison.value[0]: ""}
-                    onChange={value => changeHandler({ value: [(isNaN(+value)? value: +value)] })}
-                />
+                <Input
+                   style={{ width: 120, height: 24 }}
+                   defaultValue={comparison.value !== undefined ? comparison.value: ""}
+                   autoFocus={false}
+                   onBlur={ e => {
+                     let num_converted = Number(e.target.value)
+                     let update = {value : num_converted}
+
+                     if ( comparison.compare.includes("str") ) update.value = e.target.value
+
+                     changeHandler(update)
+                   }}
+               />
+
+               { ( float_compare == true && (comp_var_type == undefined || comp_var_type == 'double' || comp_var_type == 'float') ) &&
+                 <>
+                    <Tag style={{ width: 120, height: 24, fontSize: 15 }} >  tolerance_minus  </Tag>
+
+                    <Input
+                       style={{ width: 80, height: 24 }}
+                       defaultValue={comparison.tolerance_minus !== undefined ? comparison.tolerance_minus: ""}
+                       autoFocus={false}
+                       onBlur={ e => {
+                         let num_converted = Number(e.target.value)
+                         let update = {tolerance_minus : num_converted}
+                         if (isNaN(num_converted)) update.tolerance_minus = e.target.value
+                         // could not use { value: (+e.target.value? +e.target.value: e.target.value) }
+                         // if the input is "0", convert to 0, but 0? is false, so value is set to "0" instead of 0 (number)
+                         changeHandler(update);
+                       }}
+                   />
+
+                    <Tag style={{ width: 120, height: 24 , fontSize: 15}} >  tolerance_plus  </Tag>
+
+                    <Input
+                       style={{ width: 80, height: 24 }}
+                       defaultValue={comparison.tolerance_plus !== undefined ? comparison.tolerance_plus: ""}
+                       autoFocus={false}
+                       onBlur={ e => {
+                         let num_converted = Number(e.target.value)
+                         let update = {tolerance_plus : num_converted}
+                         if (isNaN(num_converted)) update.tolerance_plus = e.target.value
+                         changeHandler(update)
+                       }}
+                    />
+
+                 </>
+               }
 
             </Input.Group>
         </div>

@@ -1,0 +1,154 @@
+{
+    "test_script_number": "CTF-If-Func-Test",
+    "test_script_name": "Test_CTF_If_Func.json",
+    "owner": "CTF",
+    "description": "CTF Example Script Showing If & Loop Instructions in Function Usage",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "test_setup": "",
+    "import": {},
+    "functions": {
+        "Test_If": {
+            "description": "Define my_var before calling 'Test_If' function",
+            "varlist": [
+                "inputCnt"
+            ],
+            "instructions": [
+                {
+                    "instruction": "IfCondition",
+                    "data": {
+                        "label": "label_1",
+                        "conditions": [
+                            {
+                                "variable": "my_var",
+                                "compare": "<",
+                                "value": "inputCnt"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "tgt1",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_NOOP_CC",
+                        "args": {}
+                    }
+                },
+                {
+                    "instruction": "EndCondition",
+                    "data": {
+                        "label": "label_1"
+                    }
+                }
+            ]
+        },
+        "Test_Loop": {
+            "description": "Define my_var before calling 'Test_Loop' function",
+            "varlist": [
+                "inputCnt"
+            ],
+            "instructions": [
+                {
+                    "instruction": "BeginLoop",
+                    "data": {
+                        "label": "LOOP_1",
+                        "conditions": [
+                            {
+                                "variable": "my_var",
+                                "compare": "<",
+                                "value": "inputCnt"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "tgt1",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_NOOP_CC",
+                        "args": {}
+                    }
+                },
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "+",
+                        "value": 1
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "EndLoop",
+                    "data": {
+                        "label": "LOOP_1"
+                    },
+                    "wait": 1
+                }
+            ]
+        }
+    },
+    "tests": [
+        {
+            "test_number": "CTF-If-Func-Test-1",
+            "description": "",
+            "instructions": [
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "=",
+                        "value": 2
+                    },
+                    "wait": 0
+                },
+                {
+                    "function": "Test_If",
+                    "params": {
+                        "inputCnt": 1
+                    }
+                },
+                {
+                    "function": "Test_If",
+                    "params": {
+                        "inputCnt": 5
+                    }
+                }
+            ]
+        },
+        {
+            "test_number": "CTF-If-Func-Test-2",
+            "description": "",
+            "instructions": [
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "=",
+                        "value": 0
+                    },
+                    "wait": 0
+                },
+                {
+                    "function": "Test_Loop",
+                    "params": {
+                        "inputCnt": 2
+                    }
+                },
+                {
+                    "function": "Test_Loop",
+                    "params": {
+                        "inputCnt": 3
+                    }
+                }
+            ]
+        }
+    ]
+}

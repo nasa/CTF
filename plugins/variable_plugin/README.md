@@ -5,7 +5,7 @@ from json test scripts. The defined variables can be evaluated in other CTF inst
 such as "BeginLoop" and "EndLoop".  
 
 In addition, CTF provides four 'built-in' variables: `_CTF_EXE_DIR`, `_CTF_LOG_DIR`, `_CTF_TLM_DIR`, `_CTF_CFS_NAME_CFS_OUTPUT_FILE`. 
-An example of using these variables is shown in `example_scripts/config_required/lx1_lx2_basic_example.json`.  
+An example of using these variables is shown in `example_scripts/config_required/LX1_LX2_Basic_Example.json`.  
 `_CTF_EXE_DIR` is CTF runtime directory.  
 `_CTF_LOG_DIR` is the test log folder during CTF execution, the value will change when CTF executes different test json scripts.  
 `_CTF_TLM_DIR` is the telemetry log folder during CTF execution, the value will change when CTF restarts flight SW.   
@@ -39,7 +39,7 @@ Another way to define a variable is to define it in INI config file's [test_vari
 For example, below define variable_1 to be 10, and variable_2 to be false. 
 Variables defined in INI file can be used in the same way as SetUserVariable and the related instructions. 
 <pre><code>
-[test_variables]
+[test_variable]
 variable_1 = 10
 variable_2 = false
 </code></pre>
@@ -52,6 +52,8 @@ Set the user defined variable to the latest telemetry value.
 - **mid**: the mid of telemetry packet (example: "TO_HK_TLM_MID")
 - **tlm_variable**: the parameter of telemetry packet (example: "usCmdCnt")
 - **target:** (Optional) A previously registered target name. If no name is given, will use the first registered target.
+- **variable_type**: (Optional) One of "int", "float", "string", or "boolean" indicating the type of value to be set. If not specified, the value from telemetry packet will be stored as-is. 
+
 
 Example:
 <pre><code>
@@ -61,7 +63,8 @@ Example:
          "variable_name": "my_var",
           "mid": "TO_HK_TLM_MID",
           "tlm_variable": "usCmdCnt",
-          "target": "cfs_workstation"
+          "target": "cfs_workstation",
+          "variable_type": "int"
     }
 }
 </code></pre>
@@ -74,6 +77,8 @@ Same as `SetUserVariableFromTlm` except the variable references the packet heade
 - **mid**: the mid of telemetry packet (example: "TO_HK_TLM_MID")
 - **header_variable**: the parameter of telemetry packet (example: "pheader.length")
 - **target:** (Optional) A previously registered target name. If no name is given, will use the first registered target.
+- **variable_type**: (Optional) One of "int", "float", "string", or "boolean" indicating the type of value to be set. If not specified, the value from telemetry packet will be stored as-is. 
+
 
 Example:
 <pre><code> 
@@ -83,7 +88,8 @@ Example:
          "variable_name": "my_var",
           "mid": "TO_HK_TLM_MID",
           "header_variable": "pheader.length",
-          "target": "cfs_workstation"
+          "target": "cfs_workstation",
+          "variable_type": "int"
     }
 }
 </code></pre>

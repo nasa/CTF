@@ -1,20 +1,21 @@
 {
     "test_script_number": "Nominal-CFE-TIME-Commands",
     "test_script_name": "CfeTimeFunctions.json",
+    "owner": "CTF",
+    "description": "Nominal CFE-TIME Functions",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Nominal CFE-TIME Functions",
-    "owner": "CTF",
-    "test_setup": "",
     "ctf_options": {
         "verify_timeout": 4
     },
+    "test_setup": "",
     "import": {},
     "functions": {
         "SendCheckCfsTimeNoopCmd": {
             "description": "Send and check CFS_EVS_NOOP_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt"
             ],
@@ -22,7 +23,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_CMD_MID",
                         "cc": "CFE_TIME_NOOP_CC",
                         "args": {}
@@ -32,7 +33,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_HK_TLM_MID",
                         "args": [
                             {
@@ -58,6 +59,7 @@
         "SendCheckCfsTimeResetCmd": {
             "description": "Send and check CFS_EVS_RESET_COUNTER_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt"
             ],
@@ -65,7 +67,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_CMD_MID",
                         "cc": "CFE_TIME_RESET_COUNTERS_CC",
                         "args": {}
@@ -75,7 +77,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_HK_TLM_MID",
                         "args": [
                             {
@@ -101,6 +103,7 @@
         "SendCheckCfsTimeSendDiagnosticTlmCmd": {
             "description": "Send and check CFE_TIME_SEND_DIAGNOSTIC_TLM_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "source"
@@ -109,7 +112,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_CMD_MID",
                         "cc": "CFE_TIME_SEND_DIAGNOSTIC_TLM_CC",
                         "args": {
@@ -123,7 +126,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_HK_TLM_MID",
                         "args": [
                             {
@@ -149,6 +152,7 @@
         "SendCheckCfsTimeSetSourceCmd": {
             "description": "Send and check CFE_TIME_SET_SOURCE_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "source"
@@ -157,7 +161,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_CMD_MID",
                         "cc": "CFE_TIME_SEND_DIAGNOSTIC_TLM_CC",
                         "args": {
@@ -171,7 +175,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_HK_TLM_MID",
                         "args": [
                             {
@@ -197,6 +201,7 @@
         "SendCheckCfsTimeSetStateCmd": {
             "description": "Send and check CFE_TIME_SET_STATE_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "state"
@@ -205,7 +210,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_CMD_MID",
                         "cc": "CFE_TIME_SET_STATE_CC",
                         "args": {
@@ -219,7 +224,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_HK_TLM_MID",
                         "args": [
                             {
@@ -245,6 +250,7 @@
         "SendCheckCfsTimeSubDelayCmd": {
             "description": "Send and check CFE_TIME_ADD_DELAY_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "sec",
@@ -254,7 +260,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_CMD_MID",
                         "cc": "CFE_TIME_ADD_DELAY_CC",
                         "args": {
@@ -269,7 +275,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_HK_TLM_MID",
                         "args": [
                             {
@@ -295,6 +301,7 @@
         "SendCheckCfsTimeAddDelayCmd": {
             "description": "Send and check CFE_TIME_SUB_DELAY_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "sec",
@@ -304,7 +311,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_CMD_MID",
                         "cc": "CFE_TIME_SUB_DELAY_CC",
                         "args": {
@@ -319,7 +326,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_HK_TLM_MID",
                         "args": [
                             {
@@ -345,6 +352,7 @@
         "SendCheckCfsTimeSetTimeCmd": {
             "description": "Send and check CFE_TIME_SET_TIME_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "sec",
@@ -354,7 +362,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_CMD_MID",
                         "cc": "CFE_TIME_SET_TIME_CC",
                         "args": {
@@ -369,7 +377,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_HK_TLM_MID",
                         "args": [
                             {
@@ -395,6 +403,7 @@
         "SendCheckCfsTimeSetMetCmd": {
             "description": "Send and check CFE_TIME_SET_MET_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "sec",
@@ -404,7 +413,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_CMD_MID",
                         "cc": "CFE_TIME_SET_MET_CC",
                         "args": {
@@ -419,7 +428,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_HK_TLM_MID",
                         "args": [
                             {
@@ -445,6 +454,7 @@
         "SendCheckCfsTimeSetStcfCmd": {
             "description": "Send and check CFE_TIME_SET_STCF_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "sec",
@@ -454,7 +464,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_CMD_MID",
                         "cc": "CFE_TIME_SET_STCF_CC",
                         "args": {
@@ -469,7 +479,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_HK_TLM_MID",
                         "args": [
                             {
@@ -495,6 +505,7 @@
         "SendCheckCfsTimeSetLeapSecondsCmd": {
             "description": "Send and check CFE_TIME_SET_LEAP_SECONDS_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "sec"
@@ -503,7 +514,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_CMD_MID",
                         "cc": "CFE_TIME_SET_LEAP_SECONDS_CC",
                         "args": {
@@ -517,7 +528,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_HK_TLM_MID",
                         "args": [
                             {
@@ -543,6 +554,7 @@
         "SendCheckCfsTimeSubAdjustCmd": {
             "description": "Send and check CFE_TIME_SUB_ADJUST_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "sec",
@@ -552,7 +564,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_CMD_MID",
                         "cc": "CFE_TIME_SUB_ADJUST_CC",
                         "args": {
@@ -567,7 +579,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_HK_TLM_MID",
                         "args": [
                             {
@@ -593,6 +605,7 @@
         "SendCheckCfsTimeAdd1HzAdjustmentCmd": {
             "description": "Send and check CFE_TIME_ADD_1HZ_ADJUSTMENT_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "sec",
@@ -602,7 +615,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_CMD_MID",
                         "cc": "CFE_TIME_ADD_1HZ_ADJUSTMENT_CC",
                         "args": {
@@ -617,7 +630,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_HK_TLM_MID",
                         "args": [
                             {
@@ -643,6 +656,7 @@
         "SendCheckCfsTimeSub1HzAdjustmentCmd": {
             "description": "Send and check CFE_TIME_SUB_1HZ_ADJUSTMENT_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "sec",
@@ -652,7 +666,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_CMD_MID",
                         "cc": "CFE_TIME_SUB_1HZ_ADJUSTMENT_CC",
                         "args": {
@@ -667,7 +681,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_HK_TLM_MID",
                         "args": [
                             {
@@ -693,6 +707,7 @@
         "SendCheckCfsTimeSetSignalCmd": {
             "description": "Send and check CFE_TIME_SET_SIGNAL_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "toneSource"
@@ -701,7 +716,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_CMD_MID",
                         "cc": "CFE_TIME_SET_SIGNAL_CC",
                         "args": {
@@ -715,7 +730,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TIME_HK_TLM_MID",
                         "args": [
                             {

@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -107,6 +107,10 @@ class CcsdsPrimaryHeaderBase(ctypes.BigEndianStructure):
     def is_command(self) -> int:
         """Returns true if the packet represents a command, indicated by the type field"""
         return self.type
+
+    def get_sequence_count(self) -> int:
+        """Returns the sequence_count value derived from the header fields"""
+        return self.sequence_count
 
     def get_msg_id(self) -> int:
         """Returns the message ID value derived from the header fields"""

@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -38,3 +38,16 @@ class VVPlugin(Plugin):
         level = Global.config.get("vv_plugin", "comment_level", fallback="DEBUG")
         log.log(getattr(logging, level), "V&V PLUGIN COMMENT: {}".format(msg))
         return True
+
+    def initialize(self):
+        """
+        Initialize VVPlugin.
+        """
+        log.debug("Initialized VV Plugin!")
+        return True
+
+    def shutdown(self):
+        """
+        Shutdown implementation for the VV plugin.
+        """
+        log.debug("Optional shutdown/cleanup implementation for VV Plugin")

@@ -1,41 +1,36 @@
 {
     "test_script_number": "CTF-Instruction-Verify-Test",
     "test_script_name": "Test_CTF_Verify_Instruction.json",
+    "owner": "CTF",
+    "description": "Basic CTF Example Script Showing Simple Commands/Telemetry Verification",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Basic CTF Example Script Showing Simple Commands/Telemetry Verification",
-    "owner": "CTF",
-    "test_setup": "",
     "ctf_options": {
         "verify_timeout": 4
     },
+    "test_setup": "",
     "import": {},
     "tests": [
         {
             "test_number": "Cfs-Instruction-Verify-Test-1",
-            "description": "Start CFS, Send TO NOOP command",
+            "description": "",
             "instructions": [
                 {
-                    "instruction": "StartCfs",
+                    "instruction": "SendCfsCommand",
                     "data": {
-                        "target": ""
+                        "target": "tgt1",
+                        "mid": "CFE_ES_CMD_MID",
+                        "cc": "CFE_ES_RESET_COUNTERS_CC",
+                        "args": {}
                     },
                     "wait": 1
-                },
-                {
-                    "instruction": "EnableCfsOutput",
-                    "data": {
-                        "target": ""
-                    },
-                    "wait": 1,
-                    "description": "Need this to enable the telemetry thread. Enable Output counts as 1 TO cmd"
                 },
                 {
                     "instruction": "SendCfsCommand",
                     "description": "This command won't actually succeed without valid arguments, so will count as an error.",
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "mid": "CFE_ES_CMD_MID",
                         "cc": "CFE_ES_START_APP_CC",
                         "args": {
@@ -54,7 +49,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "tgt1",
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {

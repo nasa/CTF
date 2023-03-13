@@ -54,7 +54,7 @@ elif [ "$1" == "utc" ]; then
     # Convert coverage report in HTML to PDF
     wkhtmltopdf UnitTests_Coverage/index.html $OUT_SUBDIR/ctf_ut_coverage.pdf
     # Move the generated output to UTC sub-dir
-    mv -f *.log temp_log mock_sp0_config_cfs-out-file $OUT_SUBDIR
+    mv -f *.log temp_log $OUT_SUBDIR
     mv -f UnitTests_Coverage plugin_info_output temp_log_dir local $OUT_SUBDIR
     mv -f CTF_Results/Run* $OUT_SUBDIR/ut_run
     # Remove un-needed files/dirs
@@ -65,9 +65,9 @@ elif [ "$1" == "ft" ]; then
     OUT_SUBDIR="$OUT_DIR/ft"
     mkdir -p $OUT_SUBDIR
     # Run functional tests written in CTF scripts
-    ./ctf --config_file configs/default_config.ini \
-          functional_tests/plugin_tests \
-          functional_tests/cfe_6_7_tests
+    ./ctf --config_file vv_tests/configs/ctf_vv_config.ini \
+          functional_tests/Test_StartCfsEnableOutput.json functional_tests/plugin_tests \
+          functional_tests/cfe_6_7_tests functional_tests/Test_StopCfs.json
     # Move the generated output to FT sub-dir
     mv CTF_Results/Run_* $OUT_SUBDIR/ft_run
     # Remove un-needed files/dirs
@@ -80,14 +80,14 @@ elif [ "$1" == "vv" ]; then
     # Run requirement verification tests writtent in CTF scripts - set 1
     ./ctf --config_file vv_tests/configs/ctf_vv_config.ini \
           vv_tests/scripts/CTF_VV_start.json \
-          vv_tests/scripts/ci_pass &&
+          vv_tests/scripts/ci_pass
     # Move the generated output to VV sub-dir
-    mv -f CTF_Results/Run_* $OUT_SUBDIR/vv_run_ci  &&
+    mv -f CTF_Results/Run_* $OUT_SUBDIR/vv_run_ci
     # Run requirement verification tests written in CTF scripts - set 2
     ./ctf --config_file vv_tests/configs/ci_vv_lx1_config.ini \
           vv_tests/scripts/CTF_VV_14.json \
           vv_tests/scripts/CTF_VV_15.json \
-          vv_tests/scripts/CTF_VV_19.json &&
+          vv_tests/scripts/CTF_VV_19.json
     # Move the generated output to VV sub-dir
     mv -f CTF_Results/Run_* $OUT_SUBDIR/vv_run_tc
     # Remove un-needed files/dirs

@@ -1,20 +1,21 @@
 {
     "test_script_number": "Nominal-CFE-TBL-Commands",
     "test_script_name": "CfeTblFunctions.json",
+    "owner": "CTF",
+    "description": "Nominal CFE-TBL Functions",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Nominal CFE-TBL Functions",
-    "owner": "CTF",
-    "test_setup": "",
     "ctf_options": {
         "verify_timeout": 4
     },
+    "test_setup": "",
     "import": {},
     "functions": {
         "SendCheckCfsTblNoopCmd": {
             "description": "Send and check CFS_EVS_NOOP_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt"
             ],
@@ -22,7 +23,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TBL_CMD_MID",
                         "cc": "CFE_TBL_NOOP_CC",
                         "args": {}
@@ -32,7 +33,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TBL_HK_TLM_MID",
                         "args": [
                             {
@@ -58,6 +59,7 @@
         "SendCheckCfsTblResetCmd": {
             "description": "Send and check CFS_EVS_RESET_COUNTER_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt"
             ],
@@ -65,7 +67,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TBL_CMD_MID",
                         "cc": "CFE_TBL_RESET_COUNTERS_CC",
                         "args": {}
@@ -75,7 +77,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TBL_HK_TLM_MID",
                         "args": [
                             {
@@ -101,6 +103,7 @@
         "SendCheckCfsTblLoadCmd": {
             "description": "Send and check CFE_TBL_LOAD_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "fileName"
@@ -109,7 +112,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TBL_CMD_MID",
                         "cc": "CFE_TBL_LOAD_CC",
                         "args": {
@@ -123,7 +126,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TBL_HK_TLM_MID",
                         "args": [
                             {
@@ -149,6 +152,7 @@
         "SendCheckCfsTblDumpCmd": {
             "description": "Send and check CFE_TBL_DUMP_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "activeFlag",
@@ -159,7 +163,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TBL_CMD_MID",
                         "cc": "CFE_TBL_DUMP_CC",
                         "args": {
@@ -175,7 +179,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TBL_HK_TLM_MID",
                         "args": [
                             {
@@ -201,6 +205,7 @@
         "SendCheckCfsTblValidateCmd": {
             "description": "Send and check CFE_TBL_VALIDATE_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "activeFlag",
@@ -210,7 +215,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TBL_CMD_MID",
                         "cc": "CFE_TBL_VALIDATE_CC",
                         "args": {
@@ -225,7 +230,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TBL_HK_TLM_MID",
                         "args": [
                             {
@@ -251,6 +256,7 @@
         "SendCheckCfsTblActivateCmd": {
             "description": "Send and check CFE_TBL_ACTIVATE_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "tableName"
@@ -259,7 +265,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TBL_CMD_MID",
                         "cc": "CFE_TBL_VALIDATE_CC",
                         "args": {
@@ -273,7 +279,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TBL_HK_TLM_MID",
                         "args": [
                             {
@@ -299,6 +305,7 @@
         "SendCheckCfsTblDumpRegistryCmd": {
             "description": "Send and check CFE_TBL_DUMP_REGISTRY_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "fileName"
@@ -307,7 +314,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TBL_CMD_MID",
                         "cc": "CFE_TBL_DUMP_REGISTRY_CC",
                         "args": {
@@ -321,7 +328,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TBL_HK_TLM_MID",
                         "args": [
                             {
@@ -347,6 +354,7 @@
         "SendCheckCfsTblSendRegistryCmd": {
             "description": "Send and check CFE_TBL_SEND_REGISTRY_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "tableName"
@@ -355,7 +363,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TBL_CMD_MID",
                         "cc": "CFE_TBL_SEND_REGISTRY_CC",
                         "args": {
@@ -369,7 +377,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TBL_HK_TLM_MID",
                         "args": [
                             {
@@ -395,6 +403,7 @@
         "SendCheckCfsTblDeleteCdsCmd": {
             "description": "Send and check CFE_TBL_DELETE_CDS_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "tableName"
@@ -403,7 +412,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TBL_CMD_MID",
                         "cc": "CFE_TBL_DELETE_CDS_CC",
                         "args": {
@@ -417,7 +426,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TBL_HK_TLM_MID",
                         "args": [
                             {
@@ -443,6 +452,7 @@
         "SendCheckCfsTblAbortLoadCmd": {
             "description": "Send and check CFE_TBL_ABORT_LOAD_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "tableName"
@@ -451,7 +461,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TBL_CMD_MID",
                         "cc": "CFE_TBL_ABORT_LOAD_CC",
                         "args": {
@@ -465,7 +475,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_TBL_HK_TLM_MID",
                         "args": [
                             {

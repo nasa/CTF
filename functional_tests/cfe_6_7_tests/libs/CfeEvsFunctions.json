@@ -1,20 +1,21 @@
 {
     "test_script_number": "Nominal-CFE-EVS-Commands",
     "test_script_name": "CfeEvsFunctions.json",
+    "owner": "CTF",
+    "description": "Nominal CFE-EVS Functions",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Nominal CFE-EVS Functions",
-    "owner": "CTF",
-    "test_setup": "",
     "ctf_options": {
         "verify_timeout": 4
     },
+    "test_setup": "",
     "import": {},
     "functions": {
         "SendCheckCfeEvsNoopCmd": {
             "description": "Send and check CFS_EVS_NOOP_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt"
             ],
@@ -22,7 +23,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_CMD_MID",
                         "cc": "CFE_EVS_NOOP_CC",
                         "args": {}
@@ -32,7 +33,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_HK_TLM_MID",
                         "args": [
                             {
@@ -58,6 +59,7 @@
         "SendCheckCfeEvsResetCmd": {
             "description": "Send and check CFS_EVS_RESET_COUNTER_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt"
             ],
@@ -65,7 +67,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_CMD_MID",
                         "cc": "CFE_EVS_RESET_COUNTERS_CC",
                         "args": {}
@@ -75,7 +77,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_HK_TLM_MID",
                         "args": [
                             {
@@ -101,6 +103,7 @@
         "SendCheckCfeEvsEnableEventTypeCmd": {
             "description": "Send and check CFE_EVS_ENABLE_EVENT_TYPE_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "bitMask"
@@ -109,7 +112,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_CMD_MID",
                         "cc": "CFE_EVS_ENABLE_EVENT_TYPE_CC",
                         "args": {
@@ -123,7 +126,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_HK_TLM_MID",
                         "args": [
                             {
@@ -149,6 +152,7 @@
         "SendCheckCfeEvsDisableEventTypeCmd": {
             "description": "Send and check CFE_EVS_DISABLE_EVENT_TYPE_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "bitMask"
@@ -157,7 +161,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_CMD_MID",
                         "cc": "CFE_EVS_DISABLE_EVENT_TYPE_CC",
                         "args": {
@@ -171,7 +175,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_HK_TLM_MID",
                         "args": [
                             {
@@ -197,6 +201,7 @@
         "SendCheckCfeEvsSetEventFormatModeTypeCmd": {
             "description": "Send and check CFE_EVS_SET_EVENT_FORMAT_MODE_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "msgFormat"
@@ -205,7 +210,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_CMD_MID",
                         "cc": "CFE_EVS_SET_EVENT_FORMAT_MODE_CC",
                         "args": {
@@ -219,7 +224,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_HK_TLM_MID",
                         "args": [
                             {
@@ -245,6 +250,7 @@
         "SendCheckCfeEvsEnableAppEventTypeCmd": {
             "description": "Send and check CFE_EVS_ENABLE_APP_EVENT_TYPE_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "appName",
@@ -254,7 +260,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_CMD_MID",
                         "cc": "CFE_EVS_ENABLE_APP_EVENT_TYPE_CC",
                         "args": {
@@ -269,7 +275,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_HK_TLM_MID",
                         "args": [
                             {
@@ -295,6 +301,7 @@
         "SendCheckCfeEvsDisableAppEventTypeCmd": {
             "description": "Send and check CFE_EVS_DISABLE_APP_EVENT_TYPE_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "appName",
@@ -304,7 +311,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_CMD_MID",
                         "cc": "CFE_EVS_DISABLE_APP_EVENT_TYPE_CC",
                         "args": {
@@ -319,7 +326,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_HK_TLM_MID",
                         "args": [
                             {
@@ -345,6 +352,7 @@
         "SendCheckCfeEvsEnableAppEventsCmd": {
             "description": "Send and check CFE_EVS_ENABLE_APP_EVENTS_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "appName"
@@ -353,7 +361,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_CMD_MID",
                         "cc": "CFE_EVS_ENABLE_APP_EVENTS_CC",
                         "args": {
@@ -367,7 +375,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_HK_TLM_MID",
                         "args": [
                             {
@@ -393,6 +401,7 @@
         "SendCheckCfeEvsDisableAppEventsCmd": {
             "description": "Send and check CFE_EVS_DISABLE_APP_EVENTS_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "appName"
@@ -401,7 +410,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_CMD_MID",
                         "cc": "CFE_EVS_DISABLE_APP_EVENTS_CC",
                         "args": {
@@ -415,7 +424,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_HK_TLM_MID",
                         "args": [
                             {
@@ -441,6 +450,7 @@
         "SendCheckCfeEvsResetAppCounterCmd": {
             "description": "Send and check CFE_EVS_RESET_APP_COUNTER_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "appName"
@@ -449,7 +459,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_CMD_MID",
                         "cc": "CFE_EVS_RESET_APP_COUNTER_CC",
                         "args": {
@@ -463,7 +473,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_HK_TLM_MID",
                         "args": [
                             {
@@ -489,6 +499,7 @@
         "SendCheckCfeEvsSetFilterCmd": {
             "description": "Send and check CFE_EVS_SET_FILTER_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "appName",
@@ -499,7 +510,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_CMD_MID",
                         "cc": "CFE_EVS_SET_FILTER_CC",
                         "args": {
@@ -515,7 +526,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_HK_TLM_MID",
                         "args": [
                             {
@@ -541,6 +552,7 @@
         "SendCheckCfeEvsEnablePortsCmd": {
             "description": "Send and check CFE_EVS_ENABLE_PORTS_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "bitMask"
@@ -549,7 +561,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_CMD_MID",
                         "cc": "CFE_EVS_ENABLE_PORTS_CC",
                         "args": {
@@ -563,7 +575,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_HK_TLM_MID",
                         "args": [
                             {
@@ -589,6 +601,7 @@
         "SendCheckCfeEvsDisablePortsCmd": {
             "description": "Send and check CFE_EVS_DISABLE_PORTS_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "bitMask"
@@ -597,7 +610,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_CMD_MID",
                         "cc": "CFE_EVS_DISABLE_PORTS_CC",
                         "args": {
@@ -609,7 +622,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_HK_TLM_MID",
                         "args": [
                             {
@@ -635,6 +648,7 @@
         "SendCheckCfeEvsResetFilterCmd": {
             "description": "Send and check CFE_EVS_RESET_FILTER_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "appName",
@@ -644,7 +658,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_CMD_MID",
                         "cc": "CFE_EVS_RESET_FILTER_CC",
                         "args": {
@@ -659,7 +673,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_HK_TLM_MID",
                         "args": [
                             {
@@ -685,6 +699,7 @@
         "SendCheckCfeEvsResetAllFiltersCmd": {
             "description": "Send and check CFE_EVS_RESET_ALL_FILTERS_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "appName"
@@ -693,7 +708,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_CMD_MID",
                         "cc": "CFE_EVS_RESET_ALL_FILTERS_CC",
                         "args": {
@@ -707,7 +722,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_HK_TLM_MID",
                         "args": [
                             {
@@ -733,6 +748,7 @@
         "SendCheckCfeEvsAddEventFilterCmd": {
             "description": "Send and check CFE_EVS_ADD_EVENT_FILTER_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "appName",
@@ -743,7 +759,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_CMD_MID",
                         "cc": "CFE_EVS_ADD_EVENT_FILTER_CC",
                         "args": {
@@ -759,7 +775,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_HK_TLM_MID",
                         "args": [
                             {
@@ -785,6 +801,7 @@
         "SendCheckCfeEvsDeleteEventFilterCmd": {
             "description": "Send and check CFE_EVS_DELETE_EVENT_FILTER_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "appName",
@@ -794,7 +811,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_CMD_MID",
                         "cc": "CFE_EVS_DELETE_EVENT_FILTER_CC",
                         "args": {
@@ -809,7 +826,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_HK_TLM_MID",
                         "args": [
                             {
@@ -835,6 +852,7 @@
         "SendCheckCfeEvsWriteAppDataFileCmd": {
             "description": "Send and check CFE_EVS_WRITE_APP_DATA_FILE_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "fileName"
@@ -843,7 +861,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_CMD_MID",
                         "cc": "CFE_EVS_WRITE_APP_DATA_FILE_CC",
                         "args": {
@@ -857,7 +875,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_HK_TLM_MID",
                         "args": [
                             {
@@ -883,6 +901,7 @@
         "SendCheckCfeEvsWriteLogDataFileCmd": {
             "description": "Send and check CFE_EVS_WRITE_LOG_DATA_FILE_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "fileName"
@@ -891,7 +910,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_CMD_MID",
                         "cc": "CFE_EVS_WRITE_LOG_DATA_FILE_CC",
                         "args": {
@@ -905,7 +924,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_HK_TLM_MID",
                         "args": [
                             {
@@ -931,6 +950,7 @@
         "SendCheckCfeEvsSetLogModeCmd": {
             "description": "Send and check CFE_EVS_SET_LOG_MODE_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt",
                 "logMode"
@@ -939,7 +959,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_CMD_MID",
                         "cc": "CFE_EVS_SET_LOG_MODE_CC",
                         "args": {
@@ -953,7 +973,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_HK_TLM_MID",
                         "args": [
                             {
@@ -979,6 +999,7 @@
         "SendCheckCfeEvsClearLogCmd": {
             "description": "Send and check CFE_EVS_CLEAR_LOG_CC",
             "varlist": [
+                "cfstgt",
                 "expectedCmdCnt",
                 "expectedErrCnt"
             ],
@@ -986,7 +1007,7 @@
                 {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_CMD_MID",
                         "cc": "CFE_EVS_CLEAR_LOG_CC",
                         "args": {}
@@ -996,7 +1017,7 @@
                 {
                     "instruction": "CheckTlmValue",
                     "data": {
-                        "target": "",
+                        "target": "cfstgt",
                         "mid": "CFE_EVS_HK_TLM_MID",
                         "args": [
                             {

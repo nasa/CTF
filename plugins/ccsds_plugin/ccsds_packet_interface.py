@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -74,8 +74,16 @@ class CcsdsPacketInterface(ctypes.BigEndianStructure):
         """Convenience method to check for the presence of a secondary header"""
         raise NotImplementedError
 
+    def get_sequence_count(self) -> int:
+        """Convenience method to get sequence_count from the packet header """
+        raise NotImplementedError
+
     def get_function_code(self) -> int:
         """Convenience method to get the function code from the packet"""
+        raise NotImplementedError
+
+    def validate(self, data: bytearray) -> bool:
+        """Convenience method to validate packet"""
         raise NotImplementedError
 
     def set_function_code(self, function_code: int) -> None:

@@ -7,7 +7,7 @@ cfs_config.py: CFS Plugin Config for CTF.
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -80,6 +80,7 @@ class CfsConfig:
         # The following variable is set by the CCSDS Reader Implementation
         self.ccsds_header_info_included = None
         self.telemetry_debug = None
+        self.crc = None
 
         try:
             self.configure(self.name)
@@ -215,6 +216,8 @@ class CfsConfig:
 
             self.telemetry_debug = self.load_field(section_name, "telemetry_debug", Global.config.getboolean,
                                                    self.validation.validate_boolean)
+
+            self.crc = self.load_field(section_name, "send_crc", Global.config.getboolean)
 
         else:
             log.warning("No CFS configuration defined for {}".format(section_name))

@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -32,7 +32,7 @@ def test_cfs_config_init(cfs_config):
     assert cfs_config.ccsds_target == "set1"
     assert cfs_config.log_ccsds_imports is True
     assert cfs_config.cfs_build_dir == os.path.expanduser("~/sample_cfs_workspace")
-    assert cfs_config.cfs_build_cmd == "make; make install"
+    assert cfs_config.cfs_build_cmd == "make distclean; make TARGET=lx1 install"
     assert cfs_config.cfs_run_dir == os.path.expanduser("~/sample_cfs_workspace/build/exe/lx1")
     assert cfs_config.cfs_port_arg is False
     assert cfs_config.cfs_exe == "core-lx1"
@@ -122,7 +122,7 @@ def test_cfs_config_load_config_data_invalid(cfs_config, caplog):
     assert cfs_config.ccsds_target == "set1"
     assert cfs_config.log_ccsds_imports is True
     assert cfs_config.cfs_build_dir == os.path.expanduser("~/sample_cfs_workspace")
-    assert cfs_config.cfs_build_cmd == "make; make install"
+    assert cfs_config.cfs_build_cmd == "make distclean; make TARGET=lx1 install"
     assert cfs_config.cfs_run_dir == os.path.expanduser("~/sample_cfs_workspace/build/exe/lx1")
     assert cfs_config.cfs_port_arg is False
     assert cfs_config.cfs_exe == "core-lx1"
@@ -176,22 +176,22 @@ def test_cfs_config_get_error_count(cfs_config):
 
 @pytest.fixture
 def remote_cfs_config():
-    Global.load_config("./configs/example_configs/cfe_6_7_config_examples.ini")
+    Global.load_config("./configs/default_config.ini")
     return RemoteCfsConfig("local_ssh")
 
 
 def test_remote_cfs_config_init(remote_cfs_config):
     assert set(remote_cfs_config.sections) == \
-           {"ccsds", "cfs", "cfs_LX1", "cfs_LX2", "core", "local_ssh", "logging", "ssh"}
+           {"ccsds", "cfs", "core", "local_ssh", "logging", "ssh", "test_variable"}
     assert remote_cfs_config.validation.get_error_count() == 0
     assert remote_cfs_config.name == "local_ssh"
     assert remote_cfs_config.cfs_protocol == "ssh"
-    assert remote_cfs_config.build_cfs is False
+    assert remote_cfs_config.build_cfs is True
     assert remote_cfs_config.ccsds_data_dir == os.path.expanduser("~/sample_cfs_workspace/ccdd/json")
     assert remote_cfs_config.ccsds_target == "set1"
     assert remote_cfs_config.log_ccsds_imports is True
     assert remote_cfs_config.cfs_build_dir == os.path.expanduser("~/sample_cfs_workspace")
-    assert remote_cfs_config.cfs_build_cmd == "make; make install"
+    assert remote_cfs_config.cfs_build_cmd == "make distclean; make TARGET=lx1 install"
     assert remote_cfs_config.cfs_run_dir == os.path.expanduser("~/sample_cfs_workspace/build/exe/lx1")
     assert remote_cfs_config.cfs_port_arg is False
     assert remote_cfs_config.cfs_exe == "core-lx1"

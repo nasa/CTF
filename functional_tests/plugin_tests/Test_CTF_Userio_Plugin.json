@@ -1,15 +1,15 @@
 {
     "test_script_number": "Userio-Plugin-Test",
     "test_script_name": "Test_CTF_Userio_Plugin.json",
+    "owner": "CTF",
+    "description": "Testing Userio Plugin: script will execute a command for user to confirm, and a single verification",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Testing Userio Plugin: script will execute a command for user to confirm, and a single verification",
-    "owner": "CTF",
-    "test_setup": "",
     "ctf_options": {
         "verify_timeout": 2.0
     },
+    "test_setup": "",
     "tests": [
         {
             "test_number": "Userio-Plugin-Test-1",

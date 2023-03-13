@@ -1,15 +1,15 @@
 {
     "test_script_number": "CFE-TBL-Functions-Test",
     "test_script_name": "CfeTblTest.json",
+    "owner": "CTF",
+    "description": "Example script showing CFE TBL function usage",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Example script showing CFE TBL function usage",
-    "owner": "CTF",
-    "test_setup": "",
     "ctf_options": {
-        "verify_timeout": 4
+        "verify_timeout": 6
     },
+    "test_setup": "",
     "import": {
         "../libs/CfeTblFunctions.json": [
             "SendCheckCfsTblNoopCmd",
@@ -28,69 +28,60 @@
     "tests": [
         {
             "test_number": "CFE-TBL-Functions-Test-1",
-            "description": "Start CFS, Send TO NOOP command",
+            "description": "",
             "instructions": [
                 {
-                    "instruction": "StartCfs",
-                    "wait": 1,
-                    "data": {
-                        "target": ""
-                    }
-                },
-                {
-                    "instruction": "EnableCfsOutput",
-                    "wait": 1,
-                    "data": {
-                        "target": ""
-                    }
+                    "function": "SendCheckCfsTblResetCmd",
+                    "params": {
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 0,
+                        "expectedErrCnt": 0
+                    },
+                    "wait": 1
                 },
                 {
                     "function": "SendCheckCfsTblNoopCmd",
-                    "wait": 5,
                     "params": {
+                        "cfstgt": "tgt1",
                         "expectedCmdCnt": 1,
                         "expectedErrCnt": 0
-                    }
-                },
-                {
-                    "function": "SendCheckCfsTblResetCmd",
-                    "wait": 1,
-                    "params": {
-                        "expectedCmdCnt": 0,
-                        "expectedErrCnt": 0
-                    }
+                    },
+                    "wait": 5
                 },
                 {
                     "function": "SendCheckCfsTblLoadCmd",
-                    "wait": 1,
                     "description": "Off-nominal check due to invalid table filename",
                     "params": {
-                        "expectedCmdCnt": 0,
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 1,
                         "expectedErrCnt": 1,
                         "fileName": "INVALID_FILENAME"
-                    }
+                    },
+                    "wait": 1
                 },
                 {
                     "function": "SendCheckCfsTblDumpCmd",
-                    "wait": 1,
                     "description": "Off-nominal check due to invalid output filename",
                     "params": {
-                        "expectedCmdCnt": 0,
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 1,
                         "expectedErrCnt": 2,
                         "activeFlag": 1,
                         "tableName": "TO.to_subs",
                         "fileName": "CfeTblTest_SendCheckCfsTblDumpCmd_Output.txt"
-                    }
+                    },
+                    "wait": 1
                 },
                 {
                     "function": "SendCheckCfsTblValidateCmd",
-                    "wait": 1,
                     "params": {
-                        "expectedCmdCnt": 1,
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 2,
                         "expectedErrCnt": 2,
                         "activeFlag": 1,
                         "tableName": "TO.to_subs"
-                    }
+                    },
+                    "wait": 1
                 }
             ]
         }

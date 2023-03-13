@@ -5,7 +5,7 @@ Represents a single CTF test within a script
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2022 United States Government as represented by the
+# Copyright (c) 2019-2023 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -21,6 +21,7 @@ Represents a single CTF test within a script
 import time
 
 from lib.ctf_global import Global, CtfVerificationStage
+from lib.ctf_utility import resolve_variable
 from lib.event_types import Instruction
 from lib.exceptions import CtfTestError, CtfConditionError
 from lib.logger import logger as log
@@ -227,6 +228,8 @@ class Test:
                 log.info("Skipping disabled test instruction {} ".format(i.command))
                 self.num_skipped += 1
                 self.current_instruction_index += 1
+                if self.current_instruction_index >= len(self.instructions):
+                    break
                 continue
 
             if instruction in self.ignored_instructions:
@@ -238,7 +241,13 @@ class Test:
             self.test_run = True
             self.num_ran += 1
 
-            # process the command delay
+            # process the command delay - if delay is a user defined variable, resolve it
+            delay = resolve_variable(delay)
+
+            if not isinstance(delay, (int, float)):
+                log.error("Delay is not numeric value: {}".format(delay))
+                raise CtfTestError("Delay is not numeric value")
+
             log.info("Waiting {} time-units before executing {}".format(delay, instruction))
             try:
                 self.process_command_delay(delay)
@@ -246,9 +255,9 @@ class Test:
             except CtfConditionError as exception:
                 self.test_result = False
                 log.test(False, False, "CtfConditionError: Condition not satisfied: {}".format(exception))
-            except CtfTestError as exception:
-                log.error("Unknown Error Processing Command Delay & Pre-Command")
-                log.debug(exception)
+            except Exception as exception:
+                log.error("Unknown Error Processing Command Delay & Pre-Command: {}".format(exception))
+                raise CtfTestError("Unknown Error Processing Command Delay & Pre-Command") from exception
 
             # Only keep ver start time if next commands wait > 0
             reset_ver_start_time = True

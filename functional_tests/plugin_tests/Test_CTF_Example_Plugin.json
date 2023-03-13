@@ -1,15 +1,15 @@
 {
     "test_script_number": "CTF-Example-Plugin-Test",
     "test_script_name": "Test_CTF_Example_Plugin.json",
+    "owner": "CTF",
+    "description": "Testing Example Plugin: script will execute two commands, and a single verification",
     "requirements": {
         "MyRequirement": "N/A"
     },
-    "description": "Testing Example Plugin: script will execute two commands, and a single verification",
-    "owner": "CTF",
-    "test_setup": "",
     "ctf_options": {
         "verify_timeout": 2.0
     },
+    "test_setup": "",
     "tests": [
         {
             "test_number": "CTF-Example-Plugin-Test-1",
@@ -26,14 +26,14 @@
                 {
                     "instruction": "TestVerifyCommand",
                     "data": {},
-                    "wait": 1,
-                    "verify_timeout": 5.0
+                    "verify_timeout": 5.0,
+                    "wait": 1
                 },
                 {
                     "instruction": "TestSharedLibraryCommand",
                     "data": {},
-                    "wait": 1,
-                    "verify_timeout": 5.0
+                    "verify_timeout": 5.0,
+                    "wait": 1
                 }
             ]
         }
