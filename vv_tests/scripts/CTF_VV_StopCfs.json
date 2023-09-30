@@ -15,7 +15,7 @@
                 {
                     "instruction": "ShutdownCfs",
                     "data": {
-                        "target": ""
+                        "target": "tgt1"
                     },
                     "wait": 1
                 }

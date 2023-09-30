@@ -1,6 +1,6 @@
 {
     "test_script_number": "CTF-VV-Start",
-    "test_script_name": "CTF_VV_start.json",
+    "test_script_name": "CTF_VV_StartCfsEnableOutput.json",
     "owner": "CTF",
     "description": "Register, start cFS instance and enable its Telemetry Output",
     "requirements": {},
@@ -15,14 +15,14 @@
                 {
                     "instruction": "RegisterCfs",
                     "data": {
-                        "target": ""
+                        "target": "tgt1"
                     },
                     "wait": 1
                 },
                 {
                     "instruction": "StartCfs",
                     "data": {
-                        "target": ""
+                        "target": "tgt1"
                     },
                     "wait": 1
                 },
@@ -30,9 +30,9 @@
                     "instruction": "EnableCfsOutput",
                     "description": "",
                     "data": {
-                        "target": ""
+                        "target": "tgt1"
                     },
-                    "wait": 30
+                    "wait": 90
                 }
             ]
         }

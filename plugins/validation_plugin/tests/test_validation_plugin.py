@@ -119,14 +119,18 @@ def test_validation_plugin_search_txt_file(validation_plugin, utils):
     assert utils.has_log_level("ERROR")
 
 
+def test_validation_plugin_search_txt_file_macro(validation_plugin, utils):
+    utils.clear_log()
+    cfs_plugin = Global.plugin_manager.find_plugin_for_command("StartCfs")
+    assert cfs_plugin.register_cfs('cfs')
+    assert validation_plugin.search_txt_file('./ctf', 'Open Source Agreement', False, 'cfs')
+
+
 def test_validation_plugin_search_no_txt_file(validation_plugin, utils):
     assert not validation_plugin.search_no_txt_file('./ctf', 'NASA Open Source Agreement', True)
     utils.clear_log()
     assert not validation_plugin.search_no_txt_file('file_not_exist.txtxxx', 'NASA Open Source Agreement')
-    '''
-    assert not validation_plugin.search_txt_file('./ctf', 'NO Open Source Agreement')
-    assert utils.has_log_level("ERROR")
-'''
+
 
 def test_validation_plugin_save_file_as_text_unknown_type(validation_plugin, utils):
     utils.clear_log()

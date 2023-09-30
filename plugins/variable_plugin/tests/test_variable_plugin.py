@@ -134,18 +134,50 @@ def test_variable_check_user_defined_variable(variable_plugin, utils):
     Global.variable_store.clear()
 
 
-def test_variable_set_user_variable_from_tlm(variable_plugin):
+def test_variable_set_user_variable_from_tlm(variable_plugin, utils):
     with patch('lib.ctf_global.Global.plugin_manager.find_plugin_for_command') as mock_get_plugin:
+        # packet found
         mock_get_plugin.return_value.get_tlm_value.return_value = 2
         assert variable_plugin.set_user_variable_from_tlm('tlm_var', 'TO_HK_TLM_MID', 'usCmdCnt')
         assert Global.variable_store.get('tlm_var') == 2
+        assert not utils.has_log_level("ERROR")
+
+        # no packet
+        mock_get_plugin.return_value.get_tlm_value.return_value = None
+        assert not variable_plugin.set_user_variable_from_tlm('tlm_var', 'TO_HK_TLM_MID', 'usCmdCnt')
+        assert Global.variable_store.get('tlm_var') == 2
+        assert utils.has_log_level("ERROR")
 
 
 def test_variable_set_user_variable_from_tlm_header(variable_plugin):
+    # no args
     with patch('lib.ctf_global.Global.plugin_manager.find_plugin_for_command') as mock_get_plugin:
         mock_get_plugin.return_value.get_tlm_value.return_value = 12345
         assert variable_plugin.set_user_variable_from_tlm_header('hdr_var', 'TO_HK_TLM_MID', 'sheader.timestamp')
         assert Global.variable_store.get('hdr_var') == 12345
+        mock_get_plugin.return_value.get_tlm_value.assert_called_once_with('TO_HK_TLM_MID', 'sheader.timestamp',
+                                                                           True, None, None)
+
+    # with args
+    with patch('lib.ctf_global.Global.plugin_manager.find_plugin_for_command') as mock_get_plugin:
+        mock_get_plugin.return_value.get_tlm_value.return_value = 1
+        tlm_args = [{'variable': 'usCmdCnt', 'value': 1, 'compare': '=='}]
+        assert variable_plugin.set_user_variable_from_tlm_header('hdr_var', 'TO_HK_TLM_MID', 'sheader.timestamp',
+                                                                 'tgt1', 'string', tlm_args)
+        assert Global.variable_store.get('hdr_var') == "1"
+        mock_get_plugin.return_value.get_tlm_value.assert_called_once_with('TO_HK_TLM_MID', 'sheader.timestamp',
+                                                                           True, 'tgt1', tlm_args)
+
+    # fail
+    with patch('lib.ctf_global.Global.plugin_manager.find_plugin_for_command') as mock_get_plugin:
+        mock_get_plugin.return_value.get_tlm_value.return_value = None
+        tlm_args = [{'variable': 'usCmdCnt', 'value': -1, 'compare': '=='}]
+        assert not variable_plugin.set_user_variable_from_tlm_header('hdr_var', 'TO_HK_TLM_MID', 'sheader.timestamp',
+                                                                 'tgt1', 'string', tlm_args)
+        assert Global.variable_store.get('hdr_var') == "1"
+        mock_get_plugin.return_value.get_tlm_value.assert_called_once_with('TO_HK_TLM_MID', 'sheader.timestamp',
+                                                                           True, 'tgt1', tlm_args)
+
 
 
 def test_variable_set_label(variable_plugin):

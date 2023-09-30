@@ -144,7 +144,7 @@
                     "data": {
                         "variable_name": "_CTF_EXE_DIR",
                          "operator": "==",
-                         "value": "/builds/aes/ctf"
+                         "value": "/builds/gateway/cfs/tools/ctf"
                     }
                 }
             ]

@@ -1,0 +1,66 @@
+{
+    "test_script_number": "CTF-VV-32",
+    "test_script_name": "CTF_VV_32.json",
+    "owner": "CTF",
+    "description": "Interact with the variable server of a Trick simulation",
+    "requirements": {
+        "CTF-61": "Full",
+        "CTF-62": "Full",
+        "CTF-63": "Full"
+    },
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "test_setup": "Start the Trick sample cannonball analytic sim with graphics before running the test",
+    "import": {},
+    "tests": [
+        {
+            "test_number": "CTF-VV-32-1",
+            "description": "Demonstrates use of the Trick Plugin instructions",
+            "instructions": [
+                {
+                    "instruction": "FreezeTrickSim",
+                    "data": {
+                        "freeze": false
+                    }
+                },
+                {
+                    "instruction": "FreezeTrickSim",
+                    "data": {
+                        "freeze": true
+                    },
+                    "wait": 6
+                },
+                {
+                    "instruction": "CheckTrickVariable",
+                    "data": {
+                        "variable_name": "dyn.cannon.impactTime",
+                        "value": 5000,
+                        "operator": ">=",
+                        "variable_type": "float",
+                        "units": "ms"
+                    }
+                },
+                {
+                    "instruction": "SetTrickVariable",
+                    "data": {
+                        "variable_name": "dyn.cannon.impactTime",
+                        "value": 5,
+                        "variable_type": "int",
+                        "units": "s"
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "CheckTrickVariable",
+                    "data": {
+                        "variable_name": "dyn.cannon.impactTime",
+                        "value": 5,
+                        "operator": "=="
+                    },
+                    "wait": 1
+                }
+            ]
+        }
+    ]
+}

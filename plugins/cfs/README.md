@@ -213,9 +213,9 @@ Checks that an event message matching the given parameters has been received fro
 can be listed here to check multiple events at once.
     - **app_name**: The app that sent the event message.
     - **event_id**: The Event ID, taken from an EVS enum, to represent the criticality level of a message.  13 is information, 14 is error, and anything else should be updated into this wiki as you find it.
-    - **event_str**: (Optional) The expected message of the event. If blank, the event_str field is not verified.
+    - **event_str**: (Optional) The expected message of the event. It should use python string formatting style for `event_str_args`. If blank, the event_str field is not verified.
     - **is_regex**: (Optional) True if `event_str` is to be used for a regex match instead of string comparison
-    - **event_str_args**: (optional) arguments that will be inserted into `event_str`, similar to printf() functions
+    - **event_str_args**: (optional) arguments that will be inserted into `event_str` placeholder. Multiple arguments should be put in a list. 
 
 Example:
 <pre><code>
@@ -227,9 +227,9 @@ Example:
           {
             "app_name":"BEX",
             "event_id":13,
-            "event_str":"Processed MODE(%d) Command Successfully Received",
+            "event_str":"Processed MODE({}) Command {} Received",
             "is_regex": false,
-            "event_str_args":"(1,)"
+            "event_str_args":[1, "Successfully"]
           },
           {
             "app_name": "TO",
@@ -250,9 +250,9 @@ Checks that an event message matching the given parameters is no longer valid in
 can be listed here to check multiple events at once.
     - **app_name**: The app that sent the event message.
     - **event_id**: The Event ID, taken from an EVS enum, to represent the criticality level of a message.  13 is information, 14 is error, and anything else should be updated into this wiki as you find it.
-    - **event_str**: (Optional) The expected message of the event. If blank, the event_str field is not verified.
+    - **event_str**: (Optional) The expected message of the event. It should use python string formatting style for `event_str_args`. If blank, the event_str field is not verified.
     - **is_regex**: (Optional) True if `event_str` is to be used for a regex match instead of string comparison
-    - **event_str_args**: (optional) arguments that will be inserted into `event_str`, similar to printf() functions
+    - **event_str_args**: (optional) arguments that will be inserted into `event_str` placeholder. Multiple arguments should be put in a list.
 
 Example:
 <pre><code>

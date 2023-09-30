@@ -13,7 +13,7 @@
     "tests": [
         {
             "test_number": "CTF-VV-11-1",
-            "description": "Nominal OP",
+            "description": "Off-nominal OP",
             "instructions": [
                 {
                     "instruction": "SendCfsCommand",

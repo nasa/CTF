@@ -152,6 +152,7 @@ class ScriptManager:
 
                 script.status = StatusDefs.failed if script.failed_tests else StatusDefs.passed
 
+                log.debug("Going to update results summary file ... ")
                 self.write_summary_line(script)
 
                 if self.config.json_results is True:
@@ -237,13 +238,15 @@ class ScriptManager:
         if self.summary_file is not None:
             try:
                 self.summary_file.close()
+                self.summary_file = None
             except IOError:
                 log.error("Failed to close CTF results summary file!")
                 return
 
         formatted_time = "%3.2f" % script.exec_time
-        self.summary_file = open(self.regression_summary_file_path, "a+", buffering=10)
-        self.summary_file.write(str("%0s   %0s   %0s   %0s   %0s   %0s   %0s   %0s   %0s\n"
+        try:
+            self.summary_file = open(self.regression_summary_file_path, "a+", buffering=10)
+            self.summary_file.write(str("%0s   %0s   %0s   %0s   %0s   %0s   %0s   %0s   %0s\n"
                                     % (str(script.status).ljust(10),
                                        formatted_time.ljust(8),
                                        str(script.test_number).ljust(50),
@@ -253,7 +256,10 @@ class ScriptManager:
                                        str(len(script.failed_tests)).ljust(12),
                                        str(script.num_error).ljust(12),
                                        script.input_file.ljust(50))))
-        self.summary_file.close()
+            self.summary_file.close()
+            self.summary_file = None
+        except IOError:
+            log.error("Failed to write CTF results summary file!")
 
     def __del__(self):
         """

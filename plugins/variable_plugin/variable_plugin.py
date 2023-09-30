@@ -131,6 +131,8 @@ class VariablePlugin(Plugin):
 
         @return bool: True if successful, False otherwise.
         """
+        variable_name = resolve_variable(variable_name)
+        value = resolve_variable(value)
         status = ctf_utility.set_variable(variable_name, operator, value, variable_type)
         variable_value = ctf_utility.get_variable(variable_name)
         if status:
@@ -140,8 +142,8 @@ class VariablePlugin(Plugin):
         return status
 
     @staticmethod
-    def set_user_variable_from_tlm(variable_name: str, mid: str, tlm_variable: str,
-                                   target: str = None, is_header: bool = False, variable_type: str = None):
+    def set_user_variable_from_tlm(variable_name: str, mid: str, tlm_variable: str, target: str = None,
+                                   is_header: bool = False, variable_type: str = None, tlm_args: list = None):
         """
         Get the latest telemetry value from queue, and set it to the specified variable.
         @return bool: True if successful, False otherwise.
@@ -152,24 +154,32 @@ class VariablePlugin(Plugin):
         resolved_variable_name = resolve_variable(variable_name)
         resolved_target = resolve_variable(target)
         cfs_plugin = Global.plugin_manager.find_plugin_for_command("StartCfs")
-        tlm_value = cfs_plugin.get_tlm_value(resolved_mid, resolved_tlm_variable, is_header, resolved_target)
+        tlm_value = cfs_plugin.get_tlm_value(resolved_mid, resolved_tlm_variable, is_header, resolved_target, tlm_args)
+
+        if tlm_value is None:
+            if tlm_args:
+                log.error("No packet found for MID {} and the provided arguments".format(resolved_mid))
+            else:
+                log.error("No packet found for MID {}".format(resolved_mid))
+            return False
+
         status = VariablePlugin.set_user_defined_variable(resolved_variable_name, "=", tlm_value, variable_type)
         return status
 
     @staticmethod
     def set_user_variable_from_tlm_header(variable_name: str, mid: str, header_variable: str,
-                                          target: str = None, variable_type: str = None):
+                                          target: str = None, variable_type: str = None, tlm_args: list = None):
         """
         Get the latest telemetry header value from queue, and set it to the specified variable.
         @return bool: True if successful, False otherwise.
         """
         return VariablePlugin.set_user_variable_from_tlm(variable_name, mid, header_variable, target,
-                                                         True, variable_type)
+                                                         True, variable_type, tlm_args)
 
     @staticmethod
     def set_label(label: str) -> bool:
         """
-        Set the a test-script scope label for control flow instructions. It is a placeholder.
+        Set a test-script scope label for control flow instructions. It is a placeholder.
         Process_control_flow_label in test will validate the labels.
 
         @return bool: True

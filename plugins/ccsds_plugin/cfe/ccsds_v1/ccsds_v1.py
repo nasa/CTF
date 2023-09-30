@@ -24,7 +24,7 @@ from plugins.ccsds_plugin.cfe.ccsds_secondary_header import CcsdsSecondaryCmdHea
 from plugins.ccsds_plugin.ccsds_primary_header import CcsdsPrimaryHeaderBase
 
 APP_ID_MASK = 0x07FF
-CFE_SB_CMD_MESSAGE_TYPE = 0x00000080
+CFE_SB_CMD_MESSAGE_TYPE = 0x1000
 
 
 class CcsdsV1PrimaryHeader(CcsdsPrimaryHeaderBase):
@@ -49,7 +49,7 @@ class CcsdsV1Packet(CcsdsPacketInterface):
         """
         self.pheader.set_ccsds_version(0)
 
-        packet_type = (msg_id & CFE_SB_CMD_MESSAGE_TYPE) >> 7
+        packet_type = (msg_id & CFE_SB_CMD_MESSAGE_TYPE) >> 12
         self.pheader.set_packet_type(packet_type)
 
         app_id = ctypes.c_uint16(msg_id).value & APP_ID_MASK
@@ -57,7 +57,7 @@ class CcsdsV1Packet(CcsdsPacketInterface):
 
     def get_msg_id(self) -> int:
         """Convenience method to get the message ID from the packet"""
-        return (self.pheader.version_number << 15) + (self.pheader.type << 12) + \
+        return (self.pheader.version_number << 13) + (self.pheader.type << 12) + \
                (self.pheader.secondary_header_flag << 11) + self.pheader.app_id
 
     def get_sequence_count(self) -> int:
@@ -67,6 +67,13 @@ class CcsdsV1Packet(CcsdsPacketInterface):
     def validate(self, data: bytearray) -> bool:
         """ Packet validation is not supported in open source release """
         return True
+
+    @staticmethod
+    def get_crc_flag() -> int:
+        """
+        Get the header crc flag: CRC is not supported in open source release CcsdsV1Packet
+        """
+        return 0
 
     def has_secondary_header(self) -> bool:
         """Convenience method to check for the presence of a secondary header"""
@@ -130,8 +137,21 @@ class CcsdsV1TlmPacket(CcsdsV1Packet):
 
     _pack_ = 1
     _fields_ = [
-        ("sheader", CcsdsSecondaryTlmHeader)
+        ("sheader", CcsdsSecondaryTlmHeader),
+        ("spare", ctypes.c_uint32)
     ]
+
+    def get_timestamp_subseconds(self) -> int:
+        """
+         Returns the timestamp_subseconds derived from the sheader header fields in CcsdsV1TlmPacket
+        """
+        return self.sheader.timestamp_subseconds
+
+    def get_timestamp_seconds(self) -> int:
+        """
+        Returns the timestamp_seconds derived from the sheader header fields in CcsdsV1TlmPacket
+        """
+        return self.sheader.timestamp_seconds
 
 
 CcsdsPrimaryHeader = CcsdsV1PrimaryHeader

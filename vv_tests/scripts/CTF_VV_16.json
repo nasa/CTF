@@ -10,7 +10,7 @@
     "ctf_options": {
         "verify_timeout": 4
     },
-    "test_setup": "Pair with config file ../configs/vv_lx1_lx2_remote_config.ini",
+    "test_setup": "Pair with config file ../sbng_configs/vv_lx1_lx2_sbng_remote_config.ini",
     "import": {
         "./StartCfsFunction.json": [
             "StartCfsFunc"

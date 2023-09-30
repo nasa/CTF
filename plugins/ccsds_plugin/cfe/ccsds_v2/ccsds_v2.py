@@ -164,7 +164,8 @@ class CcsdsV2Packet(CcsdsPacketInterface):
     def set_function_code(self, function_code: int) -> None:
         raise TypeError("Function code is only supported in a command packet")
 
-    def get_crc_flag(self) -> int:
+    @staticmethod
+    def get_crc_flag() -> int:
         """
         Get the header crc flag: CRC is not supported in open source release
         """
@@ -225,6 +226,18 @@ class CcsdsV2TlmPacket(CcsdsV2Packet):
     _fields_ = [
         ("sheader", CcsdsSecondaryTlmHeader)
     ]
+
+    def get_timestamp_seconds(self) -> int:
+        """
+        Returns the timestamp_seconds derived from the header fields in CcsdsV2TlmPacket
+        """
+        return self.sheader.timestamp_seconds
+
+    def get_timestamp_subseconds(self) -> int:
+        """
+         Returns the timestamp_subseconds derived from the header fields in CcsdsV2TlmPacket
+        """
+        return self.sheader.timestamp_subseconds
 
 
 CcsdsPrimaryHeader = CcsdsV2PrimaryHeader

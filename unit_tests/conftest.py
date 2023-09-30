@@ -22,6 +22,38 @@ from plugins.cfs.cfs_config import CfsConfig
 from plugins.cfs.cfs_plugin import CfsPlugin
 
 
+def pytest_addoption(parser):
+    parser.addoption(
+        "--workspace", action="store", default="open_source", help="my option: open_source or gateway"
+    )
+
+
+@pytest.fixture(scope="session", autouse=True)
+def workspace(request):
+    workspace_dic = dict()
+    workspace_dic['type'] = request.config.getoption("--workspace")
+    if workspace_dic['type'] == 'open_source':
+        workspace_dic['TO_CMD_MID'] = 0x2A8B
+        workspace_dic['CFE_ES_CMD_MID'] = 0x2081
+        workspace_dic['DUMMY_IO_CMD_MID'] = 0x2A8E
+        workspace_dic['DUMMY_IO_CMD_MID_STR'] = '10894'
+        workspace_dic['TO_HK_TLM_MID'] = 0x2A0D
+        workspace_dic['ES_HK_TLM_MID'] = 0x2001
+        workspace_dic['EVS_LONG_EVENT_MSG_MID'] = 0x2006
+        workspace_dic['EVS_SHORT_EVENT_MSG_MID'] = 0x2007
+    else:
+        workspace_dic['TO_CMD_MID'] = 0xC85041E
+        workspace_dic['CFE_ES_CMD_MID'] = 0xC850401
+        workspace_dic['DUMMY_IO_CMD_MID'] = 0xC850411
+        workspace_dic['DUMMY_IO_CMD_MID_STR'] = '210043921'
+        workspace_dic['TO_HK_TLM_MID'] = 0x485041E
+        workspace_dic['ES_HK_TLM_MID'] = 0x4850401
+        workspace_dic['EVS_LONG_EVENT_MSG_MID'] = 0x4850406
+        workspace_dic['EVS_SHORT_EVENT_MSG_MID'] = 0x4850407
+
+    return workspace_dic
+
+
 @pytest.fixture(scope="session", autouse=True)
 def init_global():
     from lib.ctf_global import Global

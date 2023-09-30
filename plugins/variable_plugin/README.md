@@ -78,6 +78,7 @@ Same as `SetUserVariableFromTlm` except the variable references the packet heade
 - **header_variable**: the parameter of telemetry packet (example: "pheader.length")
 - **target:** (Optional) A previously registered target name. If no name is given, will use the first registered target.
 - **variable_type**: (Optional) One of "int", "float", "string", or "boolean" indicating the type of value to be set. If not specified, the value from telemetry packet will be stored as-is. 
+- **tlm_args**: (Optional) An array of argument objects that filter the packets to be checked. The value will be taken from the first packet matched by the specified arguments. See [CheckTlmValue](../../plugins/cfs/README.md#CheckTlmValue) for the syntax of these arguments.
 
 
 Example:
@@ -85,11 +86,18 @@ Example:
 {
     "instruction": "SetUserVariableFromTlmHeader",
     "data": {
-         "variable_name": "my_var",
-          "mid": "TO_HK_TLM_MID",
-          "header_variable": "pheader.length",
-          "target": "cfs_workstation",
-          "variable_type": "int"
+        "variable_name": "my_var",
+        "mid": "TO_HK_TLM_MID",
+        "header_variable": "pheader.length",
+        "target": "cfs_workstation",
+        "variable_type": "int",
+        "tlm_args": [
+            {
+                "compare": "==",
+                "variable": "usCmdErrCnt",
+                "value": 1
+            }
+        ]
     }
 }
 </code></pre>

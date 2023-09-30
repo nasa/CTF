@@ -630,7 +630,7 @@ def test_ssh_controller_run_command_persistent_exception(ssh_controller_instance
 
     with patch('fabric.connection.Connection.run') as mock_run, \
             patch('fabric.connection.Connection.is_connected', return_value=True):
-        mock_run.side_effect = invoke.exceptions.CommandTimedOut("mock failure", 10)
+        mock_run.side_effect = invoke.exceptions.CommandTimedOut(invoke.Result(exited=-1, stderr="mock timeout"), 10)
         with pytest.raises(invoke.exceptions.CommandTimedOut):
             ssh_controller_instance.run_command_persistent('cd lander_fsw_ctf')
             assert utils.has_log_level("ERROR")

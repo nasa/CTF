@@ -18,6 +18,7 @@ cfs_interface.py: Base-class Lower-level interface to communicate with cFS.
 """
 import collections
 import ctypes
+import datetime
 import importlib
 import os
 import re
@@ -72,7 +73,6 @@ class CfsInterface:
         and ccsds arguments to interface attributes
         """
         self.config = config
-        self.is_running = False
 
         if self.config.evs_long_event_mid_name in mid_map:
             self.evs_long_event_msg_mid = mid_map[self.config.evs_long_event_mid_name]["MID"]
@@ -158,7 +158,7 @@ class CfsInterface:
         """
         Stop CFS executable instance, close command and telemetry sockets.
         """
-        log.info("Stopping CFS Executable")
+        log.info("Disconnecting from CFS target")
 
         # Close command and telemetry sockets
         self.command.cleanup()
@@ -173,8 +173,6 @@ class CfsInterface:
             log.debug("Closing evs log file {}".format(self.evs_log_file.name))
             self.evs_log_file.close()
             self.evs_log_file = None
-
-        self.is_running = False
 
         for v_ids in self.tlm_verifications_by_mid_and_vid.values():
             for v_id, verification in v_ids.items():
@@ -194,7 +192,7 @@ class CfsInterface:
             log.error("Failed to create tlm log file {}")
             log.debug(traceback.format_exc())
 
-    def write_tlm_log(self, payload, buf, mid, sequence_count):
+    def write_tlm_log(self, payload, buf, header):
         """
         Write payload and mid to telemetry log file. if log file does not exist, create one.
         """
@@ -202,9 +200,16 @@ class CfsInterface:
             if self.tlm_log_file is None:
                 self.__create_tlm_log_file()
 
-            self.tlm_log_file.write("{}: mid:{} seq: {}\n\t{}\n".format(Global.get_time_manager().exec_time, hex(mid),
-                                                                        sequence_count,
-                                                                        str(payload).replace("\n", "\n\t")))
+            mid = header.get_msg_id()
+            sequence_count = header.get_sequence_count()
+            timestamp_seconds = header.get_timestamp_seconds()
+            timestamp_subseconds = header.get_timestamp_subseconds()
+
+            self.tlm_log_file.write("{} - {}: mid:{} seq: {} timestamp_seconds: {} timestamp_subseconds: {}\n\t{}\n".
+                                    format(Global.get_time_manager().exec_time,
+                                           datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3],
+                                           hex(mid), sequence_count, timestamp_seconds, timestamp_subseconds,
+                                           str(payload).replace("\n", "\n\t")))
             if self.config.telemetry_debug:
                 self.tlm_log_file.write("        For MID {} Payload length: {} hex values: 0x{}\n".format(hex(mid),
                                                                                                           len(buf),
@@ -221,7 +226,9 @@ class CfsInterface:
             if self.tlm_log_file is None:
                 self.__create_tlm_log_file()
 
-            self.tlm_log_file.write("{}: mid:{} \n\t{}\n".format(Global.get_time_manager().exec_time, mid, description))
+            self.tlm_log_file.write("{} - {}: mid:{} \n\t{}\n".
+                                    format(Global.get_time_manager().exec_time,
+                                           datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3], mid, description))
 
             if self.config.telemetry_debug:
                 self.tlm_log_file.write("        For MID {} buf hex values: 0x{}\n".format(mid, buf.hex()))
@@ -246,6 +253,9 @@ class CfsInterface:
                                      payload.PacketID.AppName.decode(),
                                      payload.PacketID.EventID,
                                      payload.Message.decode() if hasattr(payload, "Message") else ""))
+            # one option to replace .flush is print(msg, file=self.evs_log_file, flush=True)
+            # but it is not consistent with other .write functions.
+            self.evs_log_file.flush()
         except (UnicodeDecodeError, IOError, ValueError):
             log.error("Failed to write event packet to EVS Log file for Event Payload: {}".format(str(payload)))
             log.debug(traceback.format_exc())
@@ -331,7 +341,6 @@ class CfsInterface:
         try:
             header = self.ccsds.CcsdsTelemetry.from_buffer(buffer[0:self.tlm_header_offset])
             mid = header.get_msg_id()
-            sequence_count = header.get_sequence_count()
             if not header.validate(buffer):
                 log.debug("Telemetry packet is discarded as CRC check fails.")
                 self.write_tlm_error_log(hex(mid), 'CRC check fail', buffer)
@@ -355,7 +364,7 @@ class CfsInterface:
             self.write_tlm_error_log(hex(mid), 'Could not build payload, check ccdd json definition files', buffer)
             return None
 
-        self.write_tlm_log(payload, buffer[offset:], mid, sequence_count)
+        self.write_tlm_log(payload, buffer[offset:], header)
         self.on_packet_received(mid, header, payload)
         if mid in [self.evs_long_event_msg_mid, self.evs_short_event_msg_mid]:
             # Write this packet to the CFS EVS Log File
@@ -636,7 +645,7 @@ class CfsInterface:
             self.received_mid_packets_dic[mid] = []
         return check_tlm_result
 
-    def get_tlm_value(self, mid: dict, tlm_variable: str, is_header: bool = False):
+    def get_tlm_value(self, mid: dict, tlm_variable: str, is_header: bool = False, tlm_args: list = None):
         """
         Given a mid and a tlm_variable, iterate over all received packets, and return the latest tlm value.
         """
@@ -666,6 +675,9 @@ class CfsInterface:
             if data is None:
                 log.error("Failed to extract packet from received MID: {}. Continuing...".format(hex(mid)))
                 continue
+            if tlm_args and not self.check_tlm_packet(packet.payload, tlm_args, False):
+                log.debug("Packet {} does not match provided args. Continuing...".format(i))
+                continue
             latest_tlm_value = ctf_utility.rgetattr(data, tlm_variable, None)
 
             if isinstance(latest_tlm_value, bytes):
@@ -677,7 +689,7 @@ class CfsInterface:
 
         return latest_tlm_value
 
-    def check_tlm_packet(self, payload, args):
+    def check_tlm_packet(self, payload, args, log_result=True):
         """
         Check telemetry message's value based on argument payload and args
         """
@@ -745,14 +757,15 @@ class CfsInterface:
                 tol_minus_result &= self.check_value(actual, expected_value, "<=", mask, mask_value)
                 arg_result |= tol_minus_result
 
-            if not arg_result:
-                log.warning(
-                    'FAILED Intermediate Check - {}: Actual: {}, Expected: {}, Comparison: {}, Tol: +{}, -{}'.format(
-                        variable, actual, expected_value, arg["compare"], tol_plus, tol_minus))
-            else:
-                log.info(
-                    'PASSED Intermediate Check - {}: Actual: {}, Expected: {}, Comparison: {}, Tol: +{}, -{}'.format(
-                        variable, actual, expected_value, arg["compare"], tol_plus, tol_minus))
+            if log_result:
+                if not arg_result:
+                    log.warning(
+                        'FAILED Intermediate Check - {}: Actual: {}, Expected: {}, Comparison: {}, Tol: +{}, -{}'
+                        .format(variable, actual, expected_value, arg["compare"], tol_plus, tol_minus))
+                else:
+                    log.info(
+                        'PASSED Intermediate Check - {}: Actual: {}, Expected: {}, Comparison: {}, Tol: +{}, -{}'
+                        .format(variable, actual, expected_value, arg["compare"], tol_plus, tol_minus))
             packet_passed = packet_passed and arg_result
 
         return packet_passed

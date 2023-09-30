@@ -324,6 +324,11 @@ class CCDDExportReader(CCSDSInterface):
         data_type_name = str(json_dict.get(type_id, None))
         parameters = json_dict.get(arg_id, [])
 
+        # The parameters for this type were already defined elsewhere
+        if not parameters and data_type_name in self.type_dict:
+            log.debug("Found definition for type {}".format(data_type_name))
+            return self.type_dict[data_type_name], None
+
         for param in parameters:
             param_name = param['name']
 

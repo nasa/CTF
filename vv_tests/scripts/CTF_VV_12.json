@@ -18,7 +18,7 @@
                 {
                     "instruction": "WaitForUserInput",
                     "data": {
-                        "prompt": "  "
+                        "prompt": "This instruction is skipped"
                     },
                     "disabled": true,
                     "wait": 1

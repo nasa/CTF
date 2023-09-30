@@ -23,7 +23,8 @@ from plugins.cfs.cfs_config import CfsConfig, RemoteCfsConfig
 
 
 def test_cfs_config_init(cfs_config):
-    assert set(cfs_config.sections) == {"ccsds", "cfs", "core", "local_ssh", "logging", "ssh", 'test_variable'}
+    assert set(cfs_config.sections) == \
+           {"ccsds", "cfs", "tgt1", "core", "local_ssh", "logging", "ssh", 'test_variable', 'trick'}
     assert cfs_config.validation.get_error_count() == 0
     assert cfs_config.name == "cfs"
     assert cfs_config.cfs_protocol == "local"
@@ -182,7 +183,7 @@ def remote_cfs_config():
 
 def test_remote_cfs_config_init(remote_cfs_config):
     assert set(remote_cfs_config.sections) == \
-           {"ccsds", "cfs", "core", "local_ssh", "logging", "ssh", "test_variable"}
+           {"ccsds", "cfs", "tgt1", "core", "local_ssh", "logging", "ssh", "test_variable", "trick"}
     assert remote_cfs_config.validation.get_error_count() == 0
     assert remote_cfs_config.name == "local_ssh"
     assert remote_cfs_config.cfs_protocol == "ssh"

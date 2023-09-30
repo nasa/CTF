@@ -39,7 +39,7 @@
                     "data": {
                         "target": "tgt1"
                     },
-                    "wait": 30
+                    "wait": 90
                 }
             ]
         }

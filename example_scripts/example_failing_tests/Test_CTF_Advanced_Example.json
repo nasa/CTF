@@ -141,7 +141,8 @@
                             {
                                 "app_name": "TO",
                                 "event_id": "0xC",
-                                "event_str": "TO_VerifyPtrAndCmdLength\\(\\) - Rcvd invalid msgLen for MID:*",
+                                "event_str": "TO_VerifyPtrAndCmdLength\\(\\) - {} invalid msgLen for {}:*",
+                                "event_str_args": ["Rcvd", "MID"],
                                 "is_regex": true
                             }
                         ]

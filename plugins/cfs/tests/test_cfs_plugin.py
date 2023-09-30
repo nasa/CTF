@@ -397,7 +397,7 @@ def test_cfs_plugin_get_tlm_value(cfs_plugin):
     cfs_plugin.targets = {i: mock_controller for i in range(1)}
     assert cfs_plugin.get_tlm_value("mid", 'var.name', target=None)
     assert mock_controller.get_tlm_value.call_count == 1
-    mock_controller.get_tlm_value.assert_called_with("mid", 'var.name', False)
+    mock_controller.get_tlm_value.assert_called_with("mid", 'var.name', False, None)
 
 
 def test_cfs_plugin_check_tlm_value_pass(cfs_plugin):

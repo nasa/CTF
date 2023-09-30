@@ -39,9 +39,17 @@ from plugins.cfs.cfs_time_manager import CfsTimeManager
 from plugins.cfs.pycfs.cfs_controllers import CfsController, RemoteCfsController
 
 
-def _resolve_tlm_args_values(event_args):
-    # args will be modified during parameter evaluation, keep the original args for re-evaluation during loop
-    copied_args = deepcopy(event_args)
+def _resolve_tlm_args_values(tlm_args):
+    """
+    Helper function to resolve variables within telemetry arguments.
+    tlm_args must be a dict or list of dict, such as used in telemetry checks.
+
+    @return a deep copy of tlm_args with variables resolved in each field.
+
+    @note Since args may be modified during parameter evaluation,
+    the original args are kept for re-evaluation during loops
+    """
+    copied_args = deepcopy(tlm_args)
 
     if isinstance(copied_args, dict):
         for key, value in copied_args.items():
@@ -359,9 +367,11 @@ class CfsPlugin(Plugin):
         return all(status) if status else False
 
     @staticmethod
-    def resolve_cfs_args_value(cmd_args):
-        """ Helper function to resolve the arguments of test instructions
-       """
+    def resolve_cmd_args_value(cmd_args):
+        """
+        Helper function to recursively resolve variables with command arguments.
+        cmd_args must be a dict, such as used in SendCfsCommand, and may be nested.
+        """
         # corner case: empty list, dic, str ...
         if not cmd_args or not isinstance(cmd_args, dict):
             return
@@ -369,13 +379,13 @@ class CfsPlugin(Plugin):
         for key, value in cmd_args.items():
             if isinstance(value, list):
                 for sub_arg in value:
-                    CfsPlugin.resolve_cfs_args_value(sub_arg)
+                    CfsPlugin.resolve_cmd_args_value(sub_arg)
             elif isinstance(value, dict):
-                CfsPlugin.resolve_cfs_args_value(value)
+                CfsPlugin.resolve_cmd_args_value(value)
             else:
                 cmd_args[key] = resolve_variable(value)
 
-    def send_cfs_command(self, mid: str, cc: int, args: any, target: str = None, header: dict = None,
+    def send_cfs_command(self, mid: str, cc: str, args: any, target: str = None, header: dict = None,
                          payload_length: int = None, ctype_args: bool = False) -> bool:
         """Implements the instruction SendCfsCommand
         ctype_args is a flag to zero out the message structure for internal validation,
@@ -386,9 +396,12 @@ class CfsPlugin(Plugin):
                       .format(target, mid, cc, json.dumps(args), payload_length, ctype_args))
 
         target = resolve_variable(target)
+        mid = resolve_variable(mid)
+        cc = resolve_variable(cc)
+
         copied_args = deepcopy(args)
 
-        CfsPlugin.resolve_cfs_args_value(copied_args)
+        CfsPlugin.resolve_cmd_args_value(copied_args)
 
         # Collect the results of send_cfs_command on each specified target, and check that all passed
         # Make a copy of arguments since send_cfs_command may change arguments structure
@@ -449,7 +462,8 @@ class CfsPlugin(Plugin):
 
         return result
 
-    def get_tlm_value(self, mid: str, tlm_variable: str, is_header: bool = False, target: str = None):
+    def get_tlm_value(self, mid: str, tlm_variable: str, is_header: bool = False,
+                      target: str = None, tlm_args: list = None):
         """Get the latest telemetry value with matching mid and named parameter"""
         tlm_value = None
         log.debug("get_tlm_value for target: {},  mid: {}, tlm_variable: {}, is_header : {}"
@@ -457,7 +471,7 @@ class CfsPlugin(Plugin):
         # Get the latest telemetry value from cfs target
         cfs_target = self.get_cfs_targets(target)
         if cfs_target:
-            tlm_value = cfs_target[0].get_tlm_value(mid, tlm_variable, is_header)
+            tlm_value = cfs_target[0].get_tlm_value(mid, tlm_variable, is_header, _resolve_tlm_args_values(tlm_args))
         log.debug("get_tlm_value's return tlm_value: {} ({})".format(tlm_value, type(tlm_value).__name__))
         return tlm_value
 

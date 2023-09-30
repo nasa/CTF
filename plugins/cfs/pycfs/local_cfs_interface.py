@@ -26,7 +26,6 @@ from pathlib import Path
 from shutil import rmtree
 from subprocess import run, Popen, PIPE, STDOUT
 from distutils.spawn import find_executable
-import time
 
 # module dependencies
 from plugins.cfs.pycfs.cfs_interface import CfsInterface
@@ -180,7 +179,7 @@ class LocalCfsInterface(CfsInterface):
             return_values["result"] = False
             raise CtfTestError("Error in start_cfs") from exception
 
-        time.sleep(2)
+        Global.time_manager.wait(2)
 
         # Check the status of the CFS application
         if cfs_process.poll() is not None:
@@ -190,6 +189,5 @@ class LocalCfsInterface(CfsInterface):
             return return_values
 
         return_values["result"] = True
-        self.is_running = True
 
         return return_values

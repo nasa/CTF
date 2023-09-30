@@ -114,6 +114,6 @@ class CcsdsPrimaryHeaderBase(ctypes.BigEndianStructure):
 
     def get_msg_id(self) -> int:
         """Returns the message ID value derived from the header fields"""
-        msg_id = (self.version_number << 15) + (self.type << 12) + (
+        msg_id = (self.version_number << 13) + (self.type << 12) + (
                 self.secondary_header_flag << 11) + self.app_id
         return msg_id

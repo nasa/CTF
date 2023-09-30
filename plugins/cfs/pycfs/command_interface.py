@@ -21,7 +21,7 @@ command_interface.py: Handles sending commands to a cFS target.
 
 import socket
 import logging as log
-from lib.ctf_utility import set_nested_attr
+from lib.ctf_utility import set_nested_attr, resolve_variable
 
 
 class CommandInterface:
@@ -80,22 +80,32 @@ class CommandInterface:
 
         if header_args is not None and isinstance(header_args, dict):
             for key, value in header_args.items():
+                key = resolve_variable(key)
+                value = resolve_variable(value)
                 set_nested_attr(command, key, value)
 
         to_send = bytearray(command) + data
 
-        # command.get_crc_flag() == 1 implies the last 4 bytes are crc
-        # from ccdd json, constructing a message load should set last 4 bytes to zero.
-        # the only reason they are not zero is SendCfsCommandWithRawPayload specifies hex_buffer.
-        # in that case, CTF should not update crc
-        skip_crc_update = False
-        if command.get_crc_flag() == 1 and any(data[-4:]):
-            skip_crc_update = True
-
-        if command.get_crc_flag() == 1 and not skip_crc_update:
-            command.set_crc(to_send)
+        self.update_crc(command, to_send)
 
         return to_send
+
+    @staticmethod
+    def update_crc(header, payload):
+        """
+        This method updates CRC attribute based the header CRC flag and the value of last four bytes of the payload.
+        """
+        # header.get_crc_flag() == 1 implies the last 4 bytes are crc
+        # From CCDD json, the constructed payload should set last 4 bytes to zero by default.
+        # If they are not zero, there are 2 possible reasons.
+        # 1. test instruction sets 'CRCValue' attribute to nonzero values.
+        # 2. SendCfsCommandWithRawPayload specifies hex_buffer.
+        # In either case, CTF should not update crc.
+        # There is a special case: the header CRC flag is set and 'CRCValue' is set to all zero by test instruction
+        # for invalid CRC check. However, the CRC will be calculated/updated, but this may not be intended.
+
+        if header.get_crc_flag() == 1 and not any(payload[-4:]):
+            header.set_crc(payload)
 
     def send_command(self, msg_id, function_code, data, header_args=None):
         """

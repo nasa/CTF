@@ -65,7 +65,7 @@ def test_out_manager_disable_output(outmgr):
 
 def test_out_manager_on_time_interval(outmgr):
     with pytest.raises(NotImplementedError):
-        outmgr.on_time_interval(1)
+        outmgr.on_time_interval()
 
 
 def test_to_api_init(toapi):
@@ -124,4 +124,4 @@ def test_to_api_enable_output_fail(toapi, utils):
 
 
 def test_to_api_on_time_interval(toapi):
-    assert toapi.on_time_interval(1) is None
+    assert toapi.on_time_interval() is None

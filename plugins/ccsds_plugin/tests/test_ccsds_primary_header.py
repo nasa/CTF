@@ -247,10 +247,10 @@ def test_ccsdsprimaryheaderbase_get_msg_id(primary_header_base):
     primary_header_base.set_ccsds_version(4)
     primary_header_base.set_secondary_header_flag(1)
     primary_header_base.set_app_id(9876)
-    assert primary_header_base.get_msg_id() == 138900
+    assert primary_header_base.get_msg_id() == 40596
 
     primary_header_base.set_packet_type(0)
     primary_header_base.set_ccsds_version(3)
     primary_header_base.set_secondary_header_flag(1)
     primary_header_base.set_app_id(789)
-    assert primary_header_base.get_msg_id() == 101141
+    assert primary_header_base.get_msg_id() == 27413

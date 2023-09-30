@@ -206,6 +206,25 @@ class CfsController:
                               "bytes will be padded to the payload".format(len(payload), payload_length))
                     payload = payload + bytes(payload_length - len(payload))
 
+            # If test intentionally sends invalid mid or cc, only logs warning, does not fail the test
+            # At the beginning of this method, it validates mid and cc, if they are string type.
+            # If mid and cc are int, they are not validated, and could be sent as invalid command by cfs.send_command.
+            # The block below only checks the payload size.
+            mid_name = self.validate_mid_value(mid)
+            cc_name = None
+            if mid_name is None:
+                log.warning("Could not find MID {} in MID Map".format(mid))
+            else:
+                cc_name = self.validate_cc_value(self.mid_map[mid_name], cc)
+            if cc_name is None:
+                log.warning("Could not find Command Code {} for MID {} in MID Map".format(cc, hex(mid)))
+            if mid_name is not None and cc_name is not None:
+                expected_payload = self.build_command_payload(mid_name=mid_name, cc_name=cc_name, args={})
+                expected_payload_size = len(expected_payload)
+                if len(payload) != expected_payload_size:
+                    log.warning("The payload size {} is different from the message definition size {} ".
+                                format(len(payload), expected_payload_size))
+
             log.debug("Sending bytes: {}".format(payload))
             result = self.cfs.send_command(mid, cc, payload, header_args)
         except (ValueError, TypeError):
@@ -322,6 +341,7 @@ class CfsController:
         Implements the encoding of a ctypes Structure into a byte buffer.
         @return bytes: A raw byte representation of args
         """
+
         # pylint: disable=protected-access
 
         # noinspection PyProtectedMember
@@ -555,7 +575,7 @@ class CfsController:
 
         return result
 
-    def get_tlm_value(self, mid: str, tlm_variable: str, is_header: bool = False) -> any:
+    def get_tlm_value(self, mid: str, tlm_variable: str, is_header: bool = False, tlm_args: list = None) -> any:
         """
         Implementation of CFS plugin instructions get_tlm_value. When CFS plugin method (get_tlm_value)
         is executed, it calls CfsController instance's get_tlm_value function.
@@ -572,7 +592,8 @@ class CfsController:
             log.error("Messages never received for MID {}:{}.".format(mid, current_mid_value))
             return None
 
-        result = self.cfs.get_tlm_value(mid, tlm_variable, is_header)
+        tlm_args = self.convert_check_tlm_args(tlm_args) if tlm_args else None
+        result = self.cfs.get_tlm_value(mid, tlm_variable, is_header, tlm_args)
         return result
 
     def check_tlm_continuous(self, v_id, mid, args):
@@ -629,15 +650,27 @@ class CfsController:
         """
         # pylint: disable=invalid-name,redefined-builtin
         log.info("Checking event on {}".format(self.config.name))
-        if event_str_args is not None and len(event_str_args) > 0:
+        if event_str_args is not None:
+            formatted_args = event_str_args
             try:
-                event_str = event_str % literal_eval(event_str_args)
-            except (ValueError, SyntaxError):
+                # new string formatting syntax, like "{} - {} cmd successful for  routeMask:0x[0-9]+",
+                if '{}' in event_str:
+                    if isinstance(event_str_args, (int, float, str)):
+                        formatted_args = [event_str_args]
+                    # formatted_args is a list or tuple
+                    event_str = event_str.format(*formatted_args)
+                # old string C-type formatting syntax, like "event_str": "%s - %s cmd successful"
+                # it may be removed after CTF v1.8
+                elif isinstance(event_str_args, str) and len(event_str_args) > 0:
+                    event_str = event_str % literal_eval(event_str_args)
+
+            except (ValueError, SyntaxError, AttributeError, TypeError):
                 log.error("Failed to check Event ID {} in App {} with message: '{}' with msg_args = {}".format(
                     event_id, app_name, event_str, event_str_args))
                 log.debug(traceback.format_exc())
                 return False
 
+        log.debug("event_str is resolved to {}".format(event_str))
         if not str(event_id).isnumeric():
             event_id = self.resolve_macros(event_id)
 
@@ -694,9 +727,11 @@ class CfsController:
         # Close the command socket, close the telemetry socket and write the CFS EVS Log File
         if self.cfs:
             self.cfs.stop_cfs()
+            self.cfs = None
 
         status = False
         # check whether cFS instance exists and if so, try to kill it
+        log.info("Killing Linux process...")
         if not self.cfs_pid:
             log.error("CFS pid not found! Process may not be killed.")
         elif os.system("ps -p {}".format(self.cfs_pid)) != 0:
@@ -720,13 +755,14 @@ class CfsController:
         include the shutdown test command
         """
         log.info("Shutting down controller for {}".format(self.config.name))
-        if self.cfs and self.cfs.is_running:
+        if self.cfs:
             try:
                 self.shutdown_cfs()
             except CtfTestError:
                 log.error("Error: Shutting down controller for {}".format(self.config.name))
-
-        self.cfs = None
+            self.cfs = None
+        else:
+            log.info("CFS was already shut down")
 
     def validate_mid_value(self, mid):
         """
@@ -883,8 +919,9 @@ class RemoteCfsController(CfsController):
         if self.cfs:
             self.cfs.stop_cfs()
 
+        log.info("Killing remote process...")
         if self.cfs_pid:
-            kill_string = "kill -9 {}".format(self.cfs_pid)
+            kill_string = "pkill -P {}".format(self.cfs_pid)
             result = self.execution.run_command(kill_string)
             if not result:
                 log.error("Failed to kill process {}. CFS may have already exited.".format(self.config.cfs_exe))
@@ -893,7 +930,7 @@ class RemoteCfsController(CfsController):
             result = False
 
         # Wait 2 time units for shutdown to complete
-        Global.time_manager.wait_seconds(2)
+        Global.time_manager.wait(2)
 
         stdout_final_path = os.path.join(Global.current_script_log_dir, os.path.basename(self.cfs.cfs_std_out_path))
         if not os.path.exists(stdout_final_path):
@@ -904,4 +941,5 @@ class RemoteCfsController(CfsController):
                 log.info("Successfully copied CFS stdout file from remote SSH Target. Removing remote file.")
                 self.execution.run_command("rm {}".format(self.cfs.cfs_std_out_path))
 
+        self.cfs = None
         return result

@@ -21,6 +21,7 @@ Logger configuration and initialization for CTF logging
 import datetime as dt
 import logging
 import os
+import sys
 import time
 from enum import IntEnum
 
@@ -103,7 +104,7 @@ def init_logger(config):
                                                       datefmt=TIME_FORMAT,
                                                       log_colors=log_colors)
 
-    console_handler = logging.StreamHandler()
+    console_handler = logging.StreamHandler(stream=sys.stdout)
     console_handler.setLevel(CtfLogLevel.TEST_PASS_CONT)
     console_handler.setFormatter(console_formatter)
     logger.addHandler(console_handler)

@@ -26,7 +26,7 @@ from lib.patchwork.patchwork import transfers
 from lib.plugin_manager import Plugin, ArgTypes
 from lib.logger import logger as log
 from lib.ctf_global import Global
-from lib.ctf_utility import expand_path
+from lib.ctf_utility import expand_path, resolve_variable
 from lib.ftp_interface import FtpInterface
 
 
@@ -211,7 +211,7 @@ class SshPlugin(Plugin):
             "wait": 1,
             "data": {
                 "name": "workstation",
-                "host": "cd lander_fsw_ctf/;rm -rf build; make; make install;"
+                "command": "cd lander_fsw_ctf/;rm -rf build; make; make install;"
             }
         }
         """
@@ -242,11 +242,13 @@ class SshPlugin(Plugin):
             "wait": 1,
             "data": {
                 "name": "workstation",
-                "host": "cd lander_fsw_ctf/;rm -rf build; make; make install;"
+                "command": "cd lander_fsw_ctf/;rm -rf build; make; make install;"
             }
         }
         """
-        log.debug("SshPlugin.run_command_local")
+        name = resolve_variable(name)
+        command = resolve_variable(command)
+        log.debug("SshPlugin.run_command_local name: {} command: {}".format(name, command))
         if name not in self.targets:
             log.error("No Execution target named {}".format(name))
             return False
@@ -497,9 +499,9 @@ class SshController():
                     result = self.connection.run(command,
                                                  hide=(not self.config.print_stdout),
                                                  timeout=self.config.command_timeout)
-                except (invoke.exceptions.UnexpectedExit, invoke.exceptions.CommandTimedOut) as ex:
+                except (invoke.exceptions.UnexpectedExit, invoke.exceptions.CommandTimedOut) as exception:
                     result = invoke.Result(exited=1)
-                    log.error("Remote run command {} failed: {}".format(command, ex.reason))
+                    log.error("Remote run command {} failed: {}".format(command, exception.reason))
         if self.config.log_stdout:
             log.info("Remote {cmd} complete with result:\n {res}\n Exit Code = {code}"
                      .format(cmd=command, res=result.stdout.strip(), code=result.exited))
@@ -522,25 +524,29 @@ class SshController():
         # ENHANCE Investigate ways to pipe the output back and capture it live instead of directing to /dev/null.
         #  The interaction of fabric and nohup etc. limit our options
         pid_file = "/tmp/pid"
-        cmd_str = "nohup sh -c '{command} & echo $! > {pid_file}' & 2>&1".format(command=command, pid_file=pid_file)
+        cmd_str = "{command} & echo $! > {pid_file}".format(command=command, pid_file=pid_file)
         with self.connection.cd(cwd):
             with self.connection.prefix(prefix):
                 try:
-                    result = self.connection.run(cmd_str,
-                                                 hide=(not self.config.print_stdout),
-                                                 timeout=self.config.command_timeout)
-                except (invoke.exceptions.UnexpectedExit, invoke.exceptions.CommandTimedOut):
-                    result = invoke.Result(exited=1)
-                    log.error("Remote run command persistent {} failed".format(command))
+                    self.connection.run(cmd_str,
+                                        hide=(not self.config.print_stdout),
+                                        timeout=self.config.command_timeout,
+                                        asynchronous=True)
+                    result = invoke.Result(exited=0)
+                except (invoke.exceptions.UnexpectedExit, invoke.exceptions.CommandTimedOut) as exception:
+                    result = exception.result
+                    log.error("Remote run command persistent {} failed: {}".format(command, exception))
 
         # ENHANCE Investigate ways this could go wrong in various error conditions. There may be a more
         #  reliable method to preserve the PID and/or avoid possibly picking up an old one.
+        # This command is allowed to run even if the above failed so that the pid file is cleared
         pid = self.connection.run('cat {pid_file} && > {pid_file}'.format(pid_file=pid_file))
         if pid.exited == 0 and pid.stdout:
             self.last_pid = pid.stdout.rstrip()
         else:
             self.last_pid = None
             log.error("Unable to get PID of last command!")
+
         log.info("Remote {cmd} complete. Exit Code = {code}. PID = {pid}"
                  .format(cmd=cmd_str, code=result.exited, pid=self.last_pid))
 

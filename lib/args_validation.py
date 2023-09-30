@@ -72,7 +72,7 @@ class ArgsValidation:
         Given a file path, verify that a given symbol exists within that file.
         Return True if the symbol exists, otherwise return False
 
-        @note - Primarily used to validate SP0 executables
+        @note - Primarily used to validate target executables
 
         @param file_path: Path to executable file to check
         @param symbol: Name of symbol to verify within executable file
@@ -103,7 +103,7 @@ class ArgsValidation:
         Given a file path, verify that the file exists on disk and contains the given symbol.
         Return the symbol if it exists, otherwise return None
 
-        @note - Primarily used to validate SP0 executables
+        @note - Primarily used to validate target executables
 
         @param symbol: Name of symbol to verify within executable file
         @param file_path: Path to executable file to check

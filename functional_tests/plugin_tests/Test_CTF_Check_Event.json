@@ -35,8 +35,8 @@
                             {
                                 "app_name": "TO",
                                 "event_id": 3,
-                                "event_str": "TO - Rcvd NOOP cmd (0). Version 1.2.0.0",
-                                "event_str_args": "",
+                                "event_str": "{} - Rcvd NOOP cmd ({}). Version 1.2.0.0",
+                                "event_str_args": ["TO", 0],
                                 "is_regex": false
                             }
                         ]
@@ -76,8 +76,8 @@
                             {
                                 "app_name": "CI",
                                 "event_id": 3,
-                                "event_str": "CI - Rcvd NOOP cmd (0). Version 1.2.0.0",
-                                "event_str_args": "",
+                                "event_str": "{} - Rcvd NOOP cmd (0). Version 1.2.0.0",
+                                "event_str_args": "CI",
                                 "is_regex": false
                             }
                         ]

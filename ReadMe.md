@@ -21,6 +21,51 @@ in the `CTF Documentation` directory of the CTF releases' Assets (https://github
  
 ## Release Notes
 
+### v1.8 
+09/27/2023
+* CTF Core Changes
+    * Fix the timing mismatch between CTF run time and computer calendar time.
+
+    * Fix the issue of EVS/telemetry log files not always being readable during runtime.
+
+    * Minor improvements and bug fixes.
+
+* CTF Plugins Changes
+    * Add a new Trick Plugin 
+        * Add three instructions `FreezeTrickSim`, `SetTrickVariable` and `CheckTrickVariable` to interface to a Trick variable server.
+
+        * Add a new `trick` section in CTF config files to configure the Trick variable server interface. 
+   
+    * Updates to CFS Plugin
+        * Fix a regression in the CFS Plugin that caused CTF to not communicate with CFS targets which were not started via `StartCfs`.
+
+        * Allow `CheckEvent` args to accept literal values in functions.
+  
+        * Log additional timing information in tlm log file. 
+
+        * Add optional payload args to `SetUserVariableFromTlmHeader` to filter telemetry packets
+
+    * CCSDS Plugin
+      * Fix CCSDS v1 message header issue.
+
+      * Fix a regression issue of CCDD JSON reader not reusing known data types referenced by name.
+
+    * Updates to Gateway Plugin
+        * Improve `SendCfsCommandWithAggregatedPayload` instruction to allow different targets in payload, and its syntax.
+
+        * Fix inner command header attribute assignment issue of test instruction.
+        
+
+* CTF Tool and Scripts Changes
+    * Consolidate unit tests for open source release and internal release.
+
+    * Improve CTF test environment installation.
+    
+    * Update test scripts and sample cFS workspace. 
+    
+    * Update CTF documents.
+
+
 ### v1.7 
 01/24/2023
 * CTF Core Changes

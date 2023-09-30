@@ -17,7 +17,9 @@
                 {
                     "instruction": "SSH_InitSSH",
                     "data": {
-                        "host": "localhost"
+                        "host": "localhost",
+                        "user": "user",
+                        "args": {"password": "password"}
                     },
                     "wait": 1
                 },
@@ -40,7 +42,7 @@
                 {
                     "instruction": "SSH_RunRemoteCommand",
                     "data": {
-                        "command": "cd ~/sample_cfs_workspace/build/i686-pc-linux-gnu/default_lx1/apps/ci/fsw/unit_test; ./coverage-ci-all-testrunner || true "
+                        "command": "cd ~/sample_cfs_workspace/build/i686-pc-linux-gnu/default_lx1/apps/ci/fsw/unit_test; ./coverage-ci-all-testrunner "
                     },
                     "wait": 1
                 },

@@ -121,18 +121,19 @@ def test_cfs_interface_stop_cfs(cfs, mid_map):
 def test_cfs_interface_write_tlm_log(cfs, utils):
     assert cfs.tlm_log_file is None
     assert not utils.has_log_level('ERROR')
+    header = cfs.ccsds.CcsdsTelemetry()
     with patch('builtins.open', new_callable=mock_open()) as mock_file:
         cfs.config.telemetry_debug = True
-        cfs.write_tlm_log('payload1', bytearray('payload1', 'utf-8'), 100, 1)
+        cfs.write_tlm_log('payload1', bytearray('payload1', 'utf-8'), header)
         assert cfs.tlm_log_file is mock_file.return_value
         mock_file.assert_called_once_with('./cfs_tlm_msgs.log', 'a+')
         assert mock_file.return_value.write.call_count == 3
         mock_file.return_value.write.reset_mock()
-        cfs.write_tlm_log('payload2', bytearray('payload2', 'utf-8'), 200, 2)
+        cfs.write_tlm_log('payload2', bytearray('payload2', 'utf-8'), header)
         assert mock_file.return_value.write.call_count == 2
         mock_file.return_value.write.reset_mock()
         mock_file.return_value.write.side_effect = IOError('mock error')
-        cfs.write_tlm_log('payload3', bytearray('payload3', 'utf-8'), 300, 3)
+        cfs.write_tlm_log('payload3', bytearray('payload3', 'utf-8'), header)
         assert utils.has_log_level('ERROR')
 
 
@@ -606,6 +607,40 @@ def test_cfs_get_tlm_value_bytes(cfs):
     mock_tlm.Payload.CommandStr = b'mock_str'
     cfs.received_mid_packets_dic[8198].append(Packet(8198, None, mock_tlm, 1, 4.0))
     assert cfs.get_tlm_value(mid, tlm_variable) == 'mock_str'
+
+
+def test_cfs_get_tlm_value_args(cfs, utils):
+    mid = {'MID': 8198, 'name': 'CFE_ES_HousekeepingTlm_t', 'PARAM_CLASS': None}
+    tlm_variable = 'FieldB'
+
+    # no packet to check
+    utils.clear_log()
+    assert cfs.get_tlm_value(mid, tlm_variable, False, [{'variable': 'FieldA', 'value': 1, 'compare': '<'}]) is None
+    assert not utils.has_log_level('INFO')
+    assert not utils.has_log_level('WARNING')
+    utils.clear_log()
+
+    mock_tlm1 = MagicMock()
+    mock_tlm1.FieldA = 2
+    mock_tlm1.FieldB = 123
+    cfs.received_mid_packets_dic[8198].append(Packet(8198, None, mock_tlm1, 1, 4.0))
+    mock_tlm2 = MagicMock()
+    mock_tlm2.FieldA = 1
+    cfs.received_mid_packets_dic[8198].append(Packet(8198, None, mock_tlm2, 2, 5.0))
+
+    # match found
+    utils.clear_log()
+    assert cfs.get_tlm_value(mid, tlm_variable, False, [{'variable': 'FieldA', 'value': 1, 'compare': '>'}]) == 123
+    assert not utils.has_log_level('INFO')
+    assert not utils.has_log_level('WARNING')
+    utils.clear_log()
+
+    # match not found
+    utils.clear_log()
+    assert cfs.get_tlm_value(mid, tlm_variable, False, [{'variable': 'FieldA', 'value': 1, 'compare': '<'}]) is None
+    assert not utils.has_log_level('INFO')
+    assert not utils.has_log_level('WARNING')
+    utils.clear_log()
 
 
 def test_cfs_check_tlm_value(cfs, mid_map, utils):

@@ -161,9 +161,20 @@ def test_ftp_interface_get_file_ftp(iftp_conn, utils):
 
 def test_ftp_interface_upload_ftp_exception(iftp):
     with patch('lib.ftp_interface.ftplib.FTP', spec=ftplib.FTP) as mock_ftp:
-        # cwd triggers exception
+        # first cwd triggers exception
         mock_ftp.return_value.cwd.side_effect = [OSError('mock error'), None]
-        assert not iftp.upload_ftp('./configs', 'localhost', '/remote/path')
+        assert not iftp.upload_ftp('./example_scripts', 'localhost', '/remote/path')
+
+        # second cwd triggers exception
+        mock_ftp.return_value.cwd.side_effect = [None, OSError('mock error'), None, None, None, None, None, None,
+                                                 None, None, None, None,None, None, None, None, None, None, None]
+        assert iftp.upload_ftp('./example_scripts', 'localhost', '/remote/path')
+
+        # third cwd triggers exception
+        mock_ftp.return_value.cwd.side_effect = [None, None, None, OSError('mock error'), OSError('mock error'),
+                                                 None, None, None, None, None, None, None, None, None, None, None]
+        assert not iftp.upload_ftp('./example_scripts', 'localhost', '/remote/path')
+
 
 
 def test_ftp_interface_upload_ftp(iftp):
@@ -171,7 +182,7 @@ def test_ftp_interface_upload_ftp(iftp):
         # nominal case, single file
         assert iftp.upload_ftp('./configs', 'localhost', '/remote/path', 'ci_config.ini')
         # directory
-        assert iftp.upload_ftp('./configs', 'localhost', '/remote/path')
+        assert iftp.upload_ftp('./example_scripts', 'localhost', '/remote/path')
         # invalid file
         assert not iftp.upload_ftp('./configs', 'localhost', '/remote/path', 'filename.ext')
         # mkdir error

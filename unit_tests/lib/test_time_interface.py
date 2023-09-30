@@ -35,14 +35,6 @@ def test_time_interface_init(time_interface_instance):
     assert time_interface_instance.time_since_last_command == 0
 
 
-def test_time_interface_wait_seconds(time_interface_instance):
-    """
-    Test TimeInterface class static method: wait_seconds
-    Helper utility to wait in seconds (OS Time)
-    """
-    assert TimeInterface.wait_seconds(1) is None
-
-
 def test_time_interface_wait(time_interface_instance):
     """
     Test TimeInterface class method: wait

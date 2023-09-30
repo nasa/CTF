@@ -76,8 +76,7 @@ class RemoteCfsInterface(LocalCfsInterface):
         return_values['pid'] = self.execution_controller.get_last_pid()
 
         if result and return_values['pid'] is not None:
-            self.is_running = True
-            Global.time_manager.wait_seconds(1)
+            Global.time_manager.wait(1)
             result = self.execution_controller.run_command("ps -p {} > /dev/null 2>&1".format(return_values['pid']))
 
         return_values['result'] = result
@@ -96,7 +95,7 @@ class RemoteCfsInterface(LocalCfsInterface):
         build_success = self.execution_controller.run_command(build_command, cwd=self.config.cfs_build_dir)
 
         log.debug("Build process completed")
-        Global.time_manager.wait_seconds(1)
+        Global.time_manager.wait(1)
 
         stdout_final_path = os.path.join(Global.current_script_log_dir, os.path.basename(build_out_file))
         if not os.path.exists(stdout_final_path):

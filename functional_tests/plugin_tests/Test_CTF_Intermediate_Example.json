@@ -70,19 +70,21 @@
                     "wait": 1
                 },
                 {
-                    "instruction": "CheckTlmValue",
+                    "instruction": "SetUserVariableFromTlmHeader",
                     "data": {
                         "target": "tgt1",
                         "mid": "TO_HK_TLM_MID",
-                        "args": [
+                        "variable_name": "to_seq_cnt",
+                        "header_variable": "pheader.sequence_count",
+                        "tlm_args": [
                             {
                                 "compare": "==",
                                 "variable": "usCmdErrCnt",
-                                "value": 1
+                                "value": 0
                             }
                         ]
                     },
-                    "wait": 1
+                    "wait": 3
                 },
                 {
                     "instruction": "SendCfsCommand",

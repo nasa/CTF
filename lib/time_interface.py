@@ -18,9 +18,6 @@ Interface definition for time managers to implement
 # either expressed or implied.
 
 
-import time
-
-
 class TimeInterface:
     """
     Virtual class definition for custom plugins to implement their own time managers.
@@ -39,13 +36,6 @@ class TimeInterface:
 
         ## How much time has passed since the last instruction was completed.
         self.time_since_last_command = 0
-
-    @staticmethod
-    def wait_seconds(seconds):
-        """
-        Helper utility to wait in seconds (OS Time)
-        """
-        time.sleep(seconds)
 
     def wait(self, seconds):
         """

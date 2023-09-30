@@ -193,14 +193,14 @@ def test_cfs_controller_enable_cfs_output(cfs_controller):
     (enable_cfs_output) is executed, it calls CfsController instance's enable_cfs_output function.
     """
     with patch('plugins.cfs.pycfs.local_cfs_interface.LocalCfsInterface.enable_output'), \
-         patch('plugins.cfs.pycfs.local_cfs_interface.LocalCfsInterface.build_cfs', return_value=True) as mock_build:
+            patch('plugins.cfs.pycfs.local_cfs_interface.LocalCfsInterface.build_cfs', return_value=True) as mock_build:
         assert cfs_controller.initialize()
         cfs_controller.enable_cfs_output()
         cfs_controller.cfs.enable_output.assert_called_once()
         mock_build.assert_called()
 
 
-def test_cfs_controller_send_cfs_command(cfs_controller):
+def test_cfs_controller_send_cfs_command(cfs_controller, workspace):
     with patch('plugins.cfs.pycfs.cfs_controllers.LocalCfsInterface'):
         cfs_controller.initialize()
         bytes_TO = b'127.0.0.1\x00\x00\x00\x00\x00\x00\x00\x93\x13\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
@@ -210,8 +210,9 @@ def test_cfs_controller_send_cfs_command(cfs_controller):
                    b'\x00\x00\x00\x00/cf/test_output.txt\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
                    b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
                    b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-        TO_CMD_MID = 0x2A8B
-        CFE_ES_CMD_MID = 0x2081
+
+        TO_CMD_MID = workspace['TO_CMD_MID']
+        CFE_ES_CMD_MID = workspace['CFE_ES_CMD_MID']
 
         # simple case
         cfs_controller.cfs.send_command.reset_mock()
@@ -265,12 +266,14 @@ def test_cfs_controller_send_cfs_command(cfs_controller):
 
         # stringified mid and cc
         cfs_controller.cfs.send_command.reset_mock()
-        assert cfs_controller.send_cfs_command('0x2A8B', '2', {'cDestIp': '127.0.0.1', 'usDestPort': 5011})
+        assert cfs_controller.send_cfs_command(TO_CMD_MID, '2', {'cDestIp': '127.0.0.1', 'usDestPort': 5011})
+
         cfs_controller.cfs.send_command.assert_called_once_with(TO_CMD_MID, 2, bytes_TO, None)
 
 
-def test_cfs_controller_send_cfs_command_args_indexed_struct(cfs_controller):
-    DUMMY_IO_CMD_MID = 0x2A8E
+def test_cfs_controller_send_cfs_command_args_indexed_struct(cfs_controller, workspace):
+    DUMMY_IO_CMD_MID = workspace['DUMMY_IO_CMD_MID']
+
     with patch('plugins.cfs.pycfs.cfs_controllers.LocalCfsInterface'):
         cfs_controller.initialize()
 
@@ -282,16 +285,16 @@ def test_cfs_controller_send_cfs_command_args_indexed_struct(cfs_controller):
         assert cfs_controller.send_cfs_command('DUMMY_IO_CMD_MID',
                                                'DUMMY_IO_SEND_MULTI_TYPES_CC',
                                                {
-                                                    "args[0]": {
-                                                        "myByte": 42,
-                                                        "myShort": 1024,
-                                                        "myInt": 252525,
-                                                        "myLong": 9876543210,
-                                                        "myFloat": 3.50,
-                                                        "myDouble": 3.1415926535,
-                                                        "myChar": "a",
-                                                        "myBool": 1
-                                                    }})
+                                                   "args[0]": {
+                                                       "myByte": 42,
+                                                       "myShort": 1024,
+                                                       "myInt": 252525,
+                                                       "myLong": 9876543210,
+                                                       "myFloat": 3.50,
+                                                       "myDouble": 3.1415926535,
+                                                       "myChar": "a",
+                                                       "myBool": 1
+                                                   }})
         cfs_controller.cfs.send_command.assert_called_once_with(DUMMY_IO_CMD_MID, 2, bytes_io, None)
 
         # myArray populated
@@ -302,12 +305,12 @@ def test_cfs_controller_send_cfs_command_args_indexed_struct(cfs_controller):
         assert cfs_controller.send_cfs_command('DUMMY_IO_CMD_MID',
                                                'DUMMY_IO_SEND_MULTI_TYPES_CC',
                                                {
-                                                    "args[0]": {
-                                                        "myArray[0]": 0,
-                                                        "myArray[1]": 1,
-                                                        "myArray[7]": 7,
-                                                        "myArray[2]": 2
-                                                    }})
+                                                   "args[0]": {
+                                                       "myArray[0]": 0,
+                                                       "myArray[1]": 1,
+                                                       "myArray[7]": 7,
+                                                       "myArray[2]": 2
+                                                   }})
         cfs_controller.cfs.send_command.assert_called_once_with(DUMMY_IO_CMD_MID, 2, bytes_io, None)
 
         # myArray default value
@@ -318,9 +321,9 @@ def test_cfs_controller_send_cfs_command_args_indexed_struct(cfs_controller):
         assert cfs_controller.send_cfs_command('DUMMY_IO_CMD_MID',
                                                'DUMMY_IO_SEND_MULTI_TYPES_CC',
                                                {
-                                                    "args[0]": {
-                                                        "myArray": 2
-                                                    }})
+                                                   "args[0]": {
+                                                       "myArray": 2
+                                                   }})
         cfs_controller.cfs.send_command.assert_called_once_with(DUMMY_IO_CMD_MID, 2, bytes_io, None)
 
         # no args provided
@@ -329,8 +332,9 @@ def test_cfs_controller_send_cfs_command_args_indexed_struct(cfs_controller):
         cfs_controller.cfs.send_command.assert_called_once_with(DUMMY_IO_CMD_MID, 2, bytearray(60), None)
 
 
-def test_cfs_controller_send_cfs_command_args_nested_chars(cfs_controller):
-    DUMMY_IO_CMD_MID = 0x2A8E
+def test_cfs_controller_send_cfs_command_args_nested_chars(cfs_controller, workspace):
+    DUMMY_IO_CMD_MID = workspace['DUMMY_IO_CMD_MID']
+
     with patch('plugins.cfs.pycfs.cfs_controllers.LocalCfsInterface'):
         cfs_controller.initialize()
 
@@ -340,9 +344,9 @@ def test_cfs_controller_send_cfs_command_args_nested_chars(cfs_controller):
         assert cfs_controller.send_cfs_command('DUMMY_IO_CMD_MID',
                                                'DUMMY_IO_SEND_MULTI_TYPES_CC',
                                                {
-                                                    "args[0]": {
-                                                        "myString": "a string"
-                                                    }})
+                                                   "args[0]": {
+                                                       "myString": "a string"
+                                                   }})
         cfs_controller.cfs.send_command.assert_called_once_with(DUMMY_IO_CMD_MID, 2, bytes_io, None)
 
         # myString with special characters
@@ -351,9 +355,9 @@ def test_cfs_controller_send_cfs_command_args_nested_chars(cfs_controller):
         assert cfs_controller.send_cfs_command('DUMMY_IO_CMD_MID',
                                                'DUMMY_IO_SEND_MULTI_TYPES_CC',
                                                {
-                                                    "args[0]": {
-                                                        "myString": "../../"
-                                                    }})
+                                                   "args[0]": {
+                                                       "myString": "../../"
+                                                   }})
         cfs_controller.cfs.send_command.assert_called_once_with(DUMMY_IO_CMD_MID, 2, bytes_io, None)
 
         # myString with a number
@@ -362,13 +366,13 @@ def test_cfs_controller_send_cfs_command_args_nested_chars(cfs_controller):
         assert cfs_controller.send_cfs_command('DUMMY_IO_CMD_MID',
                                                'DUMMY_IO_SEND_MULTI_TYPES_CC',
                                                {
-                                                    "args[0]": {
-                                                        "myString": "12345"
-                                                    }})
+                                                   "args[0]": {
+                                                       "myString": "12345"
+                                                   }})
         cfs_controller.cfs.send_command.assert_called_once_with(DUMMY_IO_CMD_MID, 2, bytes_io, None)
 
 
-def test_cfs_controller_send_cfs_command_args_bitfield(cfs_controller):
+def test_cfs_controller_send_cfs_command_args_bitfield(cfs_controller, workspace):
     # define SET1_CFS_GRP1_DUMMY_IO_CMD_MID                 0x2A8E
     with patch('plugins.cfs.pycfs.cfs_controllers.LocalCfsInterface'):
         cfs_controller.initialize()
@@ -379,17 +383,18 @@ def test_cfs_controller_send_cfs_command_args_bitfield(cfs_controller):
         assert cfs_controller.send_cfs_command('DUMMY_IO_CMD_MID',
                                                'DUMMY_IO_SEND_MULTI_TYPES_CC',
                                                {
-                                                    "args[0]": {
-                                                        "myBitfield8a": 1,
-                                                        "myBitfield8b": 1,
-                                                        "myBitfield16a": 1,
-                                                        "myBitfield16b": 1,
-                                                        "myBitfield16c": 1
-                                                    }})
-        cfs_controller.cfs.send_command.assert_called_once_with(0x2A8E, 2, bytes_io, None)
+                                                   "args[0]": {
+                                                       "myBitfield8a": 1,
+                                                       "myBitfield8b": 1,
+                                                       "myBitfield16a": 1,
+                                                       "myBitfield16b": 1,
+                                                       "myBitfield16c": 1
+                                                   }})
+        DUMMY_IO_CMD_MID = workspace['DUMMY_IO_CMD_MID']
+        cfs_controller.cfs.send_command.assert_called_once_with(DUMMY_IO_CMD_MID, 2, bytes_io, None)
 
 
-def test_cfs_controller_send_cfs_command_errors(cfs_controller):
+def test_cfs_controller_send_cfs_command_errors(cfs_controller, workspace):
     with patch('plugins.cfs.pycfs.cfs_controllers.LocalCfsInterface'):
         cfs_controller.initialize()
 
@@ -411,9 +416,11 @@ def test_cfs_controller_send_cfs_command_errors(cfs_controller):
 
         # invalid args
         cfs_controller.cfs.send_command.reset_mock()
-        # define SET1_CFS_GRP1_TO_CMD_MID   0x2A8B
+
+        TO_CMD_MID = workspace['TO_CMD_MID']
+
         with pytest.raises(CtfTestError):
-            cfs_controller.send_cfs_command(0x2A8B,
+            cfs_controller.send_cfs_command(TO_CMD_MID,
                                             'TO_ENABLE_OUTPUT_CC',
                                             {'DestIp': '127.0.0.1', 'DestPort': 5011})
         cfs_controller.cfs.send_command.assert_not_called()
@@ -425,8 +432,9 @@ def test_cfs_controller_send_cfs_command_errors(cfs_controller):
         cfs_controller.cfs.send_command.assert_not_called()
 
 
-def test_send_cfs_raw_command(cfs_controller):
-    TO_CMD_MID = 0x2A8B
+def test_send_cfs_raw_command(cfs_controller, workspace):
+    TO_CMD_MID = workspace['TO_CMD_MID']
+
     with patch('plugins.cfs.pycfs.cfs_controllers.LocalCfsInterface'):
         cfs_controller.initialize()
 
@@ -443,8 +451,8 @@ def test_send_cfs_raw_command(cfs_controller):
             {})
 
         # int mid
-        assert cfs_controller.send_raw_cfs_command(TO_CMD_MID, "TO_ENABLE_OUTPUT_CC", "ABCDEF")
-        cfs_controller.cfs.send_command.assert_called_with(TO_CMD_MID, 2, b'\xab\xcd\xef', None)
+        assert cfs_controller.send_raw_cfs_command(TO_CMD_MID, "TO_ENABLE_OUTPUT_CC", "ABCDEF", {}, 1)
+        cfs_controller.cfs.send_command.assert_called_with(TO_CMD_MID, 2, b'\xab', {})
 
         # int cc
         assert cfs_controller.send_raw_cfs_command("TO_CMD_MID", 2, "ABCDEF")
@@ -455,8 +463,8 @@ def test_send_cfs_raw_command(cfs_controller):
         cfs_controller.cfs.send_command.assert_called_with(TO_CMD_MID, 2, b'\xab\xcd\xef', None)
 
         # empty payload
-        assert cfs_controller.send_raw_cfs_command(10000, 12, "")
-        cfs_controller.cfs.send_command.assert_called_with(10000, 12, b'', None)
+        assert cfs_controller.send_raw_cfs_command(TO_CMD_MID, 12, "")
+        cfs_controller.cfs.send_command.assert_called_with(TO_CMD_MID, 12, b'', None)
 
         # leading 0x
         assert cfs_controller.send_raw_cfs_command(TO_CMD_MID, 2, "0xABCDEF")
@@ -492,6 +500,11 @@ def test_send_cfs_raw_command_errors(cfs_controller, utils):
         cfs_controller.cfs.send_command.assert_called_once()
         assert utils.has_log_level("ERROR")
 
+        # invalid cc and mid as int, send invalid cfs_command intended
+        utils.clear_log()
+        assert not cfs_controller.send_raw_cfs_command(-5, 11, "ABCDEF")
+        assert utils.has_log_level("ERROR")
+
 
 def test_cfs_controller_encode_ctypes_to_bytes_array(cfs_controller):
     from plugins.ccsds_plugin.readers.ccdd_export_reader import create_type_class
@@ -499,7 +512,7 @@ def test_cfs_controller_encode_ctypes_to_bytes_array(cfs_controller):
         cfs_controller.initialize()
         arr16_type = (ctypes.c_uint16 * 4)
         struct_type = create_type_class("arr16type", cfs_controller.ccsds_reader.ctype_structure,
-                                     [("arr16", arr16_type)])
+                                        [("arr16", arr16_type)])
         struct = struct_type(arr16_type(64, 128, 256, 512))
         buf = cfs_controller.encode_ctypes_to_bytes(struct)
         assert buf == bytearray(b'\x40\x00\x80\x00\x00\x01\x00\x02')
@@ -642,7 +655,7 @@ def test_cfs_controller_check_tlm_continuous_no_mid(cfs_controller_inited, utils
     assert utils.has_log_level("ERROR")
 
 
-def test_cfs_controller_check_tlm_continuous_not_in_packet(cfs_controller_inited, utils):
+def test_cfs_controller_check_tlm_continuous_not_in_packet(cfs_controller_inited, utils, workspace):
     """
         Test CfsController class check_tlm_continuous method:
         Implementation of CFS plugin instructions check_tlm_continuous. When CFS plugin instructions
@@ -652,10 +665,11 @@ def test_cfs_controller_check_tlm_continuous_not_in_packet(cfs_controller_inited
     v_id = 'no_error'
     mid = 'TO_HK_TLM_MID'
     args = [{'compare': '==', 'variable': 'usCmdErrCnt', 'value': [0.0]}]
+    to_mid = workspace['TO_HK_TLM_MID']
 
     # remove messages into received_mid_packets_dic. should return False
     utils.clear_log()
-    cfs_controller_inited.cfs.received_mid_packets_dic.pop(0x2A0D)
+    cfs_controller_inited.cfs.received_mid_packets_dic.pop(to_mid)
     assert not cfs_controller_inited.check_tlm_continuous(v_id, mid, args)
     assert utils.has_log_level("ERROR")
 
@@ -677,7 +691,7 @@ def test_cfs_controller_check_tlm_value_no_mid(cfs_controller_inited, utils):
         assert utils.has_log_level("ERROR")
 
 
-def test_cfs_controller_check_tlm_value(cfs_controller_inited, utils):
+def test_cfs_controller_check_tlm_value(cfs_controller_inited, utils, workspace):
     """
     Test CfsController class check_tlm_value method:
     Implementation of CFS plugin instructions check_tlm_value. When CFS plugin instructions (check_tlm_value)
@@ -686,6 +700,7 @@ def test_cfs_controller_check_tlm_value(cfs_controller_inited, utils):
     mid = 'CFE_ES_HK_TLM_MID'
     args = [{'variable': 'Payload.CommandCounter', 'value': [1], 'compare': '=='},
             {'variable': 'Payload.CommandErrorCounter', 'value': [0], 'compare': '=='}]
+    ES_HK_TLM_MID = workspace['ES_HK_TLM_MID']
 
     # should not receive message
     assert not cfs_controller_inited.check_tlm_value(mid, args)
@@ -693,7 +708,7 @@ def test_cfs_controller_check_tlm_value(cfs_controller_inited, utils):
     # remove messages into received_mid_packets_dic. should return False
     with patch.object(Global, 'current_verification_stage', CtfVerificationStage.first_ver):
         utils.clear_log()
-        cfs_controller_inited.cfs.received_mid_packets_dic.pop(0x2001)
+        cfs_controller_inited.cfs.received_mid_packets_dic.pop(ES_HK_TLM_MID)
         assert not cfs_controller_inited.check_tlm_value(mid, args)
         assert utils.has_log_level("ERROR")
 
@@ -779,7 +794,7 @@ def test_cfs_controller_check_event_exception(cfs_controller_inited, utils):
     assert utils.has_log_level("ERROR")
 
 
-def test_cfs_controller_check_event(cfs_controller_inited):
+def test_cfs_controller_check_event(cfs_controller_inited, workspace):
     """
     Test CfsController class check_event method:
     Checks for an EVS event message in the telemetry packet history,
@@ -790,15 +805,24 @@ def test_cfs_controller_check_event(cfs_controller_inited):
     """
     app = 'TO'
     event_id = 3
-    msg = 'TO - ENABLE_OUTPUT cmd succesful for  routeMask:0x00000001'
+    msg = 'TO - ENABLE_OUTPUT cmd succesful for  routeMask:0x0000000{}}'
     is_regex = False
+    event_str_args = 1
+    msg_2 = '%s - ENABLE_OUTPUT cmd succesful for  routeMask:0x00000001}'
+    event_str_args_2 = 'TO'
+
     # no received events
-    assert not cfs_controller_inited.check_event(app, event_id, msg, is_regex)
+    assert not cfs_controller_inited.check_event(app, event_id, msg, is_regex,event_str_args)
     assert not cfs_controller_inited.check_event(app, event_id, None, is_regex)
+    assert not cfs_controller_inited.check_event(app, event_id, msg_2, False,event_str_args_2)
     # macro ID
     cfs_controller_inited.macro_map["MY_ID"] = event_id
     event_id = "MY_ID"
     assert not cfs_controller_inited.check_event(app, event_id, msg, is_regex)
+
+    EVS_LONG_EVENT_MSG_MID = workspace['EVS_LONG_EVENT_MSG_MID']
+    EVS_SHORT_EVENT_MSG_MID = workspace['EVS_SHORT_EVENT_MSG_MID']
+
     with patch.object(cfs_controller_inited.cfs, 'check_tlm_value') as mock_check:
         # pass with long event
         mock_check.side_effect = [False, True]
@@ -808,13 +832,13 @@ def test_cfs_controller_check_event(cfs_controller_inited):
             {"compare": "streq", "variable": "Payload.Message", "value": msg}
         ]
         assert cfs_controller_inited.check_event(app, event_id, msg, is_regex)
-        mock_check.assert_called_with(0x2006, args, discard_old_packets=False)
+        mock_check.assert_called_with(EVS_LONG_EVENT_MSG_MID, args, discard_old_packets=False)
         mock_check.reset_mock()
         # pass with short event
         mock_check.side_effect = None
         mock_check.return_value = True
         assert cfs_controller_inited.check_event(app, event_id, msg, is_regex)
-        mock_check.assert_called_once_with(0x2007, args[:2], discard_old_packets=False)
+        mock_check.assert_called_once_with(EVS_SHORT_EVENT_MSG_MID, args[:2], discard_old_packets=False)
 
 
 def test_cfs_controller_convert_archive_cfs_files_exception(cfs_controller_inited, utils):
@@ -869,7 +893,7 @@ def test_cfs_controller_shutdown_cfs(cfs_controller_inited):
         assert cfs_controller_inited.shutdown_cfs()
         mock_system.assert_any_call('kill -9 42')
         mock_system.assert_called_with('pkill -fe -9 "tail -f /dev/null"')
-    assert not cfs_controller_inited.cfs.is_running
+    assert not cfs_controller_inited.cfs
 
 
 def test_cfs_controller_shutdown_cfs_fail_pid(cfs_controller_inited, utils):
@@ -883,7 +907,7 @@ def test_cfs_controller_shutdown_cfs_fail_pid(cfs_controller_inited, utils):
         mock_system.return_value = 0
         cfs_controller_inited.cfs_pid = None
         assert not cfs_controller_inited.shutdown_cfs()
-        assert not cfs_controller_inited.cfs.is_running
+        assert not cfs_controller_inited.cfs
         assert utils.has_log_level("ERROR")
 
 
@@ -892,7 +916,7 @@ def test_cfs_controller_shutdown_cfs_fail_ps(cfs_controller_inited, utils):
     with patch('os.system') as mock_system:
         mock_system.return_value = 1
         assert not cfs_controller_inited.shutdown_cfs()
-        assert not cfs_controller_inited.cfs.is_running
+        assert not cfs_controller_inited.cfs
         assert utils.has_log_level("ERROR")
 
 
@@ -901,7 +925,7 @@ def test_cfs_controller_shutdown_cfs_fail_kill(cfs_controller_inited, utils):
     with patch('os.system') as mock_system:
         mock_system.side_effect = [0, 1, 1]
         assert not cfs_controller_inited.shutdown_cfs()
-        assert not cfs_controller_inited.cfs.is_running
+        assert not cfs_controller_inited.cfs
         assert utils.has_log_level("ERROR")
 
 
@@ -924,13 +948,13 @@ def test_cfs_controller_shutdown_exception(cfs_controller_inited, utils):
     with patch('plugins.cfs.pycfs.cfs_controllers.CfsController.shutdown_cfs') as mock_shutdown_cfs:
         utils.clear_log()
         mock_shutdown_cfs.side_effect = CtfTestError("Raise Exception for shutdown_cfs")
-        cfs_controller_inited.cfs.is_running = True
         assert cfs_controller_inited.shutdown() is None
         mock_shutdown_cfs.assert_called_once()
+        assert not cfs_controller_inited.cfs
         assert utils.has_log_level("ERROR")
 
 
-def test_cfs_controller_validate_mid_value(cfs_controller_inited):
+def test_cfs_controller_validate_mid_value(cfs_controller_inited, workspace):
     """
     Test CfsController class validate_mid_value method:
     Implementation of helper function validate_mid_value. Check whether mid_name is in mid_map dictionary.
@@ -938,8 +962,9 @@ def test_cfs_controller_validate_mid_value(cfs_controller_inited):
     assert cfs_controller_inited.validate_mid_value('TO_CMD_MID') == 'TO_CMD_MID'
     assert cfs_controller_inited.validate_mid_value('CFE_ES_CMD_MID') == 'CFE_ES_CMD_MID'
     assert cfs_controller_inited.validate_mid_value('#DUMMY_IO_CMD_MID#') == 'DUMMY_IO_CMD_MID'
-    assert cfs_controller_inited.validate_mid_value('10894') == 'DUMMY_IO_CMD_MID'
-    assert cfs_controller_inited.validate_mid_value(0x2A8E) == 'DUMMY_IO_CMD_MID'
+
+    assert cfs_controller_inited.validate_mid_value(workspace['DUMMY_IO_CMD_MID_STR']) == 'DUMMY_IO_CMD_MID'
+    assert cfs_controller_inited.validate_mid_value(workspace['DUMMY_IO_CMD_MID']) == 'DUMMY_IO_CMD_MID'
 
 
 def test_cfs_controller_validate_mid_value_invalid(cfs_controller_inited, utils):
@@ -1032,17 +1057,17 @@ def test_remote_cfs_controller_initialize_pass(remote_controller):
     """
 
     with patch('plugins.ssh.ssh_plugin.SshController.init_connection', return_value=True), \
-         patch('plugins.cfs.pycfs.cfs_controllers.RemoteCfsInterface') as mock_remotecfsinterface:
+            patch('plugins.cfs.pycfs.cfs_controllers.RemoteCfsInterface') as mock_remotecfsinterface:
         mock_remotecfsinterface.return_value.init_passed = True
         assert remote_controller.initialize()
         assert mock_remotecfsinterface.call_args.args[2].command_socket.getsockname() == ('0.0.0.0', 5011)
 
     # another case: start_cfs
     with patch('plugins.ssh.ssh_plugin.SshController.init_connection', return_value=True), \
-         patch('plugins.cfs.pycfs.cfs_controllers.RemoteCfsInterface') as mock_remotecfsinterface:
+            patch('plugins.cfs.pycfs.cfs_controllers.RemoteCfsInterface') as mock_remotecfsinterface:
         mock_remotecfsinterface.return_value.init_passed = True
-        remote_controller.cfs.is_running = False
         assert remote_controller.initialize()
+        assert remote_controller.cfs
 
 
 def test_remote_cfs_controller_initialize_exception(remote_controller, utils):
@@ -1066,14 +1091,14 @@ def test_remote_cfs_controller_shutdown_cfs(remote_controller_inited, utils):
     (shutdown_cfs) is executed, it calls RemoteCfsController instance's shutdown_cfs function.
     """
     with patch('plugins.ssh.ssh_plugin.SshController.run_command', return_value=True) as mock_command, \
-         patch('plugins.ssh.ssh_plugin.SshController.get_file', return_value=True) as mock_get:
+            patch('plugins.ssh.ssh_plugin.SshController.get_file', return_value=True) as mock_get:
         utils.clear_log()
         temp_dir = Global.current_script_log_dir
         Global.current_script_log_dir = '~/fsw/ctf_tests/results/'
         remote_controller_inited.cfs.cfs_std_out_path = '/tmp/ssh_out.txt'
         assert remote_controller_inited.shutdown_cfs()
-        assert not remote_controller_inited.cfs.is_running
-        mock_command.assert_has_calls([call("kill -9 42",), call("rm /tmp/ssh_out.txt",)]),
+        assert not remote_controller_inited.cfs
+        mock_command.assert_has_calls([call("pkill -P 42", ), call("rm /tmp/ssh_out.txt", )]),
         mock_get.assert_called_once_with('/tmp/ssh_out.txt', '~/fsw/ctf_tests/results/ssh_out.txt', {'delete': True})
         assert not utils.has_log_level("ERROR")
         Global.current_script_log_dir = temp_dir
@@ -1086,12 +1111,12 @@ def test_remote_cfs_controller_shutdown_cfs_fail(remote_controller_inited, utils
     (shutdown_cfs) is executed, it calls RemoteCfsController instance's shutdown_cfs function.
     """
     with patch('plugins.ssh.ssh_plugin.SshController.run_command', return_value=False), \
-         patch('plugins.ssh.ssh_plugin.SshController.get_file', return_value=True):
+            patch('plugins.ssh.ssh_plugin.SshController.get_file', return_value=True):
         utils.clear_log()
         remote_controller_inited.cfs.cfs_std_out_path = '/tmp/ssh_out.txt'
         assert not remote_controller_inited.shutdown_cfs()
         assert utils.has_log_level("ERROR")
-        assert not remote_controller_inited.cfs.is_running
+        assert not remote_controller_inited.cfs
 
 
 def test_remote_cfs_controller_shutdown_cfs_fail_get_file(remote_controller_inited, utils):
@@ -1101,19 +1126,19 @@ def test_remote_cfs_controller_shutdown_cfs_fail_get_file(remote_controller_init
     (shutdown_cfs) is executed, it calls RemoteCfsController instance's shutdown_cfs function.
     """
     with patch('plugins.ssh.ssh_plugin.SshController.run_command', return_value=True) as mock_run_command, \
-         patch('plugins.ssh.ssh_plugin.SshController.get_file', return_value=False):
+            patch('plugins.ssh.ssh_plugin.SshController.get_file', return_value=False):
         utils.clear_log()
         remote_controller_inited.cfs.cfs_std_out_path = '/tmp/ssh_out.txt'
         assert not remote_controller_inited.shutdown_cfs()
         mock_run_command.assert_called_once()
         assert utils.has_log_level("ERROR")
-        assert not remote_controller_inited.cfs.is_running
+        assert not remote_controller_inited.cfs
 
 
 def test_remote_cfs_controller_shutdown_cfs_fail_no_pid(remote_controller_inited, utils):
     # case: no cfs pid
     with patch('plugins.ssh.ssh_plugin.SshController.run_command') as mock_run_command, \
-         patch('plugins.ssh.ssh_plugin.SshController.get_file', return_value=True):
+            patch('plugins.ssh.ssh_plugin.SshController.get_file', return_value=True):
         utils.clear_log()
         mock_run_command.return_value = False
         remote_controller_inited.cfs_pid = None
@@ -1121,7 +1146,7 @@ def test_remote_cfs_controller_shutdown_cfs_fail_no_pid(remote_controller_inited
         assert not remote_controller_inited.shutdown_cfs()
         mock_run_command.assert_called_once_with("rm /tmp/ssh_out.txt")
         assert utils.has_log_level("ERROR")
-        assert not remote_controller_inited.cfs.is_running
+        assert not remote_controller_inited.cfs
 
 
 def test_remote_cfs_controller_archive_cfs_files_pass(remote_controller_inited):
@@ -1135,8 +1160,8 @@ def test_remote_cfs_controller_archive_cfs_files_pass(remote_controller_inited):
     Global.test_start_time = (2021, 3, 22, 10, 13, 38, 0, 0, 0)
 
     with patch('plugins.ssh.ssh_plugin.SshController.run_command', return_value=True), \
-         patch('plugins.ssh.ssh_plugin.SshController.get_file', return_value=True), \
-         patch.object(Global, 'current_script_log_dir', 'temp_log_dir'):
+            patch('plugins.ssh.ssh_plugin.SshController.get_file', return_value=True), \
+            patch.object(Global, 'current_script_log_dir', 'temp_log_dir'):
         assert remote_controller_inited.archive_cfs_files(source_path)
         assert os.path.exists('./temp_log_dir/artifacts')
         os.rmdir('./temp_log_dir/artifacts')

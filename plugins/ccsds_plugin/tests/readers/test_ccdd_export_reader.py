@@ -615,12 +615,22 @@ def test_ccdd_export_reader_process_types_second_pass_warnings(ccdd_export_reade
 
 
 def test_ccdd_export_reader_process_custom_types(ccdd_export_reader):
-    json_dict = {
-        "data_type": "my_custom_type",
+    # test creation of type
+    json_dict_inner = {
+        "data_type": "my_inner_type",
         "parameters": [{"name": "myArg", "data_type": "char", "parameters": []}]
     }
-    ccdd_export_reader.process_custom_types(json_dict)
-    assert "my_custom_type" in ccdd_export_reader.type_dict
+    ccdd_export_reader.process_custom_types(json_dict_inner)
+    assert hasattr(ccdd_export_reader.type_dict["my_inner_type"](), "myArg")
+
+    # test reuse of first type
+    json_dict_outer = {
+        "data_type": "my_outer_type",
+        "parameters": [{"name": "inner", "data_type": "my_inner_type"}]
+    }
+    ccdd_export_reader.process_custom_types(json_dict_outer)
+    assert hasattr(ccdd_export_reader.type_dict["my_outer_type"]().inner, "myArg")
+
 
 
 def test_ccdd_export_reader_process_custom_types_errors(ccdd_export_reader):

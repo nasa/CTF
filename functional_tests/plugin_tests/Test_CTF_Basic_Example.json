@@ -31,7 +31,8 @@
                     "data": {
                         "variable_name": "my_var_str",
                         "operator": "=",
-                        "value": "CommandErrorCounter"
+                        "value": "CommandErrorCounter",
+                        "variable_type": "string"
                     },
                     "wait": 1
                 },
@@ -66,8 +67,8 @@
                             {
                                 "app_name": "TO",
                                 "event_id": "3",
-                                "event_str": "TO - ENABLE_OUTPUT cmd succesful for  routeMask:0x00000001",
-                                "event_str_args": ""
+                                "event_str": "TO - ENABLE_OUTPUT cmd {} for  routeMask:0x00000001",
+                                "event_str_args": ["succesful"]
                             }
                         ]
                     },
@@ -88,7 +89,8 @@
                     "data": {
                         "variable_name": "tlm_var",
                         "operator": "=",
-                        "value": 1
+                        "value": 1,
+                        "variable_type": "int"
                     },
                     "wait": 0
                 },
@@ -97,7 +99,8 @@
                     "data": {
                         "variable_name": "usCmdErrCnt_var",
                         "operator": "=",
-                        "value": 0
+                        "value": 0,
+                        "variable_type": "int"
                     },
                     "wait": 0
                 },

@@ -1,0 +1,75 @@
+{
+  "group_name": "TrickPlugin",
+  "instructions": [
+    {
+      "name": "FreezeTrickSim",
+      "description": "",
+      "parameters": [
+        {
+          "name": "freeze",
+          "description": "",
+          "type": "boolean"
+        }
+      ]
+    },
+    {
+      "name": "SetTrickVariable",
+      "description": "",
+      "parameters": [
+        {
+          "name": "variable_name",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "variable_type",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "units",
+          "description": "",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "CheckTrickVariable",
+      "description": "",
+      "parameters": [
+        {
+          "name": "variable_name",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "operator",
+          "description": "",
+          "type": "comparison",
+          "isArray": true
+        },
+        {
+          "name": "value",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "units",
+          "description": "",
+          "type": "string"
+        },
+        {
+          "name": "variable_type",
+          "description": "",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "description": "Trick Plugin"
+}

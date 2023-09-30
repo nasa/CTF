@@ -54,7 +54,7 @@ class OutputManager:
         """
         raise NotImplementedError
 
-    def on_time_interval(self, exec_time: float) -> None:
+    def on_time_interval(self) -> None:
         """
         Define abstract on_time_interval method, the inherited class must implement
         """
@@ -123,7 +123,7 @@ class ToApi(OutputManager):
 
         return Global.plugin_manager.find_plugin_for_command_and_execute(instruction)
 
-    def on_time_interval(self, exec_time: float) -> None:
+    def on_time_interval(self) -> None:
         """
         Does nothing, as TO output is a one-time message
         """

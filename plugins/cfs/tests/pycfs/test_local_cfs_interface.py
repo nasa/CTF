@@ -118,8 +118,7 @@ def test_local_cfs_interface_build_cfs_error(localcfs, utils):
 
 
 def test_local_cfs_interface_start_cfs_pass(localcfs):
-    with patch('plugins.cfs.pycfs.local_cfs_interface.time'), \
-         patch('os.path.exists', return_value=True), \
+    with patch('os.path.exists', return_value=True), \
          patch('plugins.cfs.pycfs.local_cfs_interface.run') as mock_run, \
          patch('plugins.cfs.pycfs.local_cfs_interface.Popen') as mock_popen:
         mock_popen.return_value.pid = 42
@@ -138,8 +137,7 @@ def test_local_cfs_interface_start_cfs_pass(localcfs):
 
 
 def test_local_cfs_interface_start_cfs_pid_exist(localcfs,utils):
-    with patch('plugins.cfs.pycfs.local_cfs_interface.time'), \
-         patch('os.path.exists', return_value=True), \
+    with patch('os.path.exists', return_value=True), \
          patch('plugins.cfs.pycfs.local_cfs_interface.run') as mock_run, \
          patch('plugins.cfs.pycfs.local_cfs_interface.Popen') as mock_popen:
         mock_stdout = MagicMock(name='mock_stdout')
@@ -152,8 +150,7 @@ def test_local_cfs_interface_start_cfs_pid_exist(localcfs,utils):
 
 
 def test_local_cfs_interface_start_cfs_exist_cfs(localcfs, utils):
-    with patch('plugins.cfs.pycfs.local_cfs_interface.time'), \
-         patch('os.path.exists', return_value=False), \
+    with patch('os.path.exists', return_value=False), \
          patch('plugins.cfs.pycfs.local_cfs_interface.Popen') as mock_popen:
         mock_popen.return_value.pid = 42
         mock_popen.return_value.returncode = 0
@@ -167,8 +164,7 @@ def test_local_cfs_interface_start_cfs_exist_cfs(localcfs, utils):
 
 
 def test_local_cfs_interface_start_cfs_invalid_path(localcfs, utils):
-    with patch('plugins.cfs.pycfs.local_cfs_interface.time'), \
-         patch('os.path.exists', return_value=False), \
+    with patch('os.path.exists', return_value=False), \
          patch('plugins.cfs.pycfs.local_cfs_interface.run') as mock_run, \
          patch('plugins.cfs.pycfs.local_cfs_interface.Popen') as mock_popen:
         mock_stdout = MagicMock(name='mock_stdout')
@@ -186,8 +182,7 @@ def test_local_cfs_interface_start_cfs_invalid_path(localcfs, utils):
 
 
 def test_local_cfs_interface_start_cfs_fail(localcfs, utils):
-    with patch('plugins.cfs.pycfs.local_cfs_interface.time'), \
-         patch('os.path.exists', return_value=True), \
+    with patch('os.path.exists', return_value=True), \
          patch('plugins.cfs.pycfs.local_cfs_interface.run') as mock_run, \
          patch('plugins.cfs.pycfs.local_cfs_interface.Popen') as mock_popen:
         mock_stdout = MagicMock(name='mock_stdout')
@@ -205,8 +200,7 @@ def test_local_cfs_interface_start_cfs_fail(localcfs, utils):
 
 
 def test_local_cfs_interface_start_cfs_errors(localcfs, utils):
-    with patch('plugins.cfs.pycfs.local_cfs_interface.time'), \
-         patch('os.path.exists'), \
+    with patch('os.path.exists'), \
          patch('plugins.cfs.pycfs.local_cfs_interface.run') as mock_run, \
          patch('plugins.cfs.pycfs.local_cfs_interface.Popen') as mock_popen:
         mock_stdout = MagicMock(name='mock_stdout')

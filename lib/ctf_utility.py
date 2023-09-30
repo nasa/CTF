@@ -234,4 +234,4 @@ def set_nested_attr(obj, nested_attr, value):
     if hasattr(obj, split_attrs[-1]) and type(getattr(obj, split_attrs[-1])) is type(value):
         setattr(obj, split_attrs[-1], value)
     else:
-        raise CtfParameterError("Could not find the attribute {} in object {}".format(nested_attr, obj), nested_attr)
+        raise CtfParameterError("Could not set the attribute {} in object {}".format(nested_attr, obj), nested_attr)

@@ -57,7 +57,7 @@ def test_script_manager_config_init(script_manager_config):
     """
     Test ScriptManagerConfig class constructor
     """
-    assert script_manager_config.reset_plugins_between_scripts
+    assert not script_manager_config.reset_plugins_between_scripts
     assert script_manager_config.json_results
 
 
@@ -241,3 +241,15 @@ def test_script_manager_write_summary_line_exception(script_manager):
         mock_close.side_effect = IOError
         script_manager.write_summary_line('mock summary line')
         mock_close.assert_called_once()
+
+
+def test_script_manager_write_summary_line_open_exception(script_manager,example_script, utils):
+    """
+    Test ScriptManager class method: write_summary_line  raise exception when calling self.summary_file.open()
+    """
+    script_manager.summary_file = Mock()
+    utils.clear_log()
+    with patch.object(script_manager.summary_file, 'open') as mocked_open:
+        mocked_open.side_effect = IOError
+        script_manager.write_summary_line(example_script)
+        assert utils.has_log_level('ERROR')

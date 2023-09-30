@@ -41,6 +41,22 @@
                     }
                 },
                 {
+                    "instruction": "CheckEvent",
+                    "data": {
+                        "target": "tgt1",
+                        "args": [
+                            {
+                                "app_name": "TO",
+                                "event_id": 3,
+                                "event_str": "TO - Rcvd NOOP cmd (0). Version 1.{}.0.0",
+                                "event_str_args": "inputCnt",
+                                "is_regex": false
+                            }
+                        ]
+                    },
+                    "wait": 1
+                },
+                {
                     "instruction": "EndCondition",
                     "data": {
                         "label": "label_1"
@@ -81,7 +97,8 @@
                     "data": {
                         "variable_name": "my_var",
                         "operator": "+",
-                        "value": 1
+                        "value": 1,
+                        "variable_type": "int"
                     },
                     "wait": 1
                 },
@@ -105,9 +122,20 @@
                     "data": {
                         "variable_name": "my_var",
                         "operator": "=",
-                        "value": 2
+                        "value": 1,
+                        "variable_type": "int"
                     },
                     "wait": 0
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "tgt1",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_RESET_CC",
+                        "args": {}
+                    },
+                    "wait": 1
                 },
                 {
                     "function": "Test_If",
@@ -118,7 +146,7 @@
                 {
                     "function": "Test_If",
                     "params": {
-                        "inputCnt": 5
+                        "inputCnt": 2
                     }
                 }
             ]
@@ -132,7 +160,8 @@
                     "data": {
                         "variable_name": "my_var",
                         "operator": "=",
-                        "value": 0
+                        "value": 0,
+                        "variable_type": "int"
                     },
                     "wait": 0
                 },

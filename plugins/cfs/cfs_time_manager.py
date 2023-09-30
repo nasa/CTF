@@ -83,6 +83,7 @@ class CfsTimeManager(TimeInterface):
         @return None
         """
         start_time = self.exec_time
+        log.debug("CfsTimeManager wait {} seconds".format(seconds))
         while self.exec_time < start_time + seconds:
             try:
                 self.pre_command()
@@ -103,13 +104,16 @@ class CfsTimeManager(TimeInterface):
         Raise any occurring Exception
         """
         super().pre_command()
-        for target in self.cfs_targets.values():
+        for name, target in self.cfs_targets.items():
             try:
-                target.cfs.read_sb_packets()
-                target.cfs.output_manager.on_time_interval(self.exec_time)
+                if target.cfs:
+                    target.cfs.read_sb_packets()
+                    target.cfs.output_manager.on_time_interval()
+                else:
+                    log.debug("Target {} is not connected".format(name))
             except Exception as exception:
                 log.error("Failed to receive CFS Telemetry Packets for CFS Target: {}."
-                          .format(target.config.name))
+                          .format(name))
                 log.debug(traceback.format_exc())
                 raise CtfTestError('Error from read_sb_packets') from exception
         try:
