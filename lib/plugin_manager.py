@@ -52,6 +52,7 @@ import sys
 from inspect import signature
 
 from lib.ctf_global import Global
+from lib.ctf_utility import resolve_dic_variable
 from lib.exceptions import CtfTestError
 from lib.logger import logger as log
 
@@ -131,6 +132,10 @@ class Plugin():
                 (required + optional)
         """
         result = False
+
+        # resolve variables in kwargs, so that individual instruction does not need to process the argument
+        kwargs = resolve_dic_variable(kwargs)
+
         instruction = kwargs["instruction"]
         if "data" in kwargs.keys():
             data = kwargs["data"]

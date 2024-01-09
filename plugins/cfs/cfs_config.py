@@ -80,6 +80,8 @@ class CfsConfig:
         # The following variable is set by the CCSDS Reader Implementation
         self.ccsds_header_info_included = None
         self.telemetry_debug = None
+        self.csv_tlm_log = None
+        self.send_keepalive_msg = None
         self.crc = None
 
         try:
@@ -102,36 +104,46 @@ class CfsConfig:
             log.debug(traceback.format_exc())
             raise CtfTestError("Error in configure") from exception
 
-    def load_field(self, section, field_name, config_getter, validate_function=None):
+    def load_optional_field(self, section, field_name, config_getter, default_value=None, validate_function=None):
         """
-        Interpret field attribute of loaded CFS target config section.
+        Interpret field attribute of loaded CFS target config section. If not found, return default_value.
         @param section: loaded Json CFS target section.
         @param field_name: the field name for loaded attribute.
         @param config_getter: the function to get an option value for a given section.
+        @param default_value: the default value for loaded attribute, if not found.
         @param validate_function: the function to validate the field attribute (Optional).
         @return Any: field attribute with matching name
         """
-
         value = config_getter(section, field_name, fallback=None)
         if value is None and section != "cfs":
             log.info("Config Value {}:{} does not exist or is not the right type. "
                      "Attempting to load from base section [cfs].".format(section, field_name))
             value = config_getter("cfs", field_name, fallback=None)
         if value is None:
-            log.error("Config Value cfs:{} does not exist or is not the right type. "
-                      "Needed to configure CFS.".format(field_name))
-            self.validation.add_error("field {}".format(field_name))
-            return None
-        if validate_function is not None:
+            log.info("Config Value {}:{} does not exist or is not the right type. "
+                     "Use default value: {}".format(section, field_name, default_value ))
+            value = default_value
+        if validate_function is not None and value is not None:
             try:
                 value = validate_function(value)
             except (TypeError, OSError, socket.error, IOError):
+                self.validation.add_error("field {}".format(field_name))
                 value = None
+        return value
 
+    def load_field(self, section, field_name, config_getter, validate_function=None):
+        """
+        Interpret field attribute of loaded CFS target config section. If not found, the test instruction fails.
+        @param section: loaded Json CFS target section.
+        @param field_name: the field name for loaded attribute.
+        @param config_getter: the function to get an option value for a given section.
+        @param validate_function: the function to validate the field attribute (Optional).
+        @return Any: field attribute with matching name
+        """
+        value = self.load_optional_field(section, field_name, config_getter, None, validate_function)
         if value is None:
             log.error("Invalid Config Value at {}:{}.".format(section, field_name))
-            return None
-
+            self.validation.add_error("field {}".format(field_name))
         return value
 
     def load_config_data(self, section_name):
@@ -222,6 +234,12 @@ class CfsConfig:
         else:
             log.warning("No CFS configuration defined for {}".format(section_name))
             self.validation.add_error("section {}".format(section_name))
+
+        self.csv_tlm_log = self.load_optional_field("logging", "csv_tlm_log", Global.config.getboolean,False,
+                                                    self.validation.validate_boolean)
+
+        self.send_keepalive_msg = self.load_optional_field(section_name, "send_keepalive_msg", Global.config.getboolean,
+                                                           False, self.validation.validate_boolean)
 
         # The following variable is set by the CCSDS Reader Implementation
         self.ccsds_header_info_included = self.load_field("ccsds", "CCSDS_header_info_included",

@@ -50,6 +50,7 @@ def _cfs_controller_instance_inited():
     config.cfs_run_cmd = 'tail -f /dev/null'
     controller = CfsController(config)
     controller.initialize()
+    controller.cfs.started_by_ctf = True
     controller.cfs_pid = 42
     return controller
 
@@ -184,6 +185,37 @@ def test_cfs_controller_start_cfs(cfs_controller_inited):
             patch('plugins.cfs.pycfs.local_cfs_interface.LocalCfsInterface.enable_output'):
         mock_start_cfs.return_value = {'result': True, 'pid': -1}
         cfs_controller_inited.start_cfs('')
+        assert cfs_controller_inited.cfs_pid == -1
+
+
+def test_cfs_controller_start_cfs_restart(cfs_controller_inited):
+    """
+    Test CfsController class start_cfs method: create a new CFS interface
+    Implementation of CFS plugin instructions start_cfs. When CFS plugin instructions (start_cfs) is executed,
+    it calls CfsController instance's start_cfs function.
+    """
+    with patch("plugins.cfs.pycfs.cfs_controllers.LocalCfsInterface") as mock_cfs:
+        mock_cfs.return_value.init_passed = True
+        mock_cfs.return_value.start_cfs.return_value = {'result': True, 'pid': -1}
+        cfs_controller_inited.shutdown_cfs()
+        assert cfs_controller_inited.cfs is None
+        assert cfs_controller_inited.start_cfs('') is True
+        assert cfs_controller_inited.cfs
+
+
+def test_cfs_controller_start_cfs_restart_error(cfs_controller_inited):
+    """
+    Test CfsController class start_cfs method: fail to create a new CFS interface
+    Implementation of CFS plugin instructions start_cfs. When CFS plugin instructions (start_cfs) is executed,
+    it calls CfsController instance's start_cfs function.
+    """
+    with patch("plugins.cfs.pycfs.cfs_controllers.LocalCfsInterface") as mock_cfs:
+        mock_cfs.return_value.init_passed = False
+        cfs_controller_inited.shutdown_cfs()
+        assert cfs_controller_inited.cfs is None
+        assert cfs_controller_inited.start_cfs('') is False
+        assert cfs_controller_inited.cfs
+        cfs_controller_inited.cfs.start_cfs.assert_not_called()
 
 
 def test_cfs_controller_enable_cfs_output(cfs_controller):
@@ -563,6 +595,10 @@ def test_cfs_controller_resolve_simple_type(cfs_controller_inited):
     assert cfs_controller_inited.resolve_simple_type(1.23, arg_type) == 1.23
     assert cfs_controller_inited.resolve_simple_type('1.23', arg_type) == 1.23
     assert cfs_controller_inited.resolve_simple_type(0, arg_type) == 0.0
+    arg_type = ctypes.c_float.__ctype_be__
+    assert cfs_controller_inited.resolve_simple_type(1.23, arg_type) == 1.23
+    assert cfs_controller_inited.resolve_simple_type('1.23', arg_type) == 1.23
+    assert cfs_controller_inited.resolve_simple_type(0, arg_type) == 0.0
 
     # bool type
     arg_type = ctypes.c_bool
@@ -904,11 +940,12 @@ def test_cfs_controller_shutdown_cfs_fail_pid(cfs_controller_inited, utils):
     """
     # case: no cfs pid
     with patch('os.system') as mock_system:
-        mock_system.return_value = 0
         cfs_controller_inited.cfs_pid = None
         assert not cfs_controller_inited.shutdown_cfs()
         assert not cfs_controller_inited.cfs
+        assert utils.has_log_level("WARNING")
         assert utils.has_log_level("ERROR")
+        mock_system.assert_called_once_with('pkill -fe -9 "tail -f /dev/null"')
 
 
 def test_cfs_controller_shutdown_cfs_fail_ps(cfs_controller_inited, utils):
@@ -918,6 +955,8 @@ def test_cfs_controller_shutdown_cfs_fail_ps(cfs_controller_inited, utils):
         assert not cfs_controller_inited.shutdown_cfs()
         assert not cfs_controller_inited.cfs
         assert utils.has_log_level("ERROR")
+        mock_system.assert_any_call("ps -p 42")
+        mock_system.assert_called_with('pkill -fe -9 "tail -f /dev/null"')
 
 
 def test_cfs_controller_shutdown_cfs_fail_kill(cfs_controller_inited, utils):
@@ -927,16 +966,43 @@ def test_cfs_controller_shutdown_cfs_fail_kill(cfs_controller_inited, utils):
         assert not cfs_controller_inited.shutdown_cfs()
         assert not cfs_controller_inited.cfs
         assert utils.has_log_level("ERROR")
+        mock_system.assert_any_call('ps -p 42')
+        mock_system.assert_any_call('kill -9 42')
+        mock_system.assert_called_with('pkill -fe -9 "tail -f /dev/null"')
 
 
-def test_cfs_controller_shutdown(cfs_controller_inited):
+def test_cfs_controller_shutdown(cfs_controller_inited, utils):
     """
     Test CfsController class shutdown method:
     This function will shut down the CFS application being tested even if the JSON test file does not
     include the shutdown test command
     """
-    assert cfs_controller_inited.shutdown() is None
-    assert cfs_controller_inited.cfs is None
+    with patch('plugins.cfs.pycfs.cfs_controllers.CfsController.shutdown_cfs') as mock_shutdown_cfs:
+        # case: nominal
+        assert cfs_controller_inited.shutdown() is None
+        assert cfs_controller_inited.cfs is None
+        assert not utils.has_log_level("ERROR")
+        mock_shutdown_cfs.assert_called_once()
+        mock_shutdown_cfs.reset_mock()
+        # case: cfs already shut down
+        assert cfs_controller_inited.shutdown() is None
+        assert cfs_controller_inited.cfs is None
+        assert not utils.has_log_level("ERROR")
+        mock_shutdown_cfs.assert_not_called()
+
+
+def test_cfs_controller_shutdown_not_started(cfs_controller_inited, utils):
+    """
+    Test CfsController class shutdown method:
+    This function will not shut down the CFS application being tested if it was not started by CTF
+    """
+    with patch('plugins.cfs.pycfs.cfs_controllers.CfsController.shutdown_cfs') as mock_shutdown_cfs:
+        # case: nominal
+        cfs_controller_inited.cfs.started_by_ctf = False
+        assert cfs_controller_inited.shutdown() is None
+        assert cfs_controller_inited.cfs is None
+        assert utils.has_log_level("WARNING")
+        mock_shutdown_cfs.assert_not_called()
 
 
 def test_cfs_controller_shutdown_exception(cfs_controller_inited, utils):

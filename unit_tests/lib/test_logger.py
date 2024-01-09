@@ -54,3 +54,12 @@ def test_logger_change_log_file():
     default_handler = logger.logger.handlers[0]
     assert logger.logger.handlers[0].baseFilename == os.path.abspath('./temp_log')
     logger.logger.handlers[0] = default_handler
+
+
+def test_colorlog_import():
+    from importlib import reload
+    import lib
+    os.system('pip install colorlog')
+    reload(lib.logger)
+    logger.init_logger(Global.config)
+    os.system('pip uninstall colorlog -y')

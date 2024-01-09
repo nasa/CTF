@@ -21,6 +21,32 @@ in the `CTF Documentation` directory of the CTF releases' Assets (https://github
  
 ## Release Notes
 
+### v1.8.2 
+11/20/2023
+
+* CTF Core Changes
+    
+    * Add an optional logging configuration `csv_tlm_log`. If True, CTF creates an additional tlm CSV log file.
+
+    * Minor improvements and bug fixes.
+
+* CTF Plugins Changes
+    
+    * Updates to CFS Plugin
+        * Display full data attributes of nested structures in tlm logs.
+  
+        * Resolve user-defined variables for all test instructions. 
+
+        * Fix a regression with shutdown and restart of CFS targets in the same test script.
+    
+        * Change CFS shutdown behavior to only shut down targets automatically if the target was started by `StartCfs`.
+  
+### v1.8.1 
+09/15/2023
+
+* CTF Plugins Changes
+  * Fix a regression in the CFS Plugin that caused CTF to not communicate with CFS targets which were not started via `StartCfs`.
+
 ### v1.8 
 09/27/2023
 * CTF Core Changes
@@ -49,12 +75,7 @@ in the `CTF Documentation` directory of the CTF releases' Assets (https://github
       * Fix CCSDS v1 message header issue.
 
       * Fix a regression issue of CCDD JSON reader not reusing known data types referenced by name.
-
-    * Updates to Gateway Plugin
-        * Improve `SendCfsCommandWithAggregatedPayload` instruction to allow different targets in payload, and its syntax.
-
-        * Fix inner command header attribute assignment issue of test instruction.
-        
+    
 
 * CTF Tool and Scripts Changes
     * Consolidate unit tests for open source release and internal release.

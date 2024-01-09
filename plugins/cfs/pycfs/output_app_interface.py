@@ -17,6 +17,7 @@ output_app_interface.py: Base-class Lower-level interface to communicate with cF
 """
 from lib.ctf_global import Global
 from lib.logger import logger as log
+from plugins.cfs.cfs_config import CfsConfig
 
 TO_ENABLE_OUTPUT = "TO_ENABLE_OUTPUT_CC"
 TO_ENABLE_OUTPUT_CC = 2
@@ -29,18 +30,18 @@ class OutputManager:
     within this class, define the methods that all of the output applications must implement
     """
 
-    def __init__(self, local_ip, local_port, command_interface, ccsds_ver, command_mids=None, name=None):
+    def __init__(self, config: CfsConfig, command_interface, command_mids=None):
         """
         Constructor implementation for OutputManager class. It sets up the local_ip, local_port, command_interface,
         ccsds version, command_args, command_mids.
         """
-        self.local_ip = local_ip
-        self.local_port = local_port
+        self.local_ip = config.ctf_ip
+        self.local_port = config.tlm_udp_port
         self.command_interface = command_interface
-        self.ccsds_ver = ccsds_ver
+        self.ccsds_ver = config.ccsds_ver
         self.command_args = None
         self.command_mids = command_mids
-        self.name = name
+        self.name = config.name
 
     def enable_output(self):
         """
@@ -69,17 +70,15 @@ class ToApi(OutputManager):
     to the CFS test framework.
     """
 
-    def __init__(self, local_ip="", local_port=0, command_interface=None,
-                 ccsds_ver=0, mid_map=None, name=None):
+    def __init__(self, config, command_interface, mid_map):
         """
         Constructor of the ToApi class.
 
-        @param local_ip: The IP address we want packets to be forwarded to. Default: 127.0.0.1
-        @param local_port: The port we want packets to be forwarded to. Default: 40096
+        @param config: target cfs config
         @param command_interface: An instance of the CommandInterface class (used to send commands to UDP)
-        @param ccsds_ver: CCSDS header version (1 or 2)
+        @param mid_map: command_mid dictionary
         """
-        OutputManager.__init__(self, local_ip, local_port, command_interface, ccsds_ver, mid_map, name)
+        OutputManager.__init__(self, config, command_interface, mid_map)
         for mid, value in mid_map.items():
             if isinstance(value, dict) and TO_ENABLE_OUTPUT in value:
                 self.command_args = value[TO_ENABLE_OUTPUT]["ARG_CLASS"]

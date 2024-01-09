@@ -49,6 +49,7 @@ elif [ "$1" == "utc" ]; then
     pytest -v ./unit_tests/ \
            --workspace=open_source \
            -W ignore::pytest.PytestCollectionWarning \
+           -W ignore::DeprecationWarning:invoke.loader \
            --cov-config=.ctf_coveragerc \
            --cov=plugins --cov=lib \
            --cov-report=html | tee $OUT_SUBDIR/ctf_ut_results.log

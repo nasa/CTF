@@ -172,7 +172,7 @@ class LocalCfsInterface(CfsInterface):
             cfs_process = Popen(start_string, cwd=self.config.cfs_run_dir,
                                 shell=True, universal_newlines=True)
             return_values["pid"] = cfs_process.pid
-
+            self.started_by_ctf = True
         except Exception as exception:
             log.error("Error attempting to execute command: {}".format(start_string))
             log.debug(exception)

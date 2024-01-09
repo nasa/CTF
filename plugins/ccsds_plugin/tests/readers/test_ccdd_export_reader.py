@@ -16,11 +16,14 @@ import os
 import ctypes
 from unittest.mock import patch
 import pytest
+from importlib import reload
 
 import lib
+import plugins
+from lib.ctf_global import Global
 from lib.exceptions import CtfTestError
-from plugins.ccsds_plugin.readers.ccdd_export_reader import CCDDExportReader, ctypes_name, \
-    dynamic_init, create_type_class, to_string, _compare_field, _compare_ctypes
+from plugins.ccsds_plugin.readers.ccdd_export_reader import CCDDExportReader, ctypes_name, dynamic_init,\
+     create_type_class, to_string, _compare_field, _compare_ctypes, build_obj_from_ctype, build_str_from_ctype
 from plugins.cfs.cfs_config import CfsConfig
 
 
@@ -38,6 +41,83 @@ def test_func_ctypes_name():
     assert ctypes_name('int') == 'c_int'
     assert ctypes_name('double') == 'c_double'
     assert ctypes_name('byte') == 'c_byte'
+
+
+def test_build_obj_from_ctype():
+    """
+    Test function: build_obj_from_ctype
+    Converts a Python type name to an equivalent ctypes type name by prepending 'c_' and stripping '_t'
+    """
+
+    class Test_Struct_1(ctypes.BigEndianStructure):
+        _pack_ = 1
+        _fields_ = [("byte", ctypes.c_uint8),
+                    ("word", ctypes.c_uint16),
+                    ("float", ctypes.c_float),
+                    ("double", ctypes.c_double),
+                    ("array", ctypes.c_uint8 * 10)
+                    ]
+    struct1 = Test_Struct_1()
+    struct1.byte = 9;  struct1.word = 987; struct1.float = 1.23; struct1.double = 6.789
+    struct1.array[1] = 5; struct1.array[2] = 6
+    dict_obj = build_obj_from_ctype(struct1)
+
+    class Test_Struct_2(ctypes.BigEndianStructure):
+        _pack_ = 1
+        _fields_ = [("struct1", Test_Struct_1),
+                    ("int", ctypes.c_uint32),
+                    ("double", ctypes.c_double),
+                    ("struct1_array", Test_Struct_1 * 2)
+                    ]
+    struct2 = Test_Struct_2()
+    struct2.struct1.byte = 11; struct2.struct1.word = 456;  struct2.struct1.float = 1234.567;
+    struct2.struct1_array[1].word = 76
+    dict_obj2 = build_obj_from_ctype(struct2)
+    assert dict_obj["Test_Struct_1"]["byte"] == 9
+    assert dict_obj["Test_Struct_1"]["word"] == 987
+    assert abs(dict_obj["Test_Struct_1"]["float"] - 1.23) < 0.0001
+    assert abs(dict_obj["Test_Struct_1"]["double"] - 6.789) < 0.0001
+    assert dict_obj["Test_Struct_1"]["array"]["c_ubyte_Array_10"][1] == 5
+    assert dict_obj["Test_Struct_1"]["array"]["c_ubyte_Array_10"][2] == 6
+    assert dict_obj2["Test_Struct_2"]["struct1"]["Test_Struct_1"]["byte"] == 11
+    assert dict_obj2["Test_Struct_2"]["struct1"]["Test_Struct_1"]["word"] == 456
+    assert abs(dict_obj2["Test_Struct_2"]["struct1"]["Test_Struct_1"]["float"] - 1234.567) < 0.0001
+    assert dict_obj2["Test_Struct_2"]["struct1_array"]["Test_Struct_1_Array_2"][1]["Test_Struct_1"]["word"] == 76
+
+
+def test_build_str_from_ctype():
+    """
+    Test function: build_obj_from_ctype
+    Converts a Python type name to an equivalent ctypes type name by prepending 'c_' and stripping '_t'
+    """
+
+    class Test_Struct_1(ctypes.BigEndianStructure):
+        _pack_ = 1
+        _fields_ = [("byte", ctypes.c_uint8),
+                    ("word", ctypes.c_uint16),
+                    ("double", ctypes.c_double),
+                    ("array", ctypes.c_uint8 * 10)
+                    ]
+    struct1 = Test_Struct_1()
+    struct1.byte = 9;  struct1.word = 987; struct1.double = 6.789
+    struct1.array[1] = 5; struct1.array[2] = 6
+    dict_str = build_str_from_ctype(struct1)
+    assert dict_str == "Test_Struct_1: {byte: 9, word: 987, double: 6.789, " \
+                       "array: [0, 5, 6, 0, 0, 0, 0, 0, 0, 0]}"
+
+    class Test_Struct_2(ctypes.BigEndianStructure):
+        _pack_ = 1
+        _fields_ = [("struct1", Test_Struct_1),
+                    ("int", ctypes.c_uint32),
+                    ("struct1_array", Test_Struct_1 * 2)
+                    ]
+    struct2 = Test_Struct_2()
+    struct2.struct1.byte = 11; struct2.struct1.word = 456; struct2.struct1_array[1].word = 76
+    dict_str = build_str_from_ctype(struct2)
+    assert dict_str == "Test_Struct_2: {struct1: Test_Struct_1: {byte: 11, word: 456, double: 0.0, array: " \
+                       "[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, int: 0, struct1_array: " \
+                       "[Test_Struct_1: {byte: 0, word: 0, double: 0.0, array: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, " \
+                       "Test_Struct_1: {byte: 0, word: 76, double: 0.0, array: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}]}"
 
 
 def test_func_create_type_class(utils):
@@ -211,7 +291,7 @@ def test_ccdd_export_reader_process_command_exception(ccdd_export_reader, utils)
 
         json_dict = {
             "cmd_mid_name": "INVALID_CMD_MID", "cmd_codes":
-            [{"cc_name": "INVALID", "cc_value": "0", "cc_data_type": "INVALID", "cc_parameters": []}]
+                [{"cc_name": "INVALID", "cc_value": "0", "cc_data_type": "INVALID", "cc_parameters": []}]
         }
         utils.clear_log()
         with pytest.raises(CtfTestError):
@@ -303,7 +383,7 @@ def test_ccdd_export_reader_build_data_type_and_field_multiply(ccdd_export_reade
     fields = []
     ccdd_export_reader.type_dict = {'int32': ctypes.c_int32, 'int64': ctypes.c_int64,
                                     'uint8': ctypes.c_ubyte, 'TRUE': 1}
-    assert ccdd_export_reader._build_data_type_and_field(param, fields)  is ctypes.c_ubyte * 1
+    assert ccdd_export_reader._build_data_type_and_field(param, fields) is ctypes.c_ubyte * 1
 
 
 def test_ccdd_export_reader_build_data_type_and_field_type_in_subtype(ccdd_export_reader):
@@ -632,7 +712,6 @@ def test_ccdd_export_reader_process_custom_types(ccdd_export_reader):
     assert hasattr(ccdd_export_reader.type_dict["my_outer_type"]().inner, "myArg")
 
 
-
 def test_ccdd_export_reader_process_custom_types_errors(ccdd_export_reader):
     # invalid name key
     json_dict = {
@@ -728,3 +807,14 @@ def test_ccdd_export_reader_process_ccsds_get_ccsds_messages_from_dir(ccdd_expor
     mid_map, macro_map = ccdd_export_reader.get_ccsds_messages_from_dir(directory)
     assert len(mid_map) > 0
     assert len(macro_map) > 0
+
+
+def test_ctypes_create_to_str():
+    Global.config.set('logging', 'tlm_formatter', 'pprint')
+    # reload module to set tlm_formatter to 'pprint'
+    reload(plugins.ccsds_plugin.readers.ccdd_export_reader)
+    type_created = create_type_class("arraystruct", ctypes.Structure, [("bytearray", ctypes.c_uint8 * 2)])
+    # convert dynamic type obj to string
+    obj_type = type_created()
+    assert str(obj_type) == "{'arraystruct': {'bytearray': {'c_ubyte_Array_2': [0, 0]}}}"
+    Global.config.set('logging', 'tlm_formatter', 'None')

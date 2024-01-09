@@ -18,6 +18,7 @@ import pytest
 
 from lib.ctf_global import Global
 from lib.logger import set_logger_options_from_config
+from plugins.cfs.cfs_config import CfsConfig
 from plugins.cfs.pycfs.output_app_interface import OutputManager, ToApi
 
 
@@ -28,11 +29,13 @@ def init_global():
 
 @pytest.fixture(name='outmgr')
 def output_manager():
-    return OutputManager('local_ip', 'local_port', 'command_interface', 'ccsds_ver')
+    cfs_config = CfsConfig("cfs")
+    return OutputManager(cfs_config, 'command_interface', None)
 
 
 @pytest.fixture(name='toapi')
 def to_api():
+    cfs_config = CfsConfig("cfs")
     mid_map = {
         0xA00B: {
             "TO_ENABLE_OUTPUT_CC": {
@@ -41,14 +44,14 @@ def to_api():
             }
         }
     }
-    return ToApi('local_ip', 'local_port', 'command_interface', 'ccsds_ver', mid_map, "name")
+    return ToApi(cfs_config, 'command_interface',  mid_map)
 
 
 def test_output_manager_init(outmgr):
-    assert outmgr.local_ip == 'local_ip'
-    assert outmgr.local_port == 'local_port'
+    assert outmgr.local_ip == '127.0.0.1'
+    assert outmgr.local_port == 5011
     assert outmgr.command_interface == 'command_interface'
-    assert outmgr.ccsds_ver == 'ccsds_ver'
+    assert outmgr.ccsds_ver == 2
     assert outmgr.command_args is None
     assert outmgr.command_mids is None
 
@@ -69,14 +72,14 @@ def test_out_manager_on_time_interval(outmgr):
 
 
 def test_to_api_init(toapi):
-    assert toapi.local_ip == 'local_ip'
-    assert toapi.local_port == 'local_port'
+    assert toapi.local_ip == '127.0.0.1'
+    assert toapi.local_port == 5011
     assert toapi.command_interface == 'command_interface'
-    assert toapi.ccsds_ver == 'ccsds_ver'
+    assert toapi.ccsds_ver == 2
     assert toapi.cmd_cc == 2
     assert toapi.mid == 0xA00B
     assert toapi.command_args
-    assert toapi.name == 'name'
+    assert toapi.name == 'cfs'
 
 
 def test_to_api_init_None(utils):
@@ -88,12 +91,13 @@ def test_to_api_init_None(utils):
             }
         }
     }
-    toapi = ToApi('local_ip', 'local_port', 'command_interface', 'ccsds_ver', mid_map, "name")
+    cfs_config = CfsConfig("cfs")
+    toapi = ToApi(cfs_config, 'command_interface', mid_map)
 
-    assert toapi.local_ip == 'local_ip'
-    assert toapi.local_port == 'local_port'
+    assert toapi.local_ip == '127.0.0.1'
+    assert toapi.local_port == 5011
     assert toapi.command_interface == 'command_interface'
-    assert toapi.ccsds_ver == 'ccsds_ver'
+    assert toapi.ccsds_ver == 2
     utils.has_log_level('WARNING')
 
 
@@ -106,9 +110,9 @@ def test_to_api_enable_output(toapi):
         assert toapi.enable_output()
         pm.find_plugin_for_command_and_execute.assert_called_with({
             "data": {
-                "target": "name",
+                "target": "cfs",
                 "cc": "TO_ENABLE_OUTPUT_CC",
-                "args": {"cDestIp": "local_ip", "usDestPort": "local_port"},
+                "args": {"cDestIp": "127.0.0.1", "usDestPort": 5011},
                 "mid": 0xA00B
             },
             "instruction": "SendCfsCommand"

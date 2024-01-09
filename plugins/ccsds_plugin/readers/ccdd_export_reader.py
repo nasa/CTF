@@ -23,10 +23,20 @@ import os
 import fnmatch
 import json
 import ctypes
+from pprint import pformat
 
 from lib.logger import logger as log
 from lib.exceptions import CtfTestError
+from lib.ctf_global import Global
 from plugins.ccsds_plugin.ccsds_interface import CCSDSInterface
+
+try:
+    TLM_FORMATTER = Global.config.get("logging", "tlm_formatter", fallback=None)
+    PPRINT_DEPTH = int(Global.config.get("logging", "pprint_depth", fallback="7"))
+except (AttributeError, ValueError) as exception:
+    log.error("Exception from getting INI logging config")
+    TLM_FORMATTER = "compact"
+    PPRINT_DEPTH = 7
 
 
 # Helper Functions
@@ -53,6 +63,56 @@ def dynamic_init(self, *args, **kwargs):
     self.__dict__.update(kwargs)
 
 
+def build_obj_from_ctype(ctype_object):
+    # pylint: disable=protected-access
+    """
+    Build a python dictionary object from a ctypes structure object with mapped attributes.
+
+    @note - Utility function used by __str__ for formatted output.
+
+    @param ctype_object: The ctypes structure object instance being represented
+    """
+    shadow_obj = dict()
+    key = ctype_object.__class__.__name__
+    if isinstance(ctype_object, ctypes.Structure):
+        val = dict()
+        for field in ctype_object._fields_:
+            val[field[0]] = build_obj_from_ctype(getattr(ctype_object, field[0]))
+        shadow_obj[key] = val
+    elif isinstance(ctype_object, ctypes.Array):
+        lst = [build_obj_from_ctype(field) for field in ctype_object]
+        shadow_obj[key] = lst
+    else:
+        return ctype_object
+
+    return shadow_obj
+
+
+def build_str_from_ctype(ctype_object):
+    # pylint: disable=protected-access
+    """
+    Build a string from a ctype object that prints name-value pairs of each field.
+
+    @note - Utility function used by __str__ for formatted output.
+
+    @param ctype_object: The ctypes structure object instance being represented
+    """
+
+    max_shown_array = 1000
+    string = ""
+    name = ctype_object.__class__.__name__
+    if hasattr(ctype_object, '_fields_'):
+        string = "{}: {{{}}}".format(name, ", ".join(["{}: {}".format(
+            field[0], build_str_from_ctype(getattr(ctype_object, field[0]))) for field in ctype_object._fields_]))
+    elif hasattr(ctype_object, '_length_'):
+        string = "[{}{}]".format(", ".join([build_str_from_ctype(e) for e in ctype_object[:max_shown_array]]),
+                                 f"... ({len(ctype_object) - max_shown_array} more)"
+                                 if len(ctype_object) > max_shown_array else "")
+    else:
+        string = str(ctype_object)
+    return string
+
+
 def to_string(self):
     """
     A generic implementation of __str__ for a dynamic type that prints name-value pairs for each of its fields.
@@ -61,9 +121,12 @@ def to_string(self):
 
     @param self: The object instance being represented
     """
-    string = "{}: {{{}}}".format(self.__class__.__name__,
-                                 ", ".join(["{}: {}".format(field[0], getattr(self, field[0]))
-                                            for field in self._fields_]))  # pylint: disable=protected-access
+    string = ""
+    if TLM_FORMATTER == "pprint":
+        dict_obj = build_obj_from_ctype(self)
+        string = pformat(dict_obj, sort_dicts=False, depth=PPRINT_DEPTH, width=400)
+    else:
+        string = build_str_from_ctype(self)
     return string
 
 
@@ -458,8 +521,10 @@ class CCDDExportReader(CCSDSInterface):
                                     mid['mid_name'], self.mids[mid['mid_name']]))
                             if int(mid['mid_value'], 0) in self.mids.values():
                                 log.error("Found duplicate MID value: {}".format(mid['mid_value']))
-                            log.debug("Update mids dict with key:{} value:{} ".format(mid['mid_name'],
-                                                                                      int(mid['mid_value'], 0)))
+                            log.debug("Update mids dict with key:{} value:{} ({})".format(mid['mid_name'],
+                                                                                          int(mid['mid_value'], 0),
+                                                                                          hex(int(mid['mid_value'],0)))
+                                      )
                             self.mids.update({mid['mid_name']: int(mid['mid_value'], 0)})
                 else:
                     log.error("Invalid type definition in {}".format(self.current_file_name))

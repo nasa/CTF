@@ -100,6 +100,14 @@ def set_variable(variable_name, op_code, value, variable_type=None):
     if variable_type and variable_type in type_map:
         user_passed_type = type_map[variable_type]
 
+    # cast values from hex to int conversion
+    if variable_type == 'int' and isinstance(value, str):
+        try:
+            value = int(value, 0)
+        except ValueError as exception:
+            log.error('Could not cast {} to int type, trigger exception {}'.format(value, exception))
+            return False
+
     if op_code == "=":
         if variable_type:
             if variable_type in type_map:
@@ -129,9 +137,6 @@ def set_variable(variable_name, op_code, value, variable_type=None):
 
         if user_passed_type and not isinstance(value, user_passed_type):
             log.info("Converting value {} to type {}".format(value, user_passed_type.__name__))
-            # add a special case for int hex conversion
-            if isinstance(value, str) and variable_type == "int" and ("x" in value or "X" in value):
-                value = int(value, 16)
             try:
                 value = user_passed_type(value)
             except ValueError:
@@ -198,6 +203,26 @@ def resolve_variable(variable):
         return variable_str
 
     return variable
+
+
+def resolve_dic_variable(var_obj: dict):
+    """
+    Recursively resolve the user defined variables in dictionary object.
+    The function resolve_variable only resolve str type variables.
+    """
+    if not isinstance(var_obj, dict):
+        return var_obj
+    new_object = dict()
+    for key, value in var_obj.items():
+        resolved_key = resolve_variable(key)
+        if isinstance(value, dict):
+            resolved_value = resolve_dic_variable(value)
+        elif isinstance(value, list):
+            resolved_value = [resolve_dic_variable(v) for v in value]
+        else:
+            resolved_value = resolve_variable(value)
+        new_object[resolved_key] = resolved_value
+    return new_object
 
 
 INDEX_PATTERN = r'\[(.*?)\]'

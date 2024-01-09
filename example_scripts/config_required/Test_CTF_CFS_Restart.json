@@ -1,0 +1,65 @@
+{
+    "test_script_number": "CTF-CFS-Restart-Test",
+    "test_script_name": "Test_CTF_CFS_Restart.json",
+    "owner": "CTF",
+    "description": "CTF Example Script showing use of a CFS target after shutdown and restart",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "test_setup": "",
+    "import": {},
+    "tests": [
+        {
+            "test_number": "CFS-Restart-Test-1",
+            "description": "",
+            "instructions": [
+                {
+                    "instruction": "ShutdownCfs",
+                    "data": {
+                        "target": "tgt1"
+                    }
+                },
+                {
+                    "instruction": "StartCfs",
+                    "data": {
+                        "target": "tgt1"
+                    },
+                    "wait": 3
+                },
+                {
+                    "instruction": "EnableCfsOutput",
+                    "data": {
+                        "target": "tgt1"
+                    },
+                    "wait": 90
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "tgt1",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_RESET_CC",
+                        "args": {}
+                    }
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "data": {
+                        "target": "tgt1",
+                        "mid": "TO_HK_TLM_MID",
+                        "args": [
+                            {
+                                "compare": "==",
+                                "variable": "usCmdCnt",
+                                "value": 0
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    ]
+}

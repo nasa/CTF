@@ -124,13 +124,13 @@ def test_cfs_interface_write_tlm_log(cfs, utils):
     header = cfs.ccsds.CcsdsTelemetry()
     with patch('builtins.open', new_callable=mock_open()) as mock_file:
         cfs.config.telemetry_debug = True
+        cfs.config.csv_tlm_log = True
         cfs.write_tlm_log('payload1', bytearray('payload1', 'utf-8'), header)
         assert cfs.tlm_log_file is mock_file.return_value
-        mock_file.assert_called_once_with('./cfs_tlm_msgs.log', 'a+')
-        assert mock_file.return_value.write.call_count == 3
+        assert mock_file.return_value.write.call_count == 5
         mock_file.return_value.write.reset_mock()
         cfs.write_tlm_log('payload2', bytearray('payload2', 'utf-8'), header)
-        assert mock_file.return_value.write.call_count == 2
+        assert mock_file.return_value.write.call_count == 3
         mock_file.return_value.write.reset_mock()
         mock_file.return_value.write.side_effect = IOError('mock error')
         cfs.write_tlm_log('payload3', bytearray('payload3', 'utf-8'), header)
@@ -142,6 +142,7 @@ def test_cfs_interface_write_tlm_error_log_io_error(cfs, utils):
     assert not utils.has_log_level('ERROR')
     with patch('builtins.open', new_callable=mock_open()) as mock_file:
         cfs.config.telemetry_debug = True
+        cfs.config.csv_tlm_log = True
         mock_file.return_value.write.side_effect = IOError('mock error')
         cfs.write_tlm_error_log(hex(100), 'Undefined mid' , bytearray('payload1', 'utf-8'))
         assert utils.has_log_level('ERROR')
@@ -152,6 +153,7 @@ def test_cfs_interface_write_tlm_error_log(cfs, utils):
     assert not utils.has_log_level('ERROR')
     with patch('builtins.open', new_callable=mock_open()) as mock_file:
         cfs.config.telemetry_debug = True
+        cfs.config.csv_tlm_log = True
         cfs.write_tlm_error_log(hex(100), 'Undefined mid' , bytearray('payload1', 'utf-8'))
         assert cfs.tlm_log_file is mock_file.return_value
         mock_file.return_value.write.reset_mock()

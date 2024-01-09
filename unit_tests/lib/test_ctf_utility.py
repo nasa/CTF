@@ -19,6 +19,7 @@ from unittest.mock import patch
 
 from lib import ctf_utility
 from lib.ctf_global import Global
+from lib.ctf_utility import resolve_dic_variable
 from lib.exceptions import CtfParameterError
 
 
@@ -71,6 +72,17 @@ def test_ctf_utility_resolve_variable_exception(utils):
         assert utils.has_log_level('ERROR')
 
 
+def test_ctf_utility_resolve_dic_variable():
+    assert ctf_utility.set_variable('var_1', '=', 100)
+    dict_obj = {1: '$var_1$', '$var_1$': 78}
+    assert resolve_dic_variable(dict_obj) == {1: 100, 100: 78}
+    dict_obj = [1, '$var_1$', 3]
+    assert resolve_dic_variable(dict_obj) == [1, '$var_1$', 3]
+    dict_obj = {1: '$var_1$', 2: [100, {1: 'a$var_1$', '$var_1$': 78}, {4: 4}]}
+    assert resolve_dic_variable(dict_obj) == {1: 100, 2: [100, {1: 'a100', 100: 78}, {4: 4}]}
+    Global.variable_store.clear()
+
+
 def test_ctf_utility_set_variable_pass():
     assert ctf_utility.set_variable('var_1', '=', 100)
     assert ctf_utility.set_variable('var_2', '=', 100)
@@ -103,6 +115,14 @@ def test_ctf_utility_set_variable_specify_type():
     assert ctf_utility.set_variable('var_1', '+', "10", "float")
     assert ctf_utility.get_variable('var_1') == 11.0
     assert isinstance(ctf_utility.get_variable('var_1'), float)
+    assert ctf_utility.set_variable('var_1', '=', "0xF3", "int")
+    assert ctf_utility.get_variable('var_1') == 243
+    assert ctf_utility.set_variable('var_1', '=', "0Xa1", "int")
+    assert ctf_utility.get_variable('var_1') == 161
+    assert ctf_utility.set_variable('var_1', '=', "12", "int")
+    assert ctf_utility.get_variable('var_1') == 12
+    assert ctf_utility.set_variable('var_1', '+', "0xA", "int")
+    assert isinstance(ctf_utility.get_variable('var_1'), int)
     Global.variable_store.clear()
 
 
@@ -140,6 +160,13 @@ def test_ctf_utility_set_variable_exception(utils):
     utils.clear_log()
     assert not ctf_utility.set_variable('var_1', '=', 's12', 'int')
     assert utils.has_log_level('ERROR')
+    utils.clear_log()
+
+    assert not ctf_utility.set_variable('var_1', '=', 's12', 'float')
+    assert utils.has_log_level('ERROR')
+
+    assert ctf_utility.set_variable('var_1', '=', '1.0', 'float')
+    assert not ctf_utility.set_variable('var_1', '+', 's1.0', 'float')
     Global.variable_store.clear()
 
 

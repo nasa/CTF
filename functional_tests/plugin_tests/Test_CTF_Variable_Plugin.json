@@ -20,7 +20,7 @@
                     "data": {
                         "variable_name": "my_var",
                         "operator": "=",
-                        "value": 13,
+                        "value": "0xD",
                         "variable_type": "int"
                     }
                 },
@@ -55,6 +55,14 @@
                         "operator": "/",
                         "value": 4,
                         "variable_type": "int"
+                    }
+                },
+                {
+                    "instruction": "CheckUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "==",
+                        "value": 9
                     }
                 },
                 {
@@ -103,7 +111,7 @@
                     "data": {
                         "variable_name": "my_var",
                         "operator": "==",
-                        "value": 244
+                        "value": "0xF4"
                     }
                 },
                 {

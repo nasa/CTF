@@ -74,6 +74,7 @@ class RemoteCfsInterface(LocalCfsInterface):
 
         result = self.execution_controller.run_command_persistent(start_string, cwd=self.config.cfs_run_dir)
         return_values['pid'] = self.execution_controller.get_last_pid()
+        self.started_by_ctf = True
 
         if result and return_values['pid'] is not None:
             Global.time_manager.wait(1)

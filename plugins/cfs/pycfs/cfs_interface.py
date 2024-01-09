@@ -93,6 +93,7 @@ class CfsInterface:
                       .format(self.config.evs_short_event_mid_name))
 
         self.init_passed = False
+        self.started_by_ctf = False
 
         self.command = command
         self.telemetry = telemetry
@@ -112,15 +113,14 @@ class CfsInterface:
         tlm_app_choice = getattr(output_app_interface, self.config.tlm_app_choice)
         log.debug("Imported CFS Output Interface: {}".format(tlm_app_choice))
 
-        self.output_manager = tlm_app_choice(self.config.ctf_ip,
-                                             self.config.tlm_udp_port,
+        self.output_manager = tlm_app_choice(self.config,
                                              self.command,
-                                             self.config.ccsds_ver,
                                              self.mid_payload_map,
-                                             self.config.name)
+                                             )
         self.cfs_std_out_path = None
         self.evs_log_file = None
         self.tlm_log_file = None
+        self.tlm_csv_file = None
         # This flag is used to indicate the tlm is starting to come
         # in from the CFS application being tested
         self.tlm_has_been_received = False
@@ -186,13 +186,20 @@ class CfsInterface:
                 tlm_log_file_path = os.path.join(Global.current_script_log_dir, self.config.name + "_tlm_msgs.log")
                 self.tlm_log_file = open(tlm_log_file_path, "a+")
                 self.tlm_log_file.write("Time: MID, Data\n")
+                log.debug("Create tlm log file {}".format(self.tlm_log_file))
                 # update build-in variable for ctf tlm folder
                 ctf_utility.set_variable("_CTF_TLM_DIR", "=", os.path.abspath(Global.current_script_log_dir), "string")
+
+            if self.tlm_csv_file is None and self.config.csv_tlm_log and self.config.telemetry_debug:
+                tlm_log_csv_path = os.path.join(Global.current_script_log_dir, self.config.name + "_tlm_msgs.csv")
+                self.tlm_csv_file = open(tlm_log_csv_path, "a+")
+                self.tlm_csv_file.write("MID, Payload Length, Message (in Hex)\n")
+
         except IOError:
             log.error("Failed to create tlm log file {}")
             log.debug(traceback.format_exc())
 
-    def write_tlm_log(self, payload, buf, header):
+    def write_tlm_log(self, payload, buf: bytearray, header):
         """
         Write payload and mid to telemetry log file. if log file does not exist, create one.
         """
@@ -210,15 +217,20 @@ class CfsInterface:
                                            datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3],
                                            hex(mid), sequence_count, timestamp_seconds, timestamp_subseconds,
                                            str(payload).replace("\n", "\n\t")))
+
             if self.config.telemetry_debug:
                 self.tlm_log_file.write("        For MID {} Payload length: {} hex values: 0x{}\n".format(hex(mid),
                                                                                                           len(buf),
                                                                                                           buf.hex()))
+                if self.config.csv_tlm_log:
+                    self.tlm_csv_file.write("{}, {}, {}\n".format(hex(mid), len(buf), buf.hex()))
+
         except (IOError, ValueError):
             log.error("Failed to write telemetry packet received for {}".format(hex(mid)))
             log.debug(traceback.format_exc())
 
     def write_tlm_error_log(self, mid: str, description: str, buf: bytearray):
+
         """
         Write telemetry error messages to log file. if log file does not exist, create one.
         """
@@ -229,9 +241,10 @@ class CfsInterface:
             self.tlm_log_file.write("{} - {}: mid:{} \n\t{}\n".
                                     format(Global.get_time_manager().exec_time,
                                            datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3], mid, description))
-
             if self.config.telemetry_debug:
                 self.tlm_log_file.write("        For MID {} buf hex values: 0x{}\n".format(mid, buf.hex()))
+                if self.config.csv_tlm_log:
+                    self.tlm_csv_file.write("{}, {}, {}\n".format(mid, len(buf), buf.hex()))
 
         except (IOError, ValueError):
             log.error("Failed to write telemetry packet received for {}".format(mid))
@@ -334,7 +347,7 @@ class CfsInterface:
         self.on_packet_received(mid, header, payload)
         return mid
 
-    def parse_telemetry_packet(self, buffer):
+    def parse_telemetry_packet(self, buffer: bytearray):
         """
         Parse telemetry packets from received buffer.
         """
@@ -375,8 +388,8 @@ class CfsInterface:
         """
         If this is the first time receiving a packet with the given mid, log the message.
         """
-        msg = "Received Message with MID = {}. This MID is not in the CCSDS MID Map. Ignoring..." \
-            .format(hex(mid))
+        msg = "Target {} received message with MID = {}. This MID is not in the CCSDS MID Map. Ignoring..." \
+            .format(self.config.name, hex(mid))
         if mid not in self.has_received_mid:
             log.warning(msg)
             self.has_received_mid[mid] = True
@@ -388,7 +401,7 @@ class CfsInterface:
         If this is the first time receiving a packet with the given mid, log the packet.
         """
         if not self.has_received_mid[mid]:
-            log.error("Cannot retrieve payload from packet with MID {}.".format(hex(mid)))
+            log.error("Target:{} cannot retrieve payload from packet with MID {}.".format(self.config.name, hex(mid)))
             self.has_received_mid[mid] = True
             log.debug(traceback.format_exc())
 
@@ -398,8 +411,8 @@ class CfsInterface:
         """
         exec_time = Global.get_time_manager().exec_time
         if not self.has_received_mid[mid]:
-            log.info("Receiving first packet for Data Type: {} with MID: {} at time: {}"
-                     .format(type(payload).__name__, hex(mid), exec_time))
+            log.info("Target:{} receiving first packet for Data Type: {} with MID: {} at time: {}"
+                     .format(self.config.name, type(payload).__name__, hex(mid), exec_time))
 
             # Update the array so that the message is not printed again
             self.has_received_mid[mid] = True
@@ -627,6 +640,7 @@ class CfsInterface:
             return check_tlm_result
 
         # Traverse packets backwards validating each packet for the selected MID
+        log.debug("Check tlmvalue for MID {} in {} messages".format(hex(mid), len(self.received_mid_packets_dic[mid])))
         for i in range(len(self.received_mid_packets_dic[mid]) - 1, -1, -1):
             # Get current packet for the selected MID
             payload = self.received_mid_packets_dic[mid][i].payload
@@ -739,7 +753,7 @@ class CfsInterface:
                 break
 
             if isinstance(actual, bytes):
-                log.info("Bytes object {} is decoded to {}".format(actual, actual.decode()))
+                log.debug("Bytes object {} is decoded to {}".format(actual, actual.decode()))
                 actual = actual.decode()
 
             initial_result = self.check_value(actual, expected_value, arg["compare"], mask, mask_value)

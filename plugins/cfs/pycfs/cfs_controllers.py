@@ -111,7 +111,9 @@ class CfsController:
         log.debug("Initializing CfsController")
         if not self.process_ccsds_files():
             return False
+        return self._init_cfs_interface()
 
+    def _init_cfs_interface(self):
         log.info("Starting Local CFS Interface to {}:{} for target {}"
                  .format(self.config.cfs_target_ip, self.config.cmd_udp_port, self.config.name))
         command = CommandInterface(self.ccsds, port=self.config.cmd_udp_port, ip=self.config.cfs_target_ip,
@@ -123,7 +125,7 @@ class CfsController:
         if not result:
             log.error("Failed to initialize LocalCfsInterface")
         else:
-            log.info("CfsController Initialized for target {}".format(self.config.name))
+            log.info("LocalCfsInterface Initialized for target {}".format(self.config.name))
 
         return result
 
@@ -141,6 +143,12 @@ class CfsController:
         it calls CfsController instance's start_cfs function.
         """
         log.info("Starting CFS on {}".format(self.config.name))
+        if not self.cfs:
+            log.debug("No CFS interface to Linux target {}".format(self.config.name))
+            if not self._init_cfs_interface():
+                log.error("Unable to start CFS!")
+                return False
+
         result = {}
         try:
             result = self.cfs.start_cfs(run_args)
@@ -450,7 +458,7 @@ class CfsController:
                     raise CtfParameterError("Unknown macro '{}' in arg {}. Use format #MACRO#".format(macro, arg), arg)
         return arg
 
-    # noinspection PyProtectedMember
+    # noinspection PyProtectedMember,PyUnresolvedReferences
     def resolve_simple_type(self, arg, arg_type):
         """
         Implementation of helper function resolve_simple_type.
@@ -467,7 +475,10 @@ class CfsController:
                 raise CtfParameterError("Invalid value for bool: {}".format(arg), arg)
         elif arg_type in [ctypes.c_char, ctypes.c_char_p, ctypes.c_wchar, ctypes.c_wchar_p]:
             arg = str(arg).encode()
-        elif arg_type in [ctypes.c_float, ctypes.c_double, ctypes.c_longdouble]:
+        # ctypes.c_float and ctypes.c_double are aliased to a hidden type depending on target architecture
+        # ctypes.c_longdouble is not well-supported and does not correspond to any type used in CCDD
+        elif arg_type in [ctypes.c_float, ctypes.c_float.__ctype_be__, ctypes.c_float.__ctype_le__,
+                          ctypes.c_double, ctypes.c_double.__ctype_be__, ctypes.c_double.__ctype_le__]:
             arg = float(arg)
         elif hasattr(arg_type, '_length_') and arg_type._type_ is not ctypes.c_char:  # assume this is a primitive array
             try:
@@ -730,18 +741,21 @@ class CfsController:
             self.cfs = None
 
         status = False
-        # check whether cFS instance exists and if so, try to kill it
+        # check whether cFS process exists and if so, try to kill it
         log.info("Killing Linux process...")
-        if not self.cfs_pid:
-            log.error("CFS pid not found! Process may not be killed.")
-        elif os.system("ps -p {}".format(self.cfs_pid)) != 0:
-            log.error("CFS process {} not found! It may have already terminated.".format(self.config.cfs_run_cmd))
+        if self.cfs_pid:
+            if os.system("ps -p {}".format(self.cfs_pid)) != 0:
+                log.error("Process {} not found! It may have already terminated.".format(self.cfs_pid))
+            else:
+                status = (os.system("kill -9 {}".format(self.cfs_pid)) == 0)
+            if not status:
+                log.error("Failed to kill process {}. CFS and/or xterm may have already exited or still be running!"
+                          .format(self.cfs_pid))
         else:
-            status = (os.system("kill -9 {}".format(self.cfs_pid)) == 0)
-        if not status:
-            log.error("Failed to kill process {}. CFS and/or xterm may have already exited or still be running!"
-                      .format(self.cfs_pid))
+            log.warning("CFS pid is not known. Will attempt to kill process by name '{}'"
+                        .format(self.config.cfs_run_cmd))
 
+        # try to kill outer command (xterm, sh) run by CTF
         if os.system('pkill -fe -9 "{}"'.format(self.config.cfs_run_cmd)) != 0:
             status = False
             log.error("Failed to kill any {}. CFS may have already exited or still be running!"
@@ -756,10 +770,13 @@ class CfsController:
         """
         log.info("Shutting down controller for {}".format(self.config.name))
         if self.cfs:
-            try:
-                self.shutdown_cfs()
-            except CtfTestError:
-                log.error("Error: Shutting down controller for {}".format(self.config.name))
+            if self.cfs.started_by_ctf:
+                try:
+                    self.shutdown_cfs()
+                except CtfTestError:
+                    log.error("Error: Shutting down controller for {}".format(self.config.name))
+            else:
+                log.warning("CFS target {} was not started by CTF and will NOT be stopped.".format(self.config.name))
             self.cfs = None
         else:
             log.info("CFS was already shut down")
@@ -862,6 +879,9 @@ class RemoteCfsController(CfsController):
         if not self.process_ccsds_files():
             return False
 
+        return self._init_cfs_interface()
+
+    def _init_cfs_interface(self):
         log.info("Starting Remote CFS Interface to {}:{} for target {}"
                  .format(self.config.cfs_target_ip, self.config.cmd_udp_port, self.config.name))
         self.execution = SshController(SshConfig())
@@ -881,7 +901,7 @@ class RemoteCfsController(CfsController):
                 log.warning("Not starting CFS executable... Expecting \"StartCfs\" in test script...")
 
         if result:
-            log.info("RemoteCfsController Initialized for target {}".format(self.config.name))
+            log.info("RemoteCfsInterface Initialized for target {}".format(self.config.name))
         return result
 
     def archive_cfs_files(self, source_path):
