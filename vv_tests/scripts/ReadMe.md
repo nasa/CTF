@@ -7,7 +7,7 @@ For CTF Verification & Validation test details, refer to docs/CTF_SRS.pdf and do
 
 MSC-26646-1, "Core Flight System Test Framework (CTF)"
 
-Copyright (c) 2019-2022 United States Government as represented by the
+Copyright (c) 2019-2024 United States Government as represented by the
 Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 
 This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,

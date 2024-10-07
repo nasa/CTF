@@ -9,6 +9,7 @@ Search a file for a given text string. If the string is found, return True, othe
 
 - **file**: path of the file.
 - **search_str**: text string to be searched for.
+- **variable_name**: (Optional) user-defined variable name. If variable_name is provided, assign the count of the text string in the file to the variable. It does not apply to regex match. 
 - **is_regex**: (Optional) True if `search_str` is to be used for a regex match instead of string search. default is False.
 - **target**: (Optional) the section name in the config file, if `search_str` includes macros defined in the section's CCSDS Data Directory json files. 
 

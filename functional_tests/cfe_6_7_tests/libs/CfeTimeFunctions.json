@@ -12,8 +12,8 @@
     "test_setup": "",
     "import": {},
     "functions": {
-        "SendCheckCfsTimeNoopCmd": {
-            "description": "Send and check CFS_EVS_NOOP_CC",
+        "SendCheckCfeTimeNoopCmd": {
+            "description": "Send and check CFE_EVS_NOOP_CC",
             "varlist": [
                 "cfstgt",
                 "expectedCmdCnt",
@@ -56,8 +56,8 @@
                 }
             ]
         },
-        "SendCheckCfsTimeResetCmd": {
-            "description": "Send and check CFS_EVS_RESET_COUNTER_CC",
+        "SendCheckCfeTimeResetCmd": {
+            "description": "Send and check CFE_EVS_RESET_COUNTER_CC",
             "varlist": [
                 "cfstgt",
                 "expectedCmdCnt",
@@ -100,7 +100,7 @@
                 }
             ]
         },
-        "SendCheckCfsTimeSendDiagnosticTlmCmd": {
+        "SendCheckCfeTimeSendDiagnosticTlmCmd": {
             "description": "Send and check CFE_TIME_SEND_DIAGNOSTIC_TLM_CC",
             "varlist": [
                 "cfstgt",
@@ -115,11 +115,7 @@
                         "target": "cfstgt",
                         "mid": "CFE_TIME_CMD_MID",
                         "cc": "CFE_TIME_SEND_DIAGNOSTIC_TLM_CC",
-                        "args": {
-                            "Payload": {
-                                "TimeSource": "source"
-                            }
-                        }
+                        "args": {}
                     },
                     "wait": 0
                 },
@@ -149,7 +145,7 @@
                 }
             ]
         },
-        "SendCheckCfsTimeSetSourceCmd": {
+        "SendCheckCfeTimeSetSourceCmd": {
             "description": "Send and check CFE_TIME_SET_SOURCE_CC",
             "varlist": [
                 "cfstgt",
@@ -163,7 +159,7 @@
                     "data": {
                         "target": "cfstgt",
                         "mid": "CFE_TIME_CMD_MID",
-                        "cc": "CFE_TIME_SEND_DIAGNOSTIC_TLM_CC",
+                        "cc": "CFE_TIME_SET_SOURCE_CC",
                         "args": {
                             "Payload": {
                                 "TimeSource": "source"
@@ -198,7 +194,7 @@
                 }
             ]
         },
-        "SendCheckCfsTimeSetStateCmd": {
+        "SendCheckCfeTimeSetStateCmd": {
             "description": "Send and check CFE_TIME_SET_STATE_CC",
             "varlist": [
                 "cfstgt",
@@ -247,7 +243,7 @@
                 }
             ]
         },
-        "SendCheckCfsTimeSubDelayCmd": {
+        "SendCheckCfeTimeSubDelayCmd": {
             "description": "Send and check CFE_TIME_ADD_DELAY_CC",
             "varlist": [
                 "cfstgt",
@@ -298,7 +294,7 @@
                 }
             ]
         },
-        "SendCheckCfsTimeAddDelayCmd": {
+        "SendCheckCfeTimeAddDelayCmd": {
             "description": "Send and check CFE_TIME_SUB_DELAY_CC",
             "varlist": [
                 "cfstgt",
@@ -349,7 +345,7 @@
                 }
             ]
         },
-        "SendCheckCfsTimeSetTimeCmd": {
+        "SendCheckCfeTimeSetTimeCmd": {
             "description": "Send and check CFE_TIME_SET_TIME_CC",
             "varlist": [
                 "cfstgt",
@@ -400,7 +396,7 @@
                 }
             ]
         },
-        "SendCheckCfsTimeSetMetCmd": {
+        "SendCheckCfeTimeSetMetCmd": {
             "description": "Send and check CFE_TIME_SET_MET_CC",
             "varlist": [
                 "cfstgt",
@@ -451,7 +447,7 @@
                 }
             ]
         },
-        "SendCheckCfsTimeSetStcfCmd": {
+        "SendCheckCfeTimeSetStcfCmd": {
             "description": "Send and check CFE_TIME_SET_STCF_CC",
             "varlist": [
                 "cfstgt",
@@ -502,7 +498,7 @@
                 }
             ]
         },
-        "SendCheckCfsTimeSetLeapSecondsCmd": {
+        "SendCheckCfeTimeSetLeapSecondsCmd": {
             "description": "Send and check CFE_TIME_SET_LEAP_SECONDS_CC",
             "varlist": [
                 "cfstgt",
@@ -551,7 +547,7 @@
                 }
             ]
         },
-        "SendCheckCfsTimeSubAdjustCmd": {
+        "SendCheckCfeTimeSubAdjustCmd": {
             "description": "Send and check CFE_TIME_SUB_ADJUST_CC",
             "varlist": [
                 "cfstgt",
@@ -602,7 +598,7 @@
                 }
             ]
         },
-        "SendCheckCfsTimeAdd1HzAdjustmentCmd": {
+        "SendCheckCfeTimeAdd1HzAdjustmentCmd": {
             "description": "Send and check CFE_TIME_ADD_1HZ_ADJUSTMENT_CC",
             "varlist": [
                 "cfstgt",
@@ -653,7 +649,7 @@
                 }
             ]
         },
-        "SendCheckCfsTimeSub1HzAdjustmentCmd": {
+        "SendCheckCfeTimeSub1HzAdjustmentCmd": {
             "description": "Send and check CFE_TIME_SUB_1HZ_ADJUSTMENT_CC",
             "varlist": [
                 "cfstgt",
@@ -704,7 +700,7 @@
                 }
             ]
         },
-        "SendCheckCfsTimeSetSignalCmd": {
+        "SendCheckCfeTimeSetSignalCmd": {
             "description": "Send and check CFE_TIME_SET_SIGNAL_CC",
             "varlist": [
                 "cfstgt",

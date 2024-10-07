@@ -130,7 +130,7 @@ they can be evaluated in other instruction parameters during run-time by wrappin
 
 **Note**: User variables must be defined using one of the above instructions before they can be referenced using the `$` syntax. Built-in variables may be referenced in the same way at any time.
 
-###### Example 
+Example: 
 <pre><code>               
 {
     "instruction": "BeginLoop",

@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -75,6 +75,13 @@ def test_local_cfs_interface_get_start_string(localcfs, utils):
         assert localcfs.get_start_string('') == \
             'xterm -T core-lx1 -l -geometry 130X24+800+0 -e ' \
             '\"script -c \' ./core-lx1\' -q -f /logs/cfs_cfs_stdout.txt\"'
+
+        localcfs.config.prepend_arg = 'PREPEND_ARG'
+        assert localcfs.get_start_string('') == \
+            'xterm -T core-lx1 -l -geometry 130X24+800+0 -e ' \
+            '\"script -c \' PREPEND_ARG ./core-lx1\' -q -f /logs/cfs_cfs_stdout.txt\"'
+
+        localcfs.config.prepend_arg = ''
         localcfs.config.cfs_debug = True
         localcfs.config.cfs_port_arg = True
         assert localcfs.get_start_string('run_args') == \
@@ -136,7 +143,7 @@ def test_local_cfs_interface_start_cfs_pass(localcfs):
         assert start['pid'] == 42
 
 
-def test_local_cfs_interface_start_cfs_pid_exist(localcfs,utils):
+def test_local_cfs_interface_start_cfs_pid_exist(localcfs, utils):
     with patch('os.path.exists', return_value=True), \
          patch('plugins.cfs.pycfs.local_cfs_interface.run') as mock_run, \
          patch('plugins.cfs.pycfs.local_cfs_interface.Popen') as mock_popen:

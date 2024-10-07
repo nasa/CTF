@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -22,7 +22,7 @@ import lib
 import plugins
 from lib.ctf_global import Global
 from lib.exceptions import CtfTestError
-from plugins.ccsds_plugin.readers.ccdd_export_reader import CCDDExportReader, ctypes_name, dynamic_init,\
+from plugins.ccsds_plugin.readers.ccdd_export_reader import CCDDExportReader, ctypes_name, dynamic_init, \
      create_type_class, to_string, _compare_field, _compare_ctypes, build_obj_from_ctype, build_str_from_ctype
 from plugins.cfs.cfs_config import CfsConfig
 
@@ -482,6 +482,28 @@ def test_ccdd_export_reader_create_parameterized_type_exception(ccdd_export_read
             ccdd_export_reader._create_parameterized_type(type_dict, type_id, arg_id, subtypes)
 
 
+def test_ccdd_export_reader_create_parameterized_type_override_custom(ccdd_export_reader, utils):
+    """
+    Test CCDDExportReader class method: _create_parameterized_type -- override custom data type
+    Recursively creates custom type definitions from JSON data and any known subtypes,
+    and adds them to the type dictionary. Returns the top-level type and a dictionary of any enumerations.
+    """
+    type_dict = {'cc_name': 'CI_RESET_CC', 'cc_value': '1',
+                 'args': [{'name': 'Byte', 'data_type': 'custom', 'description': '0=all, 1=cmd, 2=fault 3=up 4=down',
+                           'array_size': '0', 'bit_length': '0',
+                           'parameters': []},
+                          {'name': 'Spare', 'data_type': 'uint8', 'description': '', 'array_size': '3',
+                           'enumeration': [{'label': 'mock_label', 'value': 'mock_value'}],
+                           'bit_length': '0', 'parameters': []}],
+                 'cc_description': '', 'cc_data_type': 'custom'}
+    type_id = 'cc_data_type'
+    arg_id = 'args'
+    subtypes = {}
+    ccdd_export_reader.type_dict = {'custom': ctypes.c_ubyte}
+    parameterized_type = ccdd_export_reader._create_parameterized_type(type_dict, type_id, arg_id, subtypes)
+    assert parameterized_type[0].__name__ == 'custom'
+
+
 def test_ccdd_export_reader_create_process_telemetry_exception(ccdd_export_reader, utils):
     """
     Test CCDDExportReader class method: process_telemetry: corner case - raise exception
@@ -751,7 +773,7 @@ def test_ccdd_export_reader_process_ccsds_json_file_invalid_file(ccdd_export_rea
     utils.clear_log()
     config = CfsConfig('cfs')
     directory = config.ccsds_data_dir
-    json_file = directory + '/auto_cfe_es_CMD.json'
+    json_file = directory + '/auto_dummy_io_CMD.json'
     ccdd_export_reader.process_ccsds_json_file(json_file)
     json_file = directory + '/auto_ci_CMD.json'
     ccdd_export_reader.process_ccsds_json_file(json_file)
@@ -787,7 +809,7 @@ def test_ccdd_export_reader_process_ccsds_json_file_exception(ccdd_export_reader
     utils.clear_log()
     config = CfsConfig('cfs')
     directory = config.ccsds_data_dir
-    json_file = directory + '/auto_cfe_es_CMD.json'
+    json_file = directory + '/auto_dummy_io_CMD.json'
     ccdd_export_reader.process_ccsds_json_file(json_file)
 
     with patch('plugins.ccsds_plugin.readers.ccdd_export_reader.CCDDExportReader.process_command') as mock_command:

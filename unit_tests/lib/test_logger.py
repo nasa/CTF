@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -63,3 +63,37 @@ def test_colorlog_import():
     reload(lib.logger)
     logger.init_logger(Global.config)
     os.system('pip uninstall colorlog -y')
+
+
+def test_logger_test_cont_false(utils):
+    from lib.logger import logger as log
+    cont = False
+
+    log.setLevel(logger.CtfLogLevel.TEST_FAIL)
+    utils.clear_log()
+    passed = False
+    assert not log.test(passed, cont, 'msg')
+    assert utils.has_log_level("TEST_FAIL")
+
+    log.setLevel(logger.CtfLogLevel.TEST_PASS)
+    utils.clear_log()
+    passed = True
+    assert log.test(passed, cont, 'msg')
+    assert utils.has_log_level("TEST_PASS")
+
+
+def test_logger_test_cont_true(utils):
+    from lib.logger import logger as log
+    cont = True
+
+    log.setLevel(logger.CtfLogLevel.TEST_FAIL_CONT)
+    utils.clear_log()
+    passed = False
+    assert not log.test(passed, cont, 'msg')
+    assert utils.has_log_level("TEST_FAIL_CONT")
+
+    log.setLevel(logger.CtfLogLevel.TEST_PASS_CONT)
+    utils.clear_log()
+    passed = True
+    assert log.test(passed, cont, 'msg')
+    assert utils.has_log_level("TEST_PASS_CONT")

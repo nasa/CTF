@@ -12,16 +12,16 @@
     "test_setup": "",
     "import": {
         "../libs/CfeTblFunctions.json": [
-            "SendCheckCfsTblNoopCmd",
-            "SendCheckCfsTblResetCmd",
-            "SendCheckCfsTblLoadCmd",
-            "SendCheckCfsTblDumpCmd",
-            "SendCheckCfsTblValidateCmd",
-            "SendCheckCfsTblDumpRegistryCmd",
-            "SendCheckCfsTblActivateCmd",
-            "SendCheckCfsTblSendRegistryCmd",
-            "SendCheckCfsTblDeleteCdsCmd",
-            "SendCheckCfsTblAbortLoadCmd"
+            "SendCheckCfeTblNoopCmd",
+            "SendCheckCfeTblResetCmd",
+            "SendCheckCfeTblLoadCmd",
+            "SendCheckCfeTblDumpCmd",
+            "SendCheckCfeTblValidateCmd",
+            "SendCheckCfeTblActivateCmd",
+            "SendCheckCfeTblDumpRegistryCmd",
+            "SendCheckCfeTblSendRegistryCmd",
+            "SendCheckCfeTblDeleteCdsCmd",
+            "SendCheckCfeTblAbortLoadCmd"
         ]
     },
     "functions": {},
@@ -31,7 +31,7 @@
             "description": "",
             "instructions": [
                 {
-                    "function": "SendCheckCfsTblResetCmd",
+                    "function": "SendCheckCfeTblResetCmd",
                     "params": {
                         "cfstgt": "tgt1",
                         "expectedCmdCnt": 0,
@@ -40,7 +40,7 @@
                     "wait": 1
                 },
                 {
-                    "function": "SendCheckCfsTblNoopCmd",
+                    "function": "SendCheckCfeTblNoopCmd",
                     "params": {
                         "cfstgt": "tgt1",
                         "expectedCmdCnt": 1,
@@ -49,7 +49,7 @@
                     "wait": 5
                 },
                 {
-                    "function": "SendCheckCfsTblLoadCmd",
+                    "function": "SendCheckCfeTblLoadCmd",
                     "description": "Off-nominal check due to invalid table filename",
                     "params": {
                         "cfstgt": "tgt1",
@@ -60,7 +60,7 @@
                     "wait": 1
                 },
                 {
-                    "function": "SendCheckCfsTblDumpCmd",
+                    "function": "SendCheckCfeTblDumpCmd",
                     "description": "Off-nominal check due to invalid output filename",
                     "params": {
                         "cfstgt": "tgt1",
@@ -68,12 +68,12 @@
                         "expectedErrCnt": 2,
                         "activeFlag": 1,
                         "tableName": "TO.to_subs",
-                        "fileName": "CfeTblTest_SendCheckCfsTblDumpCmd_Output.txt"
+                        "fileName": "CfeTblTest_SendCheckCfeTblDumpCmd_Output.txt"
                     },
                     "wait": 1
                 },
                 {
-                    "function": "SendCheckCfsTblValidateCmd",
+                    "function": "SendCheckCfeTblValidateCmd",
                     "params": {
                         "cfstgt": "tgt1",
                         "expectedCmdCnt": 2,

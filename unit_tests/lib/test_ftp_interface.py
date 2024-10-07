@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -167,14 +167,13 @@ def test_ftp_interface_upload_ftp_exception(iftp):
 
         # second cwd triggers exception
         mock_ftp.return_value.cwd.side_effect = [None, OSError('mock error'), None, None, None, None, None, None,
-                                                 None, None, None, None,None, None, None, None, None, None, None]
+                                                 None, None, None, None, None, None, None, None, None, None, None]
         assert iftp.upload_ftp('./example_scripts', 'localhost', '/remote/path')
 
         # third cwd triggers exception
         mock_ftp.return_value.cwd.side_effect = [None, None, None, OSError('mock error'), OSError('mock error'),
                                                  None, None, None, None, None, None, None, None, None, None, None]
         assert not iftp.upload_ftp('./example_scripts', 'localhost', '/remote/path')
-
 
 
 def test_ftp_interface_upload_ftp(iftp):
@@ -196,6 +195,13 @@ def test_ftp_interface_upload_ftp(iftp):
         # connection fail
         mock_ftp.side_effect = OSError('mock error')
         assert not iftp.upload_ftp('./configs', 'localhost', '/remote/path', 'ci_config.ini')
+
+
+def test_ftp_interface_upload_ftp_store_file_ftp_fail(iftp_conn, utils):
+    with patch('builtins.open', new_callable=mock_open()) as mock_file:
+        iftp_conn.ftp.storbinary.side_effect = EOFError('mock error')
+        assert not iftp_conn.upload_ftp('./configs', None, '/remote/path', 'ci_config.ini')
+        utils.clear_log()
 
 
 def test_ftp_interface_download_ftp_exception(iftp):

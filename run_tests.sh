@@ -56,7 +56,7 @@ elif [ "$1" == "utc" ]; then
     # Convert coverage report in HTML to PDF
     wkhtmltopdf --enable-local-file-access UnitTests_Coverage/index.html $OUT_SUBDIR/ctf_ut_coverage.pdf
     # Move the generated output to UTC sub-dir
-    mv -f *.log temp_log mock_sp0_config_cfs-out-file $OUT_SUBDIR
+    mv -f *.log $OUT_SUBDIR
     mv -f UnitTests_Coverage plugin_info_output temp_log_dir local $OUT_SUBDIR
     mv -f CTF_Results/Run* $OUT_SUBDIR/ut_run
     # Remove un-needed files/dirs

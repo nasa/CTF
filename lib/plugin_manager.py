@@ -5,7 +5,7 @@ The Plugin Manager is a CTF core component that manages CTF plugins.
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -155,7 +155,7 @@ class Plugin():
                 try:
                     result = func(**data)
                 except Exception as exception:
-                    log.error("Error Applying Function {} with exception {}".format(func,exception))
+                    log.error("Error Applying Function {} with exception {}".format(func, exception))
                     raise CtfTestError("Error Applying Function") from exception
             else:
                 log.error("Invalid number of parameters passed to {}. Expected at least {} args".format(instruction,
@@ -300,6 +300,7 @@ class PluginManager:
         # recursively for additional modules in sub packages
         all_current_paths = []
         if isinstance(imported_package.__path__, str):
+### Possible unreachable code: __path__ is an instance of MutableSequence (list or array)
             all_current_paths.append(imported_package.__path__)
         else:
             all_current_paths.extend(imported_package.__path__)

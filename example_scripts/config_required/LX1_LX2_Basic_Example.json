@@ -139,6 +139,21 @@
                         "search_str": "CheckTlmValue: CFS Target: cfs_LX2, MID TO_HK_TLM_MID"
                     }
                 },
+
+                {
+                    "instruction": "SendCfsCommand",
+                    "description": "Demonstrate the use of macros in command args",
+                    "data": {
+                        "target": "cfs_LX1",
+                        "mid": "SCH_CMD_MID",
+                        "cc": "SCH_ENABLE_CC",
+                        "args": {
+                            "SlotNumber": "cfs_LX2::#SCH_TOTAL_SLOTS#",
+                            "EntryNumber": "#SCH_ENTRIES_PER_SLOT#"
+                        }
+                    },
+                    "wait": 1
+                },
                 {
                     "instruction": "CheckUserVariable",
                     "data": {

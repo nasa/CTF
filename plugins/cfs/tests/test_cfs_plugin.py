@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -43,7 +43,7 @@ def test_cfs_plugin_init(cfs_plugin):
 
 
 def test_cfs_plugin_instruction_sets(cfs_plugin):
-    assert len(cfs_plugin.command_map) == 16
+    assert len(cfs_plugin.command_map) == 17
     assert "RegisterCfs" in cfs_plugin.command_map
     assert "BuildCfs" in cfs_plugin.command_map
     assert "StartCfs" in cfs_plugin.command_map
@@ -409,7 +409,7 @@ def test_cfs_plugin_check_tlm_value_pass(cfs_plugin):
     cfs_plugin.has_attempted_register = True
     assert cfs_plugin.check_tlm_value("mid", {'args': True}, None)
     assert mock_controller.check_tlm_value.call_count == num_controllers
-    mock_controller.check_tlm_value.assert_called_with("mid", {'args': True})
+    mock_controller.check_tlm_value.assert_called_with("mid", {'args': True}, 0)
     assert cfs_plugin.check_tlm_value("CFE_EVS_HK_TLM_MID", [{'variable': 'Payload.CommandCounter', 'value': [0],
                                                               'compare': '=='}], None)
 
@@ -471,6 +471,17 @@ def test_cfs_plugin_check_no_tlm_packet_pass(cfs_plugin):
         assert cfs_plugin.check_no_tlm_packet("mid")
     assert mock_controller.check_tlm_value.call_count == num_controllers * 2
     mock_controller.check_tlm_value.assert_called_with("mid")
+
+
+def test_cfs_plugin_clear_tlm_packet_pass(cfs_plugin):
+    num_controllers = 3
+    mock_controller = MagicMock()
+    mock_controller.clear_tlm_packet.return_value = True
+    cfs_plugin.targets = {i: mock_controller for i in range(num_controllers)}
+    cfs_plugin.has_attempted_register = True
+    assert cfs_plugin.clear_tlm_packet(8196)
+    assert mock_controller.clear_tlm_packet.call_count == num_controllers
+    mock_controller.clear_tlm_packet.assert_called_with(8196)
 
 
 def test_cfs_plugin_check_no_tlm_packet_fail(cfs_plugin):

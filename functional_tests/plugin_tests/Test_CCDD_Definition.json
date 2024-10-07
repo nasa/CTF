@@ -78,7 +78,8 @@
                                 "myChar": "0",
                                 "myBool": 0,
                                 "myArray": "4",
-                                "myArray[1]": "0",
+                                "myArray[1]": "7",
+                                "myArray[5]": "9",
                                 "myString": "12345",
                                 "myBitfield8a": "15",
                                 "myBitfield8b": "8",
@@ -95,15 +96,52 @@
                     "data": {
                         "target": "tgt1",
                         "mid": "DUMMY_IO_MULTI_TYPES_TLM_MID",
+                        "backward": 0.1,
                         "args": [
+                            {
+                                "variable": "payload[0].myArray",
+                                "compare": "==",
+                                "value": 9
+                            },
                             {
                                 "variable": "payload[0].myString",
                                 "compare": "streq",
                                 "value": "12345"
+                            },
+                            {
+                                "variable": "payload",
+                                "compare": "==",
+                                "value": {"myInt": 111111, "myShort": 55555}
                             }
                         ]
                     },
-                    "wait": 5
+                    "wait": 0
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "description": "as the last instruction is CheckTlmValue and 'wait' is 0, CTF does not clear received msg for DUMMY_IO_MULTI_TYPES_TLM_MID",
+                    "data": {
+                        "target": "tgt1",
+                        "mid": "DUMMY_IO_MULTI_TYPES_TLM_MID",
+                        "args": [
+                            {
+                                "variable": "payload[0].myArray",
+                                "compare": "==",
+                                "value": 9
+                            },
+                            {
+                                "variable": "payload[0].myString",
+                                "compare": "streq",
+                                "value": "12345"
+                            },
+                            {
+                                "variable": "payload",
+                                "compare": "==",
+                                "value": {"myInt": 111111, "myShort": 55555}
+                            }
+                        ]
+                    },
+                    "wait": 0
                 },
                 {
                     "instruction": "SetUserVariableFromTlm",

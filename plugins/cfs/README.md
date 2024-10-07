@@ -61,7 +61,7 @@ Macros are target (flight software) specific. In other words, for different targ
 CTF also supports definition and evaluation of user variables. These work similarly to macros, but variables are defined in test scripts, not CCDD files. 
 Refer to [Variable Plugin README](../variable_plugin/README.md) for details. 
 
-###### Macro Example 
+Macro Example: 
 <pre><code>               
 {
         "instruction": "CheckTlmValue",
@@ -277,15 +277,14 @@ Example:
 ### CheckTlmValue
 Checks that a telemetry message matching the given parameters has been received from the CFS target.
 - **target:** (Optional) A previously registered target name. If no name is given, applies to all registered targets.
+- **backward:** (Optional) unit of seconds. Allow CTF to search telemetry messages received before this instruction calls. The default value is 0. **Highly recommend not to change the default value**.
 - **mid**: The telemetry message ID to check.
 - **args**: an array of argument objects that describe the values to be checked. Multiple arguments
 can be listed here to check multiple attributes of a given packet at once.
     - **compare**: How to compare the telemetry value with the test value.
     Must be one of: `==`, `<=`, `<`, `>`, `>=`, `!=`, `streq` (string equal), `strneq` (string not equal), `regex` (any regex match on a string).
-    - **variable**: The attribute in the telemetry packet to check against.
-    - **expected_mid** (optional): The telemetry message ID where the expected value can be found. Only needed if the check will be performed between two variables.
-    This must match a name that was defined for this MID in the CCDD. (string)
-    - **value**: The value to compare against. (number, string, bool) Note that the single value must be contained in a list: **"value":[0]**, not **"value":0**. Also if the command is called within a function and the value is a function parameter, put the parameter name as a string: **"value":["myParamName"]**. If **expected_mid** is set, this field should contain the variable path to be checked.
+    - **variable**: The attribute in the telemetry packet to check against. It may be a simple type (number,bool, string) or an array. 
+    - **value**: The value to compare against. And if the command is called within a function and the value is a function parameter, put the parameter name as a string: **"value":["myParamName"]**. If variable is an array of complex structure, the value is {key:value} pairs. Refer to functional_tests/plugin_tests/Test_CCDD_Definition.json as an example.
     - **tolerance**: floating point tolerance.
     - **tolerance_plus/tolerance_minus**: non-symmetric floating point tolerance.
 
@@ -355,6 +354,23 @@ Example:
 }
 </code></pre>
 
+### ClearTlmPacket
+Clear all received telemetry messages of the given MID from the CFS target.
+- **target:** (Optional) A previously registered target name. If no name is given, applies to all registered targets.
+- **mid**: The telemetry message ID to be cleared.
+
+Example:
+<pre><code>
+{
+    "instruction": "ClearTlmPacket",
+    "data": {
+        "target": "cfs_workstation",
+        "mid": "TO_HK_TLM_MID"
+    },
+    "wait": 1
+}
+</code></pre>
+
 ### CheckTlmContinuous
 Similar to `CheckTlmValue` except the check is performed each time telemetry is received, until the test ends or the check is removed by `RemoveCheckTlmContinuous`.
 - **target:** (Optional) A previously registered target name. If no name is given, applies to all registered targets.
@@ -365,9 +381,7 @@ can be listed here to check multiple attributes of a given packet at once.
     - **compare**: How to compare the telemetry value with the test value.
     Must be one of: `==`, `<=`, `<`, `>`, `>=`, `!=`, `streq` (string equal), `strneq` (string not equal), `regex` (any regex match on a string).
     - **variable**: The attribute in the telemetry packet to check against.
-    - **expected_mid** (optional): The telemetry message ID where the expected value can be found. Only needed if the check will be performed between two variables.
-    This must match a name that was defined for this MID in the CCDD. (string)
-    - **value**: The value to compare against. (number, string, bool) Note that the single value must be contained in a list: **"value":[0]**, not **"value":0**. Also if the command is called within a function and the value is a function parameter, put the parameter name as a string: **"value":["myParamName"]**. If **expected_mid** is set, this field should contain the variable path to be checked.
+    - **value**: The value to compare against. (number, string, bool). Also if the command is called within a function and the value is a function parameter, put the parameter name as a string: **"value":["myParamName"]**.
     - **tolerance**: floating point tolerance.
     - **tolerance_plus/tolerance_minus**: non-symmetric floating point tolerance.
 

@@ -34,9 +34,35 @@
                     "instruction": "SearchStr",
                     "data": {
                         "file": "/dev/shm/osal:RAM/example_EVS.bin",
-                        "search_str": "cFE SB Initialized:  cFE DEVELOPMENT BUILD v7.0.0-rc4"
+                        "search_str": "cFE SB Initialized:  cFE DEVELOPMENT BUILD v7.0.0-rc4",
+                        "variable_name": "strcnt"
                     },
                     "wait": 5
+                },
+                {
+                    "instruction": "CheckUserVariable",
+                    "data": {
+                        "variable_name": "strcnt",
+                        "operator": "==",
+                        "value": 1
+                    }
+                },
+                {
+                    "instruction": "SearchStr",
+                    "data": {
+                        "file": "/dev/shm/osal:RAM/example_EVS.bin",
+                        "search_str": "Last Official Release",
+                        "variable_name": "strcnt"
+                    },
+                    "wait": 5
+                },
+                {
+                    "instruction": "CheckUserVariable",
+                    "data": {
+                        "variable_name": "strcnt",
+                        "operator": "==",
+                        "value": 5
+                    }
                 },
                 {
                     "instruction": "SearchNoStr",

@@ -12,21 +12,21 @@
     "test_setup": "",
     "import": {
         "../libs/CfeTimeFunctions.json": [
-            "SendCheckCfsTimeNoopCmd",
-            "SendCheckCfsTimeResetCmd",
-            "SendCheckCfsTimeSubDelayCmd",
-            "SendCheckCfsTimeSetStateCmd",
-            "SendCheckCfsTimeSetMetCmd",
-            "SendCheckCfsTimeSetSourceCmd",
-            "SendCheckCfsTimeSendDiagnosticTlmCmd",
-            "SendCheckCfsTimeAddDelayCmd",
-            "SendCheckCfsTimeSetTimeCmd",
-            "SendCheckCfsTimeSetLeapSecondsCmd",
-            "SendCheckCfsTimeSetStcfCmd",
-            "SendCheckCfsTimeSubAdjustCmd",
-            "SendCheckCfsTimeAdd1HzAdjustmentCmd",
-            "SendCheckCfsTimeSetSignalCmd",
-            "SendCheckCfsTimeSub1HzAdjustmentCmd"
+            "SendCheckCfeTimeNoopCmd",
+            "SendCheckCfeTimeResetCmd",
+            "SendCheckCfeTimeSubDelayCmd",
+            "SendCheckCfeTimeSetStateCmd",
+            "SendCheckCfeTimeSetMetCmd",
+            "SendCheckCfeTimeSetSourceCmd",
+            "SendCheckCfeTimeSendDiagnosticTlmCmd",
+            "SendCheckCfeTimeAddDelayCmd",
+            "SendCheckCfeTimeSetTimeCmd",
+            "SendCheckCfeTimeSetLeapSecondsCmd",
+            "SendCheckCfeTimeSetStcfCmd",
+            "SendCheckCfeTimeSubAdjustCmd",
+            "SendCheckCfeTimeAdd1HzAdjustmentCmd",
+            "SendCheckCfeTimeSetSignalCmd",
+            "SendCheckCfeTimeSub1HzAdjustmentCmd"
         ]
     },
     "functions": {},
@@ -36,7 +36,7 @@
             "description": "",
             "instructions": [
                 {
-                    "function": "SendCheckCfsTimeResetCmd",
+                    "function": "SendCheckCfeTimeResetCmd",
                     "params": {
                         "cfstgt": "tgt1",
                         "expectedCmdCnt": 0,
@@ -45,7 +45,7 @@
                     "wait": 1
                 },
                 {
-                    "function": "SendCheckCfsTimeNoopCmd",
+                    "function": "SendCheckCfeTimeNoopCmd",
                     "params": {
                         "cfstgt": "tgt1",
                         "expectedCmdCnt": 1,
@@ -54,7 +54,7 @@
                     "wait": 1
                 },
                 {
-                    "function": "SendCheckCfsTimeSubDelayCmd",
+                    "function": "SendCheckCfeTimeSubDelayCmd",
                     "description": "Off-nominal Case. Command gets accepted, but data is invalid",
                     "params": {
                         "cfstgt": "tgt1",
@@ -66,7 +66,7 @@
                     "wait": 1
                 },
                 {
-                    "function": "SendCheckCfsTimeSetStateCmd",
+                    "function": "SendCheckCfeTimeSetStateCmd",
                     "params": {
                         "cfstgt": "tgt1",
                         "expectedCmdCnt": 2,
@@ -76,7 +76,7 @@
                     "wait": 1
                 },
                 {
-                    "function": "SendCheckCfsTimeSetMetCmd",
+                    "function": "SendCheckCfeTimeSetMetCmd",
                     "params": {
                         "cfstgt": "tgt1",
                         "expectedCmdCnt": 3,

@@ -12,8 +12,8 @@
     "test_setup": "",
     "import": {},
     "functions": {
-        "SendCheckCfsTblNoopCmd": {
-            "description": "Send and check CFS_EVS_NOOP_CC",
+        "SendCheckCfeTblNoopCmd": {
+            "description": "Send and check CFE_TBL_NOOP_CC",
             "varlist": [
                 "cfstgt",
                 "expectedCmdCnt",
@@ -56,8 +56,8 @@
                 }
             ]
         },
-        "SendCheckCfsTblResetCmd": {
-            "description": "Send and check CFS_EVS_RESET_COUNTER_CC",
+        "SendCheckCfeTblResetCmd": {
+            "description": "Send and check CFE_TBL_RESET_COUNTER_CC",
             "varlist": [
                 "cfstgt",
                 "expectedCmdCnt",
@@ -100,7 +100,7 @@
                 }
             ]
         },
-        "SendCheckCfsTblLoadCmd": {
+        "SendCheckCfeTblLoadCmd": {
             "description": "Send and check CFE_TBL_LOAD_CC",
             "varlist": [
                 "cfstgt",
@@ -149,7 +149,7 @@
                 }
             ]
         },
-        "SendCheckCfsTblDumpCmd": {
+        "SendCheckCfeTblDumpCmd": {
             "description": "Send and check CFE_TBL_DUMP_CC",
             "varlist": [
                 "cfstgt",
@@ -202,7 +202,7 @@
                 }
             ]
         },
-        "SendCheckCfsTblValidateCmd": {
+        "SendCheckCfeTblValidateCmd": {
             "description": "Send and check CFE_TBL_VALIDATE_CC",
             "varlist": [
                 "cfstgt",
@@ -253,7 +253,7 @@
                 }
             ]
         },
-        "SendCheckCfsTblActivateCmd": {
+        "SendCheckCfeTblActivateCmd": {
             "description": "Send and check CFE_TBL_ACTIVATE_CC",
             "varlist": [
                 "cfstgt",
@@ -267,7 +267,7 @@
                     "data": {
                         "target": "cfstgt",
                         "mid": "CFE_TBL_CMD_MID",
-                        "cc": "CFE_TBL_VALIDATE_CC",
+                        "cc": "CFE_TBL_ACTIVATE_CC",
                         "args": {
                             "Payload": {
                                 "TableName": "tableName"
@@ -302,7 +302,7 @@
                 }
             ]
         },
-        "SendCheckCfsTblDumpRegistryCmd": {
+        "SendCheckCfeTblDumpRegistryCmd": {
             "description": "Send and check CFE_TBL_DUMP_REGISTRY_CC",
             "varlist": [
                 "cfstgt",
@@ -351,7 +351,7 @@
                 }
             ]
         },
-        "SendCheckCfsTblSendRegistryCmd": {
+        "SendCheckCfeTblSendRegistryCmd": {
             "description": "Send and check CFE_TBL_SEND_REGISTRY_CC",
             "varlist": [
                 "cfstgt",
@@ -400,7 +400,7 @@
                 }
             ]
         },
-        "SendCheckCfsTblDeleteCdsCmd": {
+        "SendCheckCfeTblDeleteCdsCmd": {
             "description": "Send and check CFE_TBL_DELETE_CDS_CC",
             "varlist": [
                 "cfstgt",
@@ -449,7 +449,7 @@
                 }
             ]
         },
-        "SendCheckCfsTblAbortLoadCmd": {
+        "SendCheckCfeTblAbortLoadCmd": {
             "description": "Send and check CFE_TBL_ABORT_LOAD_CC",
             "varlist": [
                 "cfstgt",

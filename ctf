@@ -8,7 +8,7 @@ and generate test reports.
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -37,7 +37,7 @@ from lib.logger import logger as log, set_logger_options_from_config, change_log
 from lib.exceptions import CtfTestError
 
 CTF_VERSION = "v1.9"
-CTF_RELEASE_DATE = "Nov 20 2023"
+CTF_RELEASE_DATE = "Sep 12 2024"
 
 
 def main():
@@ -62,7 +62,7 @@ def main():
 
         # Load plugins and determine list of commands they support.
         log.info("cFS Test Framework ({}) Starting...".format(CTF_VERSION))
-        plugin_paths = ['plugins']
+        plugin_paths = []
         additional_plugins_path_str = Global.config.get("core", "additional_plugins_path", fallback="")
         additional_plugins_path_list = additional_plugins_path_str.split(',')
         for path in additional_plugins_path_list:
@@ -71,6 +71,7 @@ def main():
             additional_plugin_path = expand_path(path.strip())
             if additional_plugin_path:
                 plugin_paths.append(additional_plugin_path)
+        plugin_paths.append('plugins')
         log.info("Loading Plugins... with path: {}".format(plugin_paths))
         plugins = PluginManager(plugin_paths)
 

@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -26,7 +26,7 @@ from pathlib import Path
 import shutil
 
 from lib.ctf_global import Global
-from lib.ctf_utility import resolve_variable
+from lib.ctf_utility import resolve_variable, set_variable
 from lib.plugin_manager import Plugin, ArgTypes
 from lib.logger import logger as log
 
@@ -307,9 +307,10 @@ class ValidationPlugin(Plugin):
         return file_data
 
     @staticmethod
-    def check_str(file_data: str, search_str: str, is_regex: bool = False) -> bool:
+    def check_str(file_data: str, search_str: str, variable_name: str = None, is_regex: bool = False) -> bool:
         """
         Helper method: Check whether a given text string is in text data.
+        If variable_name is not None, assign the count of the given text string to the variable.
         @return bool: True, if text string is found; False otherwise.
         """
         status = False
@@ -318,8 +319,11 @@ class ValidationPlugin(Plugin):
                 log.info("String value {} Found by Regex".format(search_str))
                 status = True
         else:
-            if search_str in file_data:
-                log.info("String value {} Found".format(search_str))
+            cnt = file_data.count(search_str)
+            if cnt > 0:
+                log.info("String value {} Found {} times".format(search_str, cnt))
+                if variable_name is not None:
+                    set_variable(variable_name, "=", cnt, "int")
                 status = True
         return status
 
@@ -335,9 +339,11 @@ class ValidationPlugin(Plugin):
         return args
 
     @staticmethod
-    def search_txt_file(file: str, search_str: str, is_regex: bool = False, target: str = None) -> bool:
+    def search_txt_file(file: str, search_str: str, variable_name: str = None, is_regex: bool = False,
+                        target: str = None) -> bool:
         """
         Search a text file for a given text string.
+        If variable_name is provided, assign the count of the text string in file to the variable.
         @return bool: True, if text string is found; False otherwise.
         """
         file = resolve_variable(file)
@@ -349,7 +355,7 @@ class ValidationPlugin(Plugin):
         if not file_data:
             return False
 
-        status = ValidationPlugin.check_str(file_data, search_str, is_regex)
+        status = ValidationPlugin.check_str(file_data, search_str, variable_name, is_regex)
         if not status:
             log.error("String value {} not Found".format(search_str))
 
@@ -370,7 +376,7 @@ class ValidationPlugin(Plugin):
         if not file_data:
             return False
 
-        status = ValidationPlugin.check_str(file_data, search_str, is_regex)
+        status = ValidationPlugin.check_str(file_data, search_str, None, is_regex)
         if status:
             log.error("String value {} Found".format(search_str))
 

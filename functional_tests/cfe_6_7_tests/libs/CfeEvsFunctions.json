@@ -13,7 +13,7 @@
     "import": {},
     "functions": {
         "SendCheckCfeEvsNoopCmd": {
-            "description": "Send and check CFS_EVS_NOOP_CC",
+            "description": "Send and check CFE_EVS_NOOP_CC",
             "varlist": [
                 "cfstgt",
                 "expectedCmdCnt",
@@ -57,7 +57,7 @@
             ]
         },
         "SendCheckCfeEvsResetCmd": {
-            "description": "Send and check CFS_EVS_RESET_COUNTER_CC",
+            "description": "Send and check CFE_EVS_RESET_COUNTER_CC",
             "varlist": [
                 "cfstgt",
                 "expectedCmdCnt",

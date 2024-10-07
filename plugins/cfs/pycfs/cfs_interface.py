@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -281,7 +281,6 @@ class CfsInterface:
             "mid1": ["The last packet received with mid1"],
             "mid2": ["The last packet received with mid2"]
          }
-         }
         """
         mids_read = []
         while True:
@@ -500,10 +499,10 @@ class CfsInterface:
             if actual == expected:
                 check_status = equal
             else:
-                log.warning('String comparison failed, actual value:%s streq expected value: %s', actual, expected)
+                log.debug('String comparison failed, actual value:%s streq expected value: %s', actual, expected)
 
         else:  # if there was no string to compare
-            log.warning('String comparison failed, actual value:%s streq expected value: %s', actual, expected)
+            log.debug('String comparison failed, actual value:%s streq expected value: %s', actual, expected)
             check_status = False
 
         return check_status
@@ -589,7 +588,7 @@ class CfsInterface:
 
         return result
 
-    def clear_received_msgs_before_verification_start(self, mid):
+    def clear_received_msgs_before_verification_start(self, mid, backward=0):
         """
         Given a mid argument, iterate over all received packets.
         If packets' received time expires, clear the packets with matching mid.
@@ -600,9 +599,13 @@ class CfsInterface:
         if mid in [self.evs_long_event_msg_mid, self.evs_short_event_msg_mid]:
             start_time = Global.time_manager.exec_time - self.config.evs_messages_clear_after_time
         else:
-            start_time = Global.current_verification_start_time
-        log.debug("Clearing received packets for MID: {} before time = {}"
-                  .format(hex(mid), start_time))
+            if backward > 0.0:
+                start_time = Global.current_verification_start_time - backward
+            else:
+                start_time = Global.current_verification_start_time
+        log.debug(
+            "Clearing received packets for MID: {} before time = {} exec_time={} "
+            .format(hex(mid), start_time, Global.time_manager.exec_time))
         self.received_mid_packets_dic[mid] = [
             self.received_mid_packets_dic[mid][index]
             for index, i in enumerate(self.received_mid_packets_dic[mid])
@@ -610,7 +613,7 @@ class CfsInterface:
         ]
         return
 
-    def check_tlm_value(self, mid, args=None, discard_old_packets=True):
+    def check_tlm_value(self, mid, args=None, discard_old_packets=True, backward=0.0):
         """
          Given a mid and a arguments, iterate over all received packets since the start of the verification.
          Validate each packet until a success is seen, or there are no more packets to check.
@@ -628,7 +631,7 @@ class CfsInterface:
             check_tlm_result = False
 
         if Global.current_verification_stage == CtfVerificationStage.first_ver:
-            self.clear_received_msgs_before_verification_start(mid)
+            self.clear_received_msgs_before_verification_start(mid, backward)
 
         if check_tlm_result and len(self.received_mid_packets_dic[mid]) == 0:
             log.debug("No messages received between polling to check. MID = {}".format(hex(mid)))
@@ -659,7 +662,7 @@ class CfsInterface:
             self.received_mid_packets_dic[mid] = []
         return check_tlm_result
 
-    def get_tlm_value(self, mid: dict, tlm_variable: str, is_header: bool = False, tlm_args: list = None):
+    def get_tlm_value(self, mid: dict, tlm_variable: str, is_header: bool=False, tlm_args: list=None):
         """
         Given a mid and a tlm_variable, iterate over all received packets, and return the latest tlm value.
         """
@@ -702,6 +705,28 @@ class CfsInterface:
                 break
 
         return latest_tlm_value
+
+    def check_array_value(self, variable_array, expected_value, compare):
+        """
+        Based on the argument compare value, check array elements in argument variable_array with the expected value.
+        """
+        result = list()
+        for variable in variable_array:
+            log.debug("Check array element {} for value {} ".format(variable, expected_value))
+            if isinstance(expected_value, dict):
+                dic_check_result = list()
+                for dict_key, dict_value in expected_value.items():
+                    try:
+                        dict_var = ctf_utility.rgetattr(variable, dict_key)
+                    except (AttributeError, ValueError) as exception:
+                        dic_check_result.append(False)
+                        log.error("Failed to evaluate variable payload.{}: {}".format(variable, exception))
+                        break
+                    dic_check_result.append(self.check_value(dict_var, dict_value, compare, None, None))
+                result.append(all(dic_check_result))
+            else:
+                result.append(self.check_value(variable, expected_value, compare, None, None))
+        return any(result)
 
     def check_tlm_packet(self, payload, args, log_result=True):
         """
@@ -756,30 +781,41 @@ class CfsInterface:
                 log.debug("Bytes object {} is decoded to {}".format(actual, actual.decode()))
                 actual = actual.decode()
 
-            initial_result = self.check_value(actual, expected_value, arg["compare"], mask, mask_value)
-            arg_result = initial_result
+            # if the actual is an array type, loop through to compare with the expected_value and return the result
+            # Note (ctypes.c_char*N) is not ctypes.Array
+            if isinstance(actual, ctypes.Array):
+                # does not allow tolerance compare
+                tol_plus = None
+                tol_minus = None
+                array_cmp_result = self.check_array_value(actual, expected_value, arg["compare"])
+                arg_result = array_cmp_result
 
-            if tol_plus:
-                tol_plus_value = expected_value + tol_plus
-                tol_plus_result = self.check_value(actual, tol_plus_value, "<=", mask, mask_value)
-                tol_plus_result &= self.check_value(actual, expected_value, ">=", mask, mask_value)
-                arg_result |= tol_plus_result
+            else:  # the actual is a simple type
+                initial_result = self.check_value(actual, expected_value, arg["compare"], mask, mask_value)
+                arg_result = initial_result
 
-            if tol_minus:
-                tol_minus_value = expected_value - tol_minus
-                tol_minus_result = self.check_value(actual, tol_minus_value, ">=", mask, mask_value)
-                tol_minus_result &= self.check_value(actual, expected_value, "<=", mask, mask_value)
-                arg_result |= tol_minus_result
+                if tol_plus:
+                    tol_plus_value = expected_value + tol_plus
+                    tol_plus_result = self.check_value(actual, tol_plus_value, "<=", mask, mask_value)
+                    tol_plus_result &= self.check_value(actual, expected_value, ">=", mask, mask_value)
+                    arg_result |= tol_plus_result
+
+                if tol_minus:
+                    tol_minus_value = expected_value - tol_minus
+                    tol_minus_result = self.check_value(actual, tol_minus_value, ">=", mask, mask_value)
+                    tol_minus_result &= self.check_value(actual, expected_value, "<=", mask, mask_value)
+                    arg_result |= tol_minus_result
 
             if log_result:
                 if not arg_result:
-                    log.warning(
-                        'FAILED Intermediate Check - {}: Actual: {}, Expected: {}, Comparison: {}, Tol: +{}, -{}'
+                    log.debug(
+                        "FAILED Intermediate Check - {}: Actual: {}, Expected: {}, Comparison: {}, Tol: +{}, -{}"
                         .format(variable, actual, expected_value, arg["compare"], tol_plus, tol_minus))
                 else:
-                    log.info(
-                        'PASSED Intermediate Check - {}: Actual: {}, Expected: {}, Comparison: {}, Tol: +{}, -{}'
+                    log.debug(
+                        "PASSED Intermediate Check - {}: Actual: {}, Expected: {}, Comparison: {}, Tol: +{}, -{}"
                         .format(variable, actual, expected_value, arg["compare"], tol_plus, tol_minus))
+
             packet_passed = packet_passed and arg_result
 
         return packet_passed

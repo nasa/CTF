@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -162,6 +162,11 @@ class CfsPlugin(Plugin):
                 (self.check_tlm_packet, [ArgTypes.tlm_mid, ArgTypes.string]),
             # CheckTlmValue: Checks that a telemetry message has not been received
             # - mid: The telemetry message ID to check
+            # - target: (Optional) A previously registered target name, or empty for all registered targets
+            "ClearTlmPacket":
+                (self.clear_tlm_packet, [ArgTypes.tlm_mid, ArgTypes.string]),
+            # ClearTlmPacket: Clear all telemetry message in message buffer for a given MID
+            # - mid: The telemetry message ID to clear
             # - target: (Optional) A previously registered target name, or empty for all registered targets
             "CheckNoTlmPacket":
                 (self.check_no_tlm_packet, [ArgTypes.tlm_mid, ArgTypes.string]),
@@ -419,15 +424,16 @@ class CfsPlugin(Plugin):
 
         return all(status) if status else False
 
-    def check_tlm_value(self, mid: str, args: list, target: str = None) -> bool:
+    def check_tlm_value(self, mid: str, args: list, target: str = None, backward: float = 0) -> bool:
         """Implements the instruction CheckTlmValue."""
         if Global.current_verification_stage == CtfVerificationStage.first_ver:
-            log.info("CheckTlmValue: CFS Target: {}, MID {}, Args {}".format(target, mid, json.dumps(args)))
+            log.info("CheckTlmValue: CFS Target: {}, MID {}, Args {} Backward: {}".format(target, mid,
+                                                                                          json.dumps(args), backward))
 
         target = resolve_variable(target)
         # Collect the results of check_tlm_value on each specified target, and check that all passed
         copied_args = _resolve_tlm_args_values(args)
-        status = [t.check_tlm_value(mid, copied_args) for t in self.get_cfs_targets(target)]
+        status = [t.check_tlm_value(mid, copied_args, backward) for t in self.get_cfs_targets(target)]
 
         return all(status) if status else False
 
@@ -439,6 +445,13 @@ class CfsPlugin(Plugin):
         target = resolve_variable(target)
         # Collect the results of check_tlm_value on each specified target, and check that all passed
         status = [t.check_tlm_value(mid) for t in self.get_cfs_targets(target)]
+        return all(status) if status else False
+
+    def clear_tlm_packet(self, mid: str, target: str = None) -> bool:
+        """Implements the instruction ClearTlmPacket."""
+        target = resolve_variable(target)
+        # Collect the results of clear_tlm_packet on each specified target, and check that all passed
+        status = [t.clear_tlm_packet(mid) for t in self.get_cfs_targets(target)]
         return all(status) if status else False
 
     def check_no_tlm_packet(self, mid: str, target: str = None) -> bool:

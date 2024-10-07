@@ -21,6 +21,42 @@ in the `CTF Documentation` directory of the CTF releases' Assets (https://github
  
 ## Release Notes
 
+### v1.9 
+09/12/2024
+* CTF Core Changes
+    * Update plugins loading sequence for customized plugins to override test instructions.
+    
+    * Minor improvements and bug fixes.
+
+* CTF Plugins Changes
+    
+    * Updates to CFS Plugin
+        * Add a new instruction `ClearTlmPacket` to clear received tlm messages of given MID for test verification.
+  
+        * Allow `CheckTlmValue` instruction to search tlm value in attribute array. 
+
+        * Fix the issue of `CheckEvent` taking too long to time out when receiving overwhelmingly large numbers of tlm messages.
+
+        * Add a `backward` optional argument for `CheckTlmValue` instruction to search telemetry messages received before this instruction execution.
+
+        * Add a new feature for `SendCfsCommand` instruction to resolve the macros defined by any registered cfs targets and the macros in the header attributes.
+        
+        * Add a new feature to allow setting the CPU affinity of Linux targets by taskset command.   
+
+    * Updates to Variable Plugin
+        * Make explicit type conversion for CCDD Macro/Const to avoid log warnings.
+
+        * Add an option argument to count the occurrence of a string in file for `SearchStr` instruction.
+                 
+
+* CTF Tool and Scripts Changes
+    * Update requirement.txt.
+
+    * Remove sample_cfs_workspace submodule from repository.
+    
+    * Improve CTF tests scripts. 
+    
+
 ### v1.8.2 
 11/20/2023
 
@@ -467,7 +503,7 @@ Existing users should review the change logs below and ensure current configurat
         * Note - Give the custom plugin directory a unique name (do not use `plugins`, `lib`, etc...), so as to not shadow any modules within the CTF repo.
     
     * Add an option to ignore specific CTF instructions within the configuration file. This is useful for CI or specific-configurations that may not have the ability to run certain instructions.
-        * Add the `ignored_instructions = <instruction_1>, <instruction_2>, ...` field to the config ini. Specify the instructions to ignore (comma-seperated).
+        * Add the `ignored_instructions = <instruction_1>, <instruction_2>, ...` field to the config ini. Specify the instructions to ignore (comma-separated).
     
     * Minor improvements and bug-fixes.
         
@@ -678,7 +714,7 @@ Major backend updates to improve reliability/maintainability of CTF.
 
 MSC-26646-1, "Core Flight System Test Framework (CTF)"
 
-Copyright (c) 2019-2023 United States Government as represented by the
+Copyright (c) 2019-2024 United States Government as represented by the
 Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 
 This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,

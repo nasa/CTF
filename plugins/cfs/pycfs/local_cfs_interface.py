@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -80,15 +80,18 @@ class LocalCfsInterface(CfsInterface):
         # define build-in variable for CFS stdout folder
         cfs_std_output_file = "_CTF_"+self.config.name.upper()+"_CFS_OUTPUT_FILE"
         set_variable(cfs_std_output_file, "=", self.cfs_std_out_path, "string")
+        prepend_arg = ""
+        if self.config.prepend_arg:
+            prepend_arg = self.config.prepend_arg + " "
 
         # ENHANCE - Test use of debug when running embedded
         if not self.config.cfs_run_in_xterm or find_executable('xterm') is None:
-            start_string = "./{} >> {} 2>&1".format(target, self.cfs_std_out_path)
+            start_string = "{}./{} >> {} 2>&1".format(prepend_arg, target, self.cfs_std_out_path)
             if self.config.cfs_run_in_xterm:
                 log.error("Dependency 'xterm' not found. Attempting to run in an embedded terminal window instead.")
         else:
-            start_string = "xterm -T {} -l -geometry 130X24+800+0 -e \"script -c \'{} ./{}\' -q -f {}\"" \
-                .format(self.config.cfs_exe, debug, target, self.cfs_std_out_path)
+            start_string = "xterm -T {} -l -geometry 130X24+800+0 -e \"script -c \'{} {}./{}\' -q -f {}\"" \
+                .format(self.config.cfs_exe, debug, prepend_arg, target, self.cfs_std_out_path)
         log.info("Starting CFS with command: {}".format(start_string))
         return start_string
 
@@ -111,7 +114,6 @@ class LocalCfsInterface(CfsInterface):
 
                 # Send process output to both console and log file
                 for line in proc.stdout:
-                    print(line, end='')
                     buf.write(line)
                 build_log.write(buf.getvalue())
 

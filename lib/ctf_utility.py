@@ -5,7 +5,7 @@ Utility library functions
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -52,7 +52,9 @@ type_map = {
     "int": int,
     "float": float,
     "string": str,
-    "boolean": bool
+    "boolean": bool,
+    "list": list,
+    "dict": dict
 }
 
 MACRO_MARKER = '#'
@@ -113,7 +115,7 @@ def set_variable(variable_name, op_code, value, variable_type=None):
             if variable_type in type_map:
                 try:
                     value = type_map[variable_type](value)
-                except ValueError:
+                except (ValueError, TypeError):
                     log.error("Unable to convert value {} to type {}".format(value, variable_type))
                     return False
             else:

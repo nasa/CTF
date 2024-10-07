@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -89,7 +89,6 @@ def test_ccsds_plugin_validate_cfs_ccsds_data(ccsds_plugin_instance, cfs_plugin_
     """
     with patch('plugins.cfs.pycfs.cfs_controllers.LocalCfsInterface'):
         if Global.get_time_manager() is None:
-            print("Global.get_time_manager() is None:")
             cfs_plugin_instance.initialize()
 
         Global.plugins_available = {"CFS Plugin": cfs_plugin_instance}

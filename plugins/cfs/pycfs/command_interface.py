@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -128,8 +128,8 @@ class CommandInterface:
         try:
             # Note - command bytes are logged by the send_cfs_command in DEBUG
             bytessent = self.command_socket.sendto(to_send, (self.ip_address, self.port))
-        except socket.error as msg:
-            print(msg)
+        except socket.error:
+            log.error("Command socket exception: close and re-init socket")
             self.command_socket.close()
             self.init_socket()
             bytessent = 0

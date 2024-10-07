@@ -14,5 +14,5 @@
     "pluginDir": "../../plugins/info/",
 
     "ccddJsonDir_notes": "CCDD JSON Dir - Directory containing JSON CCSDS files exported from CCDD. Used by the editor for autosuggestion features",
-    "ccddJsonDir": "../../../../ccdd/json/"
+    "ccddJsonDir": "../../../../sample_cfs_workspace/ccdd/json/"
 }

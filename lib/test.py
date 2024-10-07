@@ -5,7 +5,7 @@ Represents a single CTF test within a script
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -137,7 +137,10 @@ class Test:
         self.status_manager.update_command_status(StatusDefs.active, "Waiting for verification", index=command_index)
         num_verify = int(timeout / self.ctf_verification_poll_period) + 1
         verified = False
+        verification_start_time = time.time()
+
         for i in range(num_verify):
+            log.info("Executing {}th verification of the command {}".format(i+1, command))
             plugin_to_use = Global.plugin_manager.find_plugin_for_command(instruction)
             if plugin_to_use is not None:
                 if i == 0:
@@ -157,6 +160,9 @@ class Test:
                     break
                 if verified:
                     break
+            # In case CTF is over-loaded, use system time to break the loop
+            if (time.time() - verification_start_time) > (timeout+1):
+                break
             try:
                 self.process_verification_delay()
             except CtfConditionError as exception:
@@ -199,6 +205,7 @@ class Test:
         """
         Run all CTF Instructions in the current test
         """
+        # pylint: disable=too-many-statements
         if len(self.instructions) == 0:
             log.error("Invalid Test: {}. Check that the script has been parsed correctly.."
                       .format(self.test_info.get("test_number", "")))
@@ -210,6 +217,7 @@ class Test:
             log.error("No test instructions to execute.")
             return
 
+        prev_instruction = None
         while True:
             i = self.instructions[self.current_instruction_index]
             # get command information
@@ -230,6 +238,7 @@ class Test:
                 self.current_instruction_index += 1
                 if self.current_instruction_index >= len(self.instructions):
                     break
+                dummy = 0  # Needed for coverage to detect the following continue statement
                 continue
 
             if instruction in self.ignored_instructions:
@@ -259,9 +268,16 @@ class Test:
                 log.error("Unknown Error Processing Command Delay & Pre-Command: {}".format(exception))
                 raise CtfTestError("Unknown Error Processing Command Delay & Pre-Command") from exception
 
-            # Only keep ver start time if next commands wait > 0
+            # reset_ver_start_time only applies to tlm check (to clear stale messages)
+            continuous_check_tlm = False
+            if prev_instruction and prev_instruction.command['instruction'] == instruction and instruction in \
+                    ['CheckTlmValue', 'CheckTlmPacket', 'CheckNoTlmPacket'] and \
+                    i.command['data']['mid'] == prev_instruction.command['data']['mid']:
+                continuous_check_tlm = True
+
             reset_ver_start_time = True
-            if i.delay == 0.0:
+            # Not to clear received tlm messages if 'wait' == 0 and the last instruction check the same tlm MID's value
+            if i.delay == 0.0 and continuous_check_tlm:
                 reset_ver_start_time = False
 
             if instruction in self.verify_required_commands:
@@ -274,6 +290,7 @@ class Test:
             else:
                 instruction_result = self.execute_instruction(i.command, self.current_instruction_index)
 
+            prev_instruction = i
             try:
                 Global.time_manager.post_command()
             except CtfTestError as exception:
@@ -392,7 +409,7 @@ class Test:
                 self.__check_label_def('BeginLoop', event, False, Global.label_map)
                 label = event.command['data']['label']
                 Global.label_map[label] = {"condition_eval": None, "beginloop_index": event.command_index,
-                                                        "endloop_index": None }
+                                           "endloop_index": None}
                 label_stack.append(label)
 
             if event.command['instruction'] == 'EndLoop':

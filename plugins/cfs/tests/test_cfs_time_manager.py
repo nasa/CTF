@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -54,7 +54,7 @@ def test_wait(mock_handle, mock_post, mock_pre, time_mgr):
         wait_time = 1.25
         time_mgr.wait(wait_time)
         # wait will take seconds / poll period cycles rounded up
-        cycles = -(- wait_time // time_mgr.ctf_verification_poll_period)
+        cycles = -(-wait_time // time_mgr.ctf_verification_poll_period)
         assert mock_pre.call_count == cycles
         assert mock_post.call_count == cycles
         assert mock_sleep.call_count == cycles
@@ -70,7 +70,7 @@ def test_wait_exception(mock_handle, mock_pre, time_mgr):
         mock_post_command.side_effect = CtfTestError('Mock post_command call')
         time_mgr.wait(wait_time)
     # wait will take seconds / poll period cycles rounded up
-    cycles = -(- wait_time // time_mgr.ctf_verification_poll_period)
+    cycles = -(-wait_time // time_mgr.ctf_verification_poll_period)
     assert mock_pre.call_count == cycles
     assert time_mgr.exec_time == cycles * time_mgr.ctf_verification_poll_period
 
@@ -106,6 +106,12 @@ def test_pre_command(time_mgr):
     time_mgr.pre_command()
     [target.cfs.read_sb_packets.assert_called_once() for target in time_mgr.cfs_targets.values()]
     [target.cfs.check_tlm_conditions.assert_called_once() for target in time_mgr.cfs_targets.values()]
+
+
+def test_pre_command_target_not_connected(time_mgr, utils):
+    time_mgr.cfs_targets['mock'].cfs = None
+    time_mgr.pre_command()
+    assert utils.has_log_level("DEBUG")
 
 
 def test_run_continuous_verifications(time_mgr):

@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -99,6 +99,22 @@ def test_ccsds_v1_cmd_packet_get_function_code(ccsds_v1_cmd_packet):
     ccsds_v1_cmd_packet.set_function_code(10)
     assert ccsds_v1_cmd_packet.get_function_code() == 10
     assert ccsds_v1_cmd_packet.validate(bytearray([1, 2, 3, 4]))
+
+
+def test_ccsds_v1_cmd_packet_validate(ccsds_v1_cmd_packet):
+    """
+    Test CcsdsV1CmdPacket method: get_function_code
+    Packet validation is not supported in open source release
+    """
+    assert ccsds_v1_cmd_packet.validate(None)
+
+
+def test_ccsds_v1_cmd_packet_get_crc_flag(ccsds_v1_cmd_packet):
+    """
+    Test CcsdsV1CmdPacket method: get_function_code
+    Get the header crc flag: CRC is not supported in open source release CcsdsV1Packet
+    """
+    assert ccsds_v1_cmd_packet.get_crc_flag() == 0
 
 
 def test_ccsds_v1_tel_get_timestamp_seconds(ccsds_v1_tel_packet):

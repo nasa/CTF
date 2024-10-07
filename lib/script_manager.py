@@ -5,7 +5,7 @@ Loads and manages test scripts during a test run
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -109,12 +109,13 @@ class ScriptManager:
             test_count = 1
             wait_time = Global.config.getfloat("core", "delay_between_scripts", fallback=1.0)
 
-            for script in self.script_list:
+            for i, script in enumerate(self.script_list):
                 # Create directory to log each script output
                 logs_dirname = Global.test_log_dir + "/logs/" + script.input_file + script.params
                 current_time = time.time()
                 self.curr_script_log_dir_path = str("%0s_%0d" % (logs_dirname, current_time))
                 Global.current_script_log_dir = self.curr_script_log_dir_path
+                log.info("Ready to run test script {}".format(script.input_file))
 
                 if self.config.reset_plugins_between_scripts and test_count > 1:
                     # Re-initialize to re-run plugin __init__ function (constructor)
@@ -129,7 +130,6 @@ class ScriptManager:
 
                 # update build-in variable
                 ctf_utility.set_variable("_CTF_LOG_DIR", "=", self.curr_script_log_dir_path, "string")
-
                 try:
                     script.run_script(self.status_manager)
                 except CtfTestError:
@@ -177,10 +177,12 @@ class ScriptManager:
                     # Revert logging back to CTF main log
                     change_log_file(Global.CTF_log_dir_file)
                 except Exception as ex:
+# Cannot be reached - change_log_file does not throw an exception, even with an invalid log path/file
                     log.warning("Failed to revert logging to CTF. Does {} still exist?".format(Global.CTF_log_dir_file))
                     raise CtfTestError("Error in run_all_scripts") from ex
 
-                log.info("Test execution complete. Waiting {} seconds for plugins to clean up...".format(wait_time))
+                prompt_str = "to run the next test" if i < (len(self.script_list) - 1) else "to clean up plugins"
+                log.info("Test execution complete. Waiting {} seconds {} ...".format(wait_time, prompt_str))
                 Global.time_manager.wait(wait_time)
 
             if not self.config.reset_plugins_between_scripts:

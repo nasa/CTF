@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -81,6 +81,15 @@ def test_ccsdspacketinterface_get_function_code(packet_interface):
         packet_interface.get_function_code()
 
 
+def test_ccsdspacketinterface_validate(packet_interface):
+    """
+    Test CcsdsPacketInterface class method: validate
+    Convenience method to validate packet
+    """
+    with pytest.raises(NotImplementedError):
+        packet_interface.validate(None)
+
+
 def test_ccsdspacketinterface_get_sequence_count(packet_interface):
     """
     Test CcsdsPacketInterface class method: get_sequence_count
@@ -154,7 +163,6 @@ def test_ccsds_packet_interface_import_ccsds_header_types_class_attributes():
     assert import_ccsds_header_types() is None
 
     ccsds_primary_header = getattr(sys.modules['ccsds_v2'], "CcsdsPrimaryHeader")
-    print("in test ccsds_primary_header=", ccsds_primary_header)
     setattr(ccsds_primary_header, 'is_command', None)
     assert import_ccsds_header_types() is None
 

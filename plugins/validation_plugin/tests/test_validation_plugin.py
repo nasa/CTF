@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -109,6 +109,29 @@ def test_validation_plugin_save_file_as_text_fail(validation_plugin, utils):
     assert not validation_plugin.save_file_as_text('file_not_exist.bin', 'file_not_exist.txt', 'EVS')
     assert not validation_plugin.save_file_as_text('./ctf', 'file_not_exist.txt', 'EVS')
     assert utils.has_log_level("ERROR")
+
+
+def test_check_str_set_variable(validation_plugin):
+    var_name = 'variableName'
+    Global.variable_store[var_name] = None
+    assert validation_plugin.check_str(file_data='aabbccddeeff', search_str='e', variable_name=var_name, is_regex=False)
+    assert Global.variable_store[var_name] is not None
+
+
+def test_resolve_macros_target_not_available(validation_plugin):
+    from plugins.cfs.pycfs.cfs_controllers import CfsController
+    assert validation_plugin._resolve_macros(args='abc', target="TEST") == 'abc'
+
+
+def test_resolve_macros_target_available(validation_plugin):
+    from plugins.cfs.pycfs.cfs_controllers import CfsController
+    from plugins.cfs.cfs_config import CfsConfig
+    cfs_controller = CfsController(CfsConfig("cfs"))
+    my_target = 'TEST'
+    my_args = my_target + '::#ARGS#'
+    cfs_controller.macro_map = {'ARGS': 123}
+    Global.plugins_available['CFS Plugin'].targets[my_target] = cfs_controller
+    assert validation_plugin._resolve_macros(args=my_args, target=my_target) == '123'
 
 
 def test_validation_plugin_search_txt_file(validation_plugin, utils):

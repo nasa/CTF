@@ -5,7 +5,7 @@ FTP interface for CTF
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -250,7 +250,11 @@ class FtpInterface:
                         except OSError:
                             try:
                                 log.debug("Creating local directory {}...".format(remotefile))
+### The path can have multiple levels; mkdir can only create one, so it fails if the parent levels don't exist.
+### makedirs() will create any needed parent levels, but test test_ftp_interface_download_ftp_folder() goes
+### into a loop creating the provided path within itself until a maximum level depth is reached, then it crashes
                                 os.mkdir(remotefile)
+#                                os.makedirs(remotefile)  ### creates the intermediate paths as well,
                                 os.chdir(remotefile)
                             except OSError:
                                 log.error("Creating local directory failed {}...".format(remotefile))

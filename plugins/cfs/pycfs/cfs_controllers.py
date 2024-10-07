@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -11,7 +11,6 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
-
 """
 cfs_controllers.py: CFS Controller Implementation for CTF.
 
@@ -49,6 +48,54 @@ from plugins.cfs.pycfs.remote_cfs_interface import RemoteCfsInterface
 
 MACRO_MARKER = '#'
 
+# pylint: disable=too-many-lines
+
+def merge_ccsds_dictionaries(name, pri, sec):
+    """
+    Merge the contents of two CCSDS data dictionaries. If a key in the secondary dictionary is
+    not present in the primary dictionary then the secondary dictionary key:value pair is added
+    to the primary dictionary. If a key exists in both dictionaries then the values are compared.
+    If the values are the same then the duplicate entry is not added to the primary dictionary.
+    If the values differ then a mismatch error is logged
+
+    @param name: Name of the dictionary being merged
+    @param pri: The primary dictionary, into which the other dictionary's contents will be merged
+    @param sec: The dictionary that is to be merged into the primary dictionary
+    """
+    is_error = False
+
+    for sec_key in sec.keys():
+        is_new = True
+
+        for pri_key in pri.keys():
+            # A matching key exists in both dictionaries
+            if pri_key == sec_key and sec.get(sec_key):
+                is_new = False
+
+                # The types created by the CCDDExportReader have 'ccdd_export_reader' embedded
+                # in the class path, whereas the class types created by the SEDSReader have
+                # 'seds_reader' embedded in the class path. In order to perform a comparison
+                # the class paths are altered by changing all instances of 'ccdd_export' to
+                # 'seds'
+                sec_value = str(sec[sec_key]).replace('ccdd_export', 'seds')
+
+                # If the values match then this is a duplicate key:value pair; ignore it
+                if str(pri[pri_key]) == sec_value:
+                    break
+
+                # The keys match, but the values differ; this is an error condition
+                log.error("Dictionary {}: key '{}' values do not match: '{}' != '{}'"
+                          .format(name, pri_key, pri[pri_key], sec[sec_key]))
+                is_error = True
+                break
+
+        # No matching key was found in the primary dictionary. Add the secondary dictionary
+        # key:value pair to the primary dictionary
+        if is_new:
+            pri[sec_key] = sec[sec_key]
+
+    return is_error
+
 
 class CfsController:
     """
@@ -64,6 +111,8 @@ class CfsController:
     @note Controller manages cFS process, and will shutdown the target at the end of the test script or on
          ShutdownCfs instruction.
     """
+
+    # pylint: disable=too-many-public-methods
 
     def __init__(self, config):
         """
@@ -176,8 +225,8 @@ class CfsController:
         log.info("Enabling CFS output on {}".format(self.config.name))
         return self.cfs.enable_output()
 
-    def send_raw_cfs_command(self, mid: str, cc: str, buffer: str, header_args: dict = None,
-                             payload_length: int = None) -> bool:
+    def send_raw_cfs_command(self, mid: str, cc: str, buffer: str, header_args: dict=None,
+                             payload_length: int=None) -> bool:
         """
         Implementation of the CFS plugin instruction send_raw_cfs_command. Serializes a hex string directly to bytes for
         the command payload, regardless of the data type in the MID map.
@@ -246,7 +295,7 @@ class CfsController:
 
     # noinspection PyProtectedMember
     def send_cfs_command(self, mid: str, cc: str, args: dict,
-                         header_args: dict = None, payload_length: dict = None, ctype_args: bool = False) -> bool:
+                         header_args: dict=None, payload_length: dict=None, ctype_args: bool=False) -> bool:
         """
         Implementation of CFS plugin instructions send_cfs_command.  When CFS plugin instructions
         (send_cfs_command) is executed, it calls one or more CfsController instance's send_cfs_command function.
@@ -279,6 +328,13 @@ class CfsController:
 
         arg_data = self.build_command_payload(mid_name, cc_name, args, payload_length, ctype_args)
         log.debug("Sending bytes: {}".format(arg_data))
+
+        # Resolve macros in header args - NEW
+        if header_args is not None and isinstance(header_args, dict):
+            for key, value in header_args.items():
+                value = self.resolve_macros(value)
+                if str(value).isnumeric():
+                    header_args[key] = int(value)
         result = self.cfs.send_command(mid, cc, arg_data, header_args)
 
         if not result:
@@ -286,7 +342,7 @@ class CfsController:
         return result
 
     def build_command_payload(self, mid_name: str, cc_name: str, args: dict,
-                              payload_length: int = None, ctype_args: bool = False) -> bytes:
+                              payload_length: int=None, ctype_args: bool=False) -> bytes:
         """
         Implements the building of a CFS command payload by converting args into ctypes and then encoding into bytes.
         @note mid_name and cc_name must be keys in the mid_map. Validate before calling this method.
@@ -295,7 +351,7 @@ class CfsController:
         # pylint: disable=invalid-name, protected-access
 
         mid_dict = self.mid_map[mid_name]
-        arg_class = mid_dict['CC'][cc_name]['ARG_CLASS']
+        arg_class = mid_dict['CC'][cc_name].get('ARG_CLASS')
         arg_size = 0
 
         # If we are passing ctypes arguments from the MID map internally,
@@ -333,7 +389,12 @@ class CfsController:
             if isinstance(args, list) and len(args) == 0:
                 args = {}
             if isinstance(args, dict):
-                args = self.resolve_args_from_dict(args, arg_class)
+                if isinstance(arg_class, list):
+                    for cls in arg_class:
+                        if isinstance(args, dict):
+                            args = self.resolve_args_from_dict(args, cls)
+                else:
+                    args = self.resolve_args_from_dict(args, arg_class)
             else:
                 assert len(arg_class._fields_) == 1, 'Raw values can only be used for types with a single field'
                 args = arg_class(self.resolve_simple_type(args, arg_class._fields_[0][1]))
@@ -389,6 +450,7 @@ class CfsController:
                 for j in range(field_length // my_size):
                     if j < len(field_val):
                         if isinstance(field_val, str):
+### Possible unreachable code; field_val is a ctypes.c_char
                             field_val = field_val.encode()
                         buf[byte_offset:byte_offset + my_size] = bytes(my_type(field_val[j]))
                     else:
@@ -420,6 +482,7 @@ class CfsController:
                 bit_offset += bit_width
                 if bit_offset >= field_length * 8:  # reached end of this bitfield, advancing to next field
                     if bit_offset > field_length * 8:
+### Unable to reach this line of code
                         log.error("Bit misalignment detected! Check bitfield positions for type {}"
                                   .format(type(arg_val).__name__))
                     byte_offset += field_length
@@ -449,11 +512,21 @@ class CfsController:
         Implementation of helper function resolve_macros.
         search macro_map to convert arg to string.
         """
+        macro_map = self.macro_map
+        if isinstance(arg, str) and "::" in arg:
+            target, arg = arg.split("::", 1)
+            log.debug("Referred to the macro defined for target {} as {}".format(target, arg))
+            if target in Global.plugins_available['CFS Plugin'].targets:
+                cfs_controller = Global.plugins_available['CFS Plugin'].targets[target]
+                macro_map = cfs_controller.macro_map
+            else:
+                raise CtfParameterError("No registered cfs target '{}' in referred macro resolve".format(target), arg)
+
         if isinstance(arg, str):
             while arg.count(MACRO_MARKER) > 1:
                 macro = arg.split(MACRO_MARKER, 1)[1].split(MACRO_MARKER, 1)[0]
-                if macro in self.macro_map:
-                    arg = arg.replace("{0}{1}{0}".format(MACRO_MARKER, macro), str(self.macro_map[macro]))
+                if macro in macro_map:
+                    arg = arg.replace("{0}{1}{0}".format(MACRO_MARKER, macro), str(macro_map[macro]))
                 else:
                     raise CtfParameterError("Unknown macro '{}' in arg {}. Use format #MACRO#".format(macro, arg), arg)
         return arg
@@ -559,7 +632,7 @@ class CfsController:
                 return field[1]
         raise CtfParameterError("No field {} in {}".format(name, args_class.__name__), name)
 
-    def check_tlm_value(self, mid, args=None):
+    def check_tlm_value(self, mid, args=None, backward=0):
         """
         Implementation of CFS plugin instructions check_tlm_value. When CFS plugin instructions (check_tlm_value)
         is executed, it calls CfsController instance's check_tlm_value function.
@@ -579,14 +652,34 @@ class CfsController:
                 return False
 
         args = self.convert_check_tlm_args(args) if args else None
-        result = self.cfs.check_tlm_value(mid, args)
+        # As .cfs.clear_received_msgs_before_verification_start in .cfs.check_tlm_value func clears stale packets,
+        # there is no need to clear buffer again after the verification by setting discard_old_packets to True
+        result = self.cfs.check_tlm_value(mid, args, discard_old_packets=False, backward=backward)
 
         if result:
             log.info("PASSED Final Check for MID:{}, Args:{}".format(mid, args))
 
         return result
 
-    def get_tlm_value(self, mid: str, tlm_variable: str, is_header: bool = False, tlm_args: list = None) -> any:
+    def clear_tlm_packet(self, mid):
+        """
+        Implementation of CFS plugin instruction ClearTlmPacket. When CFS plugin instruction (ClearTlmPacket)
+        is executed, it calls CfsController instance's clear_tlm_packet function.
+        """
+        mid = self.validate_mid_value(mid)
+        if mid is None:
+            log.error("MID {} not in the mid_map.".format(mid))
+            return False
+
+        mid = self.mid_map[mid]
+        mid_value = mid["MID"]
+        if mid_value not in self.cfs.received_mid_packets_dic:
+            log.error("MID {} not in the cfs controller's mid dictionary.".format(mid_value))
+            return False
+        self.cfs.received_mid_packets_dic[mid_value] = []
+        return True
+
+    def get_tlm_value(self, mid: str, tlm_variable: str, is_header: bool=False, tlm_args: list=None) -> any:
         """
         Implementation of CFS plugin instructions get_tlm_value. When CFS plugin method (get_tlm_value)
         is executed, it calls CfsController instance's get_tlm_value function.
@@ -684,6 +777,9 @@ class CfsController:
         log.debug("event_str is resolved to {}".format(event_str))
         if not str(event_id).isnumeric():
             event_id = self.resolve_macros(event_id)
+            # resolve_macros converts int type to str type, as event_id is int, need to convert it back
+            # assumes that event_id is either in format '123' or '0x12a', not '12a'
+            event_id = int(event_id, 0)
 
         # ENHANCE - Should use the mid_map and EVS event name to determine these...
         # These are the values that will be used to look through the telemetry packets
@@ -698,6 +794,8 @@ class CfsController:
             log.info("Received EVS_ShortEventTlm_t. Ignoring 'Message' field...")
         else:
             if event_str:
+                log.debug("No EVS_ShortEventTlm_t ({}) matched, going to check EVS_LongEventTlm_t ({})".
+                          format(self.cfs.evs_short_event_msg_mid, self.cfs.evs_long_event_msg_mid))
                 compare = "regex" if is_regex else "streq"
                 args.append({"compare": compare, "variable": "Payload.Message", "value": event_str})
                 result = self.cfs.check_tlm_value(self.cfs.evs_long_event_msg_mid, args, discard_old_packets=False)

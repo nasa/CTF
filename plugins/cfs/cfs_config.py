@@ -7,7 +7,7 @@ cfs_config.py: CFS Plugin Config for CTF.
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -53,10 +53,13 @@ class CfsConfig:
         self.build_cfs = None
         self.ccsds_data_dir = None
         self.ccsds_target = None
+        self.telemetry_header_struct_type = None
+        self.command_header_struct_type = None
         self.log_ccsds_imports = None
         self.cfs_build_dir = None
         self.cfs_build_cmd = None
         self.cfs_run_dir = None
+        self.prepend_arg = None
         self.cfs_port_arg = None
         self.cfs_exe = None
         self.cfs_run_args = None
@@ -107,7 +110,7 @@ class CfsConfig:
     def load_optional_field(self, section, field_name, config_getter, default_value=None, validate_function=None):
         """
         Interpret field attribute of loaded CFS target config section. If not found, return default_value.
-        @param section: loaded Json CFS target section.
+        @param section: loaded JSON or SEDS CFS target section.
         @param field_name: the field name for loaded attribute.
         @param config_getter: the function to get an option value for a given section.
         @param default_value: the default value for loaded attribute, if not found.
@@ -121,7 +124,7 @@ class CfsConfig:
             value = config_getter("cfs", field_name, fallback=None)
         if value is None:
             log.info("Config Value {}:{} does not exist or is not the right type. "
-                     "Use default value: {}".format(section, field_name, default_value ))
+                     "Use default value: {}".format(section, field_name, default_value))
             value = default_value
         if validate_function is not None and value is not None:
             try:
@@ -134,7 +137,7 @@ class CfsConfig:
     def load_field(self, section, field_name, config_getter, validate_function=None):
         """
         Interpret field attribute of loaded CFS target config section. If not found, the test instruction fails.
-        @param section: loaded Json CFS target section.
+        @param section: loaded JSON or SEDS CFS target section.
         @param field_name: the field name for loaded attribute.
         @param config_getter: the function to get an option value for a given section.
         @param validate_function: the function to validate the field attribute (Optional).
@@ -150,7 +153,7 @@ class CfsConfig:
         """
         From loaded sections of INI config, interpret CFS target config attributes, including
         build_cfs, CCSDS_data_dir, CCSDS_target, etc.
-        @param section_name: loaded Json CFS target section.
+        @param section_name: loaded JSON or SEDS CFS target section.
         @return None
         """
         if section_name in self.sections:
@@ -161,6 +164,14 @@ class CfsConfig:
                                                   self.validation.validate_directory)
 
             self.ccsds_target = self.load_field(section_name, "CCSDS_target", Global.config.get)
+
+            self.telemetry_header_struct_type = self.load_optional_field(section_name,
+                                                                         "telemetry_header_struct_type",
+                                                                         Global.config.get)
+
+            self.command_header_struct_type = self.load_optional_field(section_name,
+                                                                       "command_header_struct_type",
+                                                                       Global.config.get)
 
             self.log_ccsds_imports = self.load_field(section_name, "log_ccsds_imports", Global.config.getboolean,
                                                      self.validation.validate_boolean)
@@ -175,6 +186,8 @@ class CfsConfig:
 
             self.cfs_port_arg = self.load_field(section_name, "cfs_port_arg", Global.config.getboolean,
                                                 self.validation.validate_boolean)
+
+            self.prepend_arg = self.load_optional_field(section_name, "prepend_arg", Global.config.get, "")
 
             self.cfs_exe = self.load_field(section_name, "cfs_exe", Global.config.get)
             self.validation.validate_file(os.path.join(self.cfs_run_dir, self.cfs_exe))
@@ -235,7 +248,7 @@ class CfsConfig:
             log.warning("No CFS configuration defined for {}".format(section_name))
             self.validation.add_error("section {}".format(section_name))
 
-        self.csv_tlm_log = self.load_optional_field("logging", "csv_tlm_log", Global.config.getboolean,False,
+        self.csv_tlm_log = self.load_optional_field("logging", "csv_tlm_log", Global.config.getboolean, False,
                                                     self.validation.validate_boolean)
 
         self.send_keepalive_msg = self.load_optional_field(section_name, "send_keepalive_msg", Global.config.getboolean,
@@ -294,7 +307,7 @@ class RemoteCfsConfig(CfsConfig):
         """
         From loaded sections of INI config, interpret CFS target config attributes, including
         build_cfs, CCSDS_data_dir, CCSDS_target, etc.
-        @param section_name: loaded Json CFS target section.
+        @param section_name: loaded JSON or SEDS CFS target section.
         @return None
         """
         super().load_config_data(section_name)

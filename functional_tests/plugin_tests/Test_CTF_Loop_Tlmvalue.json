@@ -170,10 +170,11 @@
                     "instruction": "SendCfsCommand",
                     "data": {
                         "target": "tgt1",
-                        "mid": "TO_SEND_HK_MID",
-                        "cc": "",
-                        "args": []
-                    }
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_NOOP_CC",
+                        "args": {}
+                    },
+                    "wait": 1
                 },
                 {
                     "instruction": "EndLoop",

@@ -6,7 +6,7 @@ Unit Test for JSONScriptReader class: Loads and validates input CTF test scripts
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -298,7 +298,6 @@ def test_json_script_reader_process_tests_no_wait():
     """
     input_script_path = 'functional_tests/cfe_6_7_tests/cfe_tests/CfeEsTest.json'
     reader = JSONScriptReader(input_script_path)
-    print(reader.raw_data['tests'][0]['instructions'])
     reader.raw_data['tests'][0]['instructions'][4].pop('wait')
     assert reader.process_tests() is None
 

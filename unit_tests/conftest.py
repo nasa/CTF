@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -24,7 +24,7 @@ from plugins.cfs.cfs_plugin import CfsPlugin
 
 def pytest_addoption(parser):
     parser.addoption(
-        "--workspace", action="store", default="open_source", help="my option: open_source or gateway"
+        "--workspace", action="store", default="gateway", help="my option: open_source or gateway"
     )
 
 

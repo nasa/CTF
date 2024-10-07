@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -167,6 +167,17 @@ def test_ctf_utility_set_variable_exception(utils):
 
     assert ctf_utility.set_variable('var_1', '=', '1.0', 'float')
     assert not ctf_utility.set_variable('var_1', '+', 's1.0', 'float')
+
+
+
+
+    utils.clear_log()
+    assert not ctf_utility.set_variable('var_1', '=', '1.0', 'unknown')
+    assert utils.has_log_level('ERROR')
+
+
+
+
     Global.variable_store.clear()
 
 

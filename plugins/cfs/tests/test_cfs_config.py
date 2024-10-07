@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -29,7 +29,7 @@ def test_cfs_config_init(cfs_config):
     assert cfs_config.name == "cfs"
     assert cfs_config.cfs_protocol == "local"
     assert cfs_config.build_cfs is True
-    assert cfs_config.ccsds_data_dir == os.path.expanduser("~/sample_cfs_workspace/ccdd/json")
+    assert cfs_config.ccsds_data_dir == os.path.expanduser("~/sample_cfs_workspace/ccsdsData")
     assert cfs_config.ccsds_target == "set1"
     assert cfs_config.log_ccsds_imports is True
     assert cfs_config.cfs_build_dir == os.path.expanduser("~/sample_cfs_workspace")
@@ -119,7 +119,7 @@ def test_cfs_config_load_config_data_invalid(cfs_config, caplog):
     assert cfs_config.name == "cfs"
     assert cfs_config.cfs_protocol == "local"
     assert cfs_config.build_cfs is True
-    assert cfs_config.ccsds_data_dir == os.path.expanduser("~/sample_cfs_workspace/ccdd/json")
+    assert cfs_config.ccsds_data_dir == os.path.expanduser("~/sample_cfs_workspace/ccsdsData")
     assert cfs_config.ccsds_target == "set1"
     assert cfs_config.log_ccsds_imports is True
     assert cfs_config.cfs_build_dir == os.path.expanduser("~/sample_cfs_workspace")
@@ -188,7 +188,7 @@ def test_remote_cfs_config_init(remote_cfs_config):
     assert remote_cfs_config.name == "local_ssh"
     assert remote_cfs_config.cfs_protocol == "ssh"
     assert remote_cfs_config.build_cfs is True
-    assert remote_cfs_config.ccsds_data_dir == os.path.expanduser("~/sample_cfs_workspace/ccdd/json")
+    assert remote_cfs_config.ccsds_data_dir == os.path.expanduser("~/sample_cfs_workspace/ccsdsData")
     assert remote_cfs_config.ccsds_target == "set1"
     assert remote_cfs_config.log_ccsds_imports is True
     assert remote_cfs_config.cfs_build_dir == os.path.expanduser("~/sample_cfs_workspace")

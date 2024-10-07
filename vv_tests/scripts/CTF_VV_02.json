@@ -15,7 +15,17 @@
             "test_number": "CTF-VV-02-1",
             "description": "Nominal OP",
             "instructions": [
-                {
+               {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "tgt1",
+                        "mid": "CI_CMD_MID",
+                        "cc": "CI_NOOP_CC",
+                        "args": {}
+                    },
+                    "wait": 1
+               },
+               {
                     "instruction": "CheckTlmValue",
                     "data": {
                         "target": "",
@@ -23,14 +33,32 @@
                         "args": [
                             {
                                 "compare": "streq",
-                                "variable": "Payload.PacketID.AppName",
-                                "value": "SCH"
+                                "variable": "Payload.Message",
+                                "value": "CI - Rcvd NOOP cmd (0). Version 1.2.0.0"
                             }
                         ]
                     },
+                    "wait": 0
+               },
+               {
+                    "instruction": "ClearTlmPacket",
+                    "data": {
+                    "target": "",
+                    "mid": "CFE_EVS_LONG_EVENT_MSG_MID"
+                    },
                     "wait": 1
-                },
-                {
+               },
+               {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "tgt1",
+                        "mid": "CI_CMD_MID",
+                        "cc": "CI_NOOP_CC",
+                        "args": {}
+                    },
+                    "wait": 10
+               },
+               {
                     "instruction": "CheckTlmValue",
                     "data": {
                         "target": "",
@@ -38,14 +66,24 @@
                         "args": [
                             {
                                 "compare": "strneq",
-                                "variable": "Payload.PacketID.AppName",
-                                "value": "SCHNO"
+                                "variable": "Payload.Message",
+                                "value": "NOAPP - Rcvd NOOP cmd (0). Version 1.2.0.0"
                             }
                         ]
                     },
-                    "wait": 1
-                },
-                {
+                    "wait": 0
+               },
+               {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "tgt1",
+                        "mid": "CI_CMD_MID",
+                        "cc": "CI_NOOP_CC",
+                        "args": {}
+                    },
+                    "wait": 10
+               },
+               {
                     "instruction": "CheckTlmValue",
                     "data": {
                         "target": "",
@@ -53,14 +91,13 @@
                         "args": [
                             {
                                 "compare": "regex",
-                                "variable": "Payload.PacketID.AppName",
-                                "value": "S[CK]H"
+                                "variable": "Payload.Message",
+                                "value": "Rcvd NO[OX]P cmd"
                             }
                         ]
                     },
-                    "verify_timeout": 30,
-                    "wait": 1
-                }
+                    "wait": 0
+               }
             ]
         }
     ]

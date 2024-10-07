@@ -4,7 +4,7 @@ Loads and validates input CTF test scripts. Manages execution of loaded test scr
 """
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -167,5 +167,5 @@ class TestScript:
         log.info("Number of tests Passed:                {}".format(self.num_passed))
         log.info("Number of tests Failed:                {}".format(len(self.failed_tests)))
         if self.failed_tests:
-            log.info("Failed tests: {}".format(", ".join(self.failed_tests)))
+            log.info("Test_numbers of Failed tests: {}".format(", ".join(self.failed_tests)))
         log.info("---------- TEST SCRIPT END ----------")

@@ -4,7 +4,7 @@ Unit Test for Test class: Represents a single CTF test.
 """
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2023 United States Government as represented by the
+# Copyright (c) 2019-2024 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -223,7 +223,7 @@ def test_test_run_commands(test_instance_inited):
         assert test_instance_inited.run_commands() is None
 
     test_instance_inited.instructions[0].is_disabled = True
-    test_instance_inited.ignored_instructions = ['SendCfsCommand','EnableCfsOutput']
+    test_instance_inited.ignored_instructions = ['SendCfsCommand', 'EnableCfsOutput']
     with patch("lib.test.Test.execute_verification", return_value=None), \
          patch("lib.test.Test.execute_instruction", return_value=None):
         assert test_instance_inited.run_commands() is None
@@ -299,7 +299,7 @@ def test_test_process_conditional_branch_label(test_instance_inited):
     test_instance_inited.instructions.clear()
 
 
-def test_test_process_conditional_branch_label_exception(test_instance_inited,utils):
+def test_test_process_conditional_branch_label_exception(test_instance_inited, utils):
     """
     test Test class method: process_conditional_branch_label -- raise exception
     Process control flow labels defined in test instructions 'IfCondition',  'ElseCondition' and 'EndCondition'
@@ -330,7 +330,7 @@ def test_test_process_conditional_branch_label_exception(test_instance_inited,ut
     test_instance_inited.instructions.clear()
 
 
-def test_test_process_conditional_branch_label_exception_2(test_instance_inited,utils):
+def test_test_process_conditional_branch_label_exception_2(test_instance_inited, utils):
     """
     test Test class method: process_conditional_branch_label -- raise exception
     Process control flow labels defined in test instructions 'IfCondition',  'ElseCondition' and 'EndCondition'
@@ -345,7 +345,7 @@ def test_test_process_conditional_branch_label_exception_2(test_instance_inited,
     test_instance_inited.instructions.clear()
 
 
-def test_test_process_conditional_branch_label_exception_3(test_instance_inited,utils):
+def test_test_process_conditional_branch_label_exception_3(test_instance_inited, utils):
     """
     test Test class method: process_conditional_branch_label -- raise exception
     Process control flow labels defined in test instructions 'IfCondition',  'ElseCondition' and 'EndCondition'
@@ -362,7 +362,7 @@ def test_test_process_conditional_branch_label_exception_3(test_instance_inited,
     test_instance_inited.instructions.clear()
 
 
-def test_test_process_conditional_branch_label_exception_4(test_instance_inited,utils):
+def test_test_process_conditional_branch_label_exception_4(test_instance_inited, utils):
     """
     test Test class method: process_conditional_branch_label -- raise exception
     Process control flow labels defined in test instructions 'IfCondition',  'ElseCondition' and 'EndCondition'
@@ -417,8 +417,8 @@ def test_test_process_control_flow_label_exception(test_instance_inited, utils):
                   "data": {"label": "", "conditions": [{"name": "my_var", "operator": "<", "value": 3}]
                            }, "wait": 1}
     end_loop = {"instruction": "EndLoop", "data": {"label": ""}, "wait": 1}
-    label = {"instruction": "SetLabel", "data": {"label": ""}}
-    cmd = Instruction(1.0, begin_loop, 0, 18, False)
+    label = {"instruction": "SetLabel", "data": {}}
+    cmd = Instruction(1.0, label, 0, 18, False)
     test_instance_inited.instructions.append(cmd)
     with pytest.raises(CtfTestError):
         test_instance_inited.process_control_flow_label()
