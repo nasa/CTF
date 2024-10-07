@@ -36,7 +36,7 @@ from lib.ctf_utility import expand_path
 from lib.logger import logger as log, set_logger_options_from_config, change_log_file
 from lib.exceptions import CtfTestError
 
-CTF_VERSION = "v1.8.2"
+CTF_VERSION = "v1.9"
 CTF_RELEASE_DATE = "Nov 20 2023"
 
 
