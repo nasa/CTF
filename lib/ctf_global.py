@@ -1,16 +1,13 @@
 """
 @namespace lib.ctf_global
-Exposes CTF global state information for utilization by CTF Plugins.
+Expose CTF global state information for utilization by CTF Plugins.
 
 Global Test Info object accessible by all plugins.
-Populated by script reader with test header
-info and other useful values for plugins
+Populated by script reader with test header info and other useful values for plugins
 """
 
+# =========================================================================================
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
-#
-# Copyright (c) 2019-2024 United States Government as represented by the
-# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
 # distributed and modified only pursuant to the terms of that agreement.
@@ -20,6 +17,17 @@ info and other useful values for plugins
 # Unless required by applicable law or agreed to in writing, software distributed under the
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
+#
+# Copyright © 2019-2025 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
+#
+# File: ctf_global.py
+#
+# Purpose: This file exposes CTF global state information for utilization by CTF Plugins.
+#
+# Note: This file was created at the NASA Johnson Space Center.
+# =========================================================================================
+
 
 import argparse
 import configparser
@@ -28,7 +36,7 @@ import sys
 
 from enum import Enum
 
-## Default Config used by CTF if no config_file is provided in the arguments
+# Default Config used by CTF if no config_file is provided in the arguments
 DEFAULT_CONFIG = "configs/default_config.ini"
 
 
@@ -71,6 +79,18 @@ class Global:
 
     ## CTF top-level log file. Includes CTF core logs such as initialization and plugin loading/unloading
     CTF_log_dir_file = None
+
+    # The dictionary storing the incomplete telemetry construct functions for given MIDs / protocol IDs
+    coalesce_funcs = dict()
+
+    # The dictionary storing the variable length tlm payload construct functions for given MIDs / protocol IDs
+    variable_payload_length_funcs = dict()
+
+    # Flag to enable/disable local ctf db logging
+    CTF_log_to_db = None
+
+    # File Path to read/store the ctf db log file
+    CTF_db_file_path = ""
 
     ## Current time manager used by CTF. Utilized by other plugins to manage time
     time_manager = None
@@ -132,7 +152,7 @@ class Global:
         if config_file == DEFAULT_CONFIG:
             status = 'Config file may not have been specified. Using default config {}'.format(DEFAULT_CONFIG)
         if not os.path.exists(config_file):
-            status += 'Config file does not exist....\nFailed to load config file: {}\n.'.format(
+            status += '\nConfig file does not exist....\nFailed to load config file: {}\n.'.format(
                 os.path.abspath(config_file))
             sys.exit(status)
 
@@ -172,3 +192,33 @@ class Global:
         Gets the currently active time manager
         """
         return Global.time_manager
+
+    @staticmethod
+    def get_tlm_construct_func(mid):
+        """
+        Gets the telemetry construct function for a given MID
+        @note - Return None, if there is no registered construct function for the MID
+        """
+        return Global.coalesce_funcs.get(mid, None)
+
+    @staticmethod
+    def get_variable_length_payload_construct_func(mid):
+        """
+        Gets the variable length tlm payload construct functions for a given MID
+        @note - Return None, if there is no registered construct function for the MID
+        """
+        return Global.variable_payload_length_funcs.get(mid, None)
+
+    @staticmethod
+    def register_construct_variable_length_payload_func(func, mid):
+        """
+        Registers the variable length telemetry payload construct function for a given MID
+        """
+        Global.variable_payload_length_funcs[mid] = func
+
+    @staticmethod
+    def register_construct_incomplete_tlm_func(func, mid):
+        """
+        Registers the incomplete telemetry construct function for a given MID
+        """
+        Global.coalesce_funcs[mid] = func

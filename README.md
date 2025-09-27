@@ -21,6 +21,42 @@ in the `CTF Documentation` directory of the CTF releases' Assets (https://github
  
 ## Release Notes
 
+
+### v1.10 
+09/26/2025
+     
+* CTF Core Changes
+    
+    * Add support for the sqlite3 database engine to store telemetry and event messages from the flight software, and commands sent by CTF.
+
+    * Allow the CCDD reader to reuse data types regardless of the JSON file loading order.
+
+    * Fix nested function references in the test scripts.
+
+    * Support end users in installing Python libraries required for their customized plugins.
+
+    * Add support for excluding specified plugins from loading into CTF.
+
+    * Improve space-delimited hex logging of telemetry message payloads.
+    
+    * Minor improvements and bug fixes.
+
+* CTF Plugins Changes 
+    
+    * Updates to SSH Plugin
+        * Fix the issue with the SSH plugin starting cFS flight software remotely.  
+        
+
+    * Updates to Variable Plugin
+        * Add a type option to the CheckUserVariable instruction to specify the comparison type.
+
+        * Improve logging information for the SetUserVariableFromTlm instruction.
+                 
+
+* CTF Tool and Scripts Changes
+    * Clean up ini configuration files and test scripts.
+
+
 ### v1.9 
 09/12/2024
 * CTF Core Changes

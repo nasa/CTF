@@ -1,7 +1,5 @@
+# =========================================================================================
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
-#
-# Copyright (c) 2019-2024 United States Government as represented by the
-# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
 # distributed and modified only pursuant to the terms of that agreement.
@@ -11,6 +9,18 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
+#
+# Copyright © 2019-2025 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
+#
+# File: test_ctf_global.py
+#
+# Purpose: This file contains test cases for unit testing of CTF global class.
+#
+# Note: This file was created at the NASA Johnson Space Center.
+# =========================================================================================
+
+
 import os
 import sys
 from unittest.mock import patch, Mock
@@ -93,3 +103,14 @@ def test_ctf_global_time_manager():
     assert Global.get_time_manager() is None
     Global.set_time_manager(Mock())
     assert Global.get_time_manager() == Global.time_manager
+
+
+def test_ctf_global_register_construct_incomplete_tlm_func():
+    assert bool(Global.coalesce_funcs) is False
+    assert Global.register_construct_incomplete_tlm_func(test_ctf_global_time_manager, 'FM_DIR_LIST_TLM_MID') is None
+    assert Global.get_tlm_construct_func('FM_DIR_LIST_TLM_MID') is test_ctf_global_time_manager
+
+    assert Global.register_construct_incomplete_tlm_func(test_ctf_global_time_manager, 0x4850420) is None
+    assert Global.get_tlm_construct_func(0x4850420) is test_ctf_global_time_manager
+
+    Global.coalesce_funcs.clear()

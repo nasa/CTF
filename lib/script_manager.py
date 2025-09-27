@@ -1,12 +1,10 @@
 """
 @namespace lib.script_manager
-Loads and manages test scripts during a test run
+Load and manage test scripts during a test run
 """
 
+# =========================================================================================
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
-#
-# Copyright (c) 2019-2024 United States Government as represented by the
-# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
 # distributed and modified only pursuant to the terms of that agreement.
@@ -16,6 +14,16 @@ Loads and manages test scripts during a test run
 # Unless required by applicable law or agreed to in writing, software distributed under the
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
+#
+# Copyright © 2019-2025 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
+#
+# File: script_manager.py
+#
+# Purpose: This file defines ScriptManager which loads and manages test scripts during test run.
+#
+# Note: This file was created at the NASA Johnson Space Center.
+# =========================================================================================
 
 
 import os
@@ -61,6 +69,7 @@ class ScriptManager:
 
     def __init__(self, plugin_manager, status_manager):
         self.script_list = []
+        self.skipped_script_list = []
         self.config = ScriptManagerConfig()
         self.regression_summary_file_path = ""
         self.regression_summary_json_file_path = ""
@@ -68,6 +77,7 @@ class ScriptManager:
         self.plugin_manager = plugin_manager
         self.status_manager = status_manager
         self.summary_file = None
+        self.aggregated_metrics = {}
 
     def add_script(self, script):
         """
@@ -80,11 +90,19 @@ class ScriptManager:
         Adds a script file to the list of scripts. If the file is not valid, skip it.
         """
         script_reader = JSONScriptReader(file)
+
         if script_reader.valid_script:
-            self.add_script(script_reader.script)
-            log.info("Loaded Script: {}".format(script_reader.input_script_path))
+            if self.validate_instructions(script_reader.script):
+                self.add_script(script_reader.script)
+                log.info("Loaded Script: {}".format(script_reader.input_script_path))
         else:
-            log.warning("Invalid Input Test JSON Script: {}. Skipping.".format(file))
+            # if file has invalid json format, script_reader does not have 'script' attribute
+            if hasattr(script_reader, 'script'):
+                if not script_reader.functions_only_script:
+                    self.skipped_script_list.append(script_reader.script)
+                    log.error("Skipping invalid test script: {} ...".format(file))
+                else:
+                    log.warning("Skipping function-only test script: {} ...".format(file))
 
     def run_all_scripts(self):
         """
@@ -104,7 +122,8 @@ class ScriptManager:
 
             # Run each script in the script_list sequentially
             results = {
-                "Test_Results": []
+                "Test_Results": [],
+                "Results_Summary": [],
             }
             test_count = 1
             wait_time = Global.config.getfloat("core", "delay_between_scripts", fallback=1.0)
@@ -154,19 +173,7 @@ class ScriptManager:
 
                 log.debug("Going to update results summary file ... ")
                 self.write_summary_line(script)
-
-                if self.config.json_results is True:
-                    results["Test_Results"].append({
-                        "Status": script.status,
-                        "Time": script.exec_time,
-                        "Test_Num": script.test_number,
-                        "Req_Num": script.requirements,
-                        "Tests_Run": script.num_tests,
-                        "Tests_Passed": script.num_passed,
-                        "Tests_Failed": len(script.failed_tests),
-                        "Tests_Error": script.num_error,
-                        "Script": script.input_file
-                    })
+                self.append_json_results(script, results)
 
                 test_count = test_count + 1
 
@@ -185,6 +192,12 @@ class ScriptManager:
                 log.info("Test execution complete. Waiting {} seconds {} ...".format(wait_time, prompt_str))
                 Global.time_manager.wait(wait_time)
 
+            for script in self.skipped_script_list:
+                script.status = "skipped"
+                script.num_error = 1
+                self.write_summary_line(script)
+                self.append_json_results(script, results)
+
             if not self.config.reset_plugins_between_scripts:
                 self.plugin_manager.shutdown_plugins()
 
@@ -193,12 +206,73 @@ class ScriptManager:
                 with open(self.regression_summary_json_file_path, "a") as file:
                     json.dump(results, file, indent=4)
 
+            # Collect aggregated metrics
+            self.calculate_summary_metrics()
+            # Write aggregated summary to both text and json results files
+            self.write_test_suite_summary()
+            self.append_summary_metrics_to_json_results(results)
+
         except Exception as ex:
             log.error("Exception: ", exc_info=True)
             suite_status = StatusDefs.error
             suite_details = str(traceback.format_exc())
             self.status_manager.update_suite_status(suite_status, suite_details)
             raise CtfTestError("Error in run_all_scripts") from ex
+
+    def append_json_results(self, script, results):
+        """
+        Append the test script result to the json results object.
+        """
+        if self.config.json_results is True:
+            results["Test_Results"].append({
+                "Status": script.status,
+                "Time": script.exec_time,
+                "Test_Num": script.test_number,
+                "Req_Num": script.requirements,
+                "Tests_Run": script.num_tests,
+                "Tests_Passed": script.num_passed,
+                "Tests_Failed": len(script.failed_tests),
+                "Tests_Error": script.num_error,
+                "Script": script.input_file
+            })
+
+    def append_summary_metrics_to_json_results(self, results):
+        """
+        Append the aggregated test metrics to the json results object.
+        """
+        if self.config.json_results is True:
+            results["Results_Summary"].append({
+                "Runtime_Secs": self.aggregated_metrics["runtime_secs"],
+                "TestScripts_Passed": self.aggregated_metrics["num_passed_scripts"],
+                "TestScripts_Failed": self.aggregated_metrics["num_failed_scripts"],
+                "TestScripts_Skipped": len(self.skipped_script_list),
+                "Num_Tests": self.aggregated_metrics["num_tests"],
+                "Tests_Passed": self.aggregated_metrics["num_passed_tests"],
+                "Tests_Failed": self.aggregated_metrics["num_failed_tests"],
+                "Tests_Error": self.aggregated_metrics["num_script_error"],
+                "TestScripts_Run": len(self.script_list)
+            })
+
+    def validate_instructions(self, script):
+        """
+        Returns true if all instructions in provided TestScript are valid and processable by a loaded plugin.
+        Raises exception otherwise.
+        """
+        # Grab all unique instructions
+        instructions = set()
+        for test in script.tests:
+            for instruction in test.instructions:
+                # Grab the instruction string from the object
+                instructions.add(instruction.command['instruction'])
+
+        # Verify each instruction is supported by a plugin
+        for instruction in instructions:
+            plugin_for_instruction = self.plugin_manager.find_plugin_for_command(instruction)
+            if plugin_for_instruction is None:
+                log.error('No suitable plugin found for instruction: "{}"'.format(instruction))
+                raise CtfTestError('Unsupported instruction: "{}"'.format(instruction))
+
+        return True
 
     def prep_logging(self):
         """
@@ -233,7 +307,7 @@ class ScriptManager:
                 - Requirements Verified
                 - # of tests that ran
                 - # of tests that passed
-                - # of tests the failed
+                - # of tests that failed
                 - # of tests with an error
                 - Script input file (.JSON)
         """
@@ -261,7 +335,84 @@ class ScriptManager:
             self.summary_file.close()
             self.summary_file = None
         except IOError:
-            log.error("Failed to write CTF results summary file!")
+            log.error("Failed to write to CTF results summary file!")
+
+    def calculate_summary_metrics(self):
+        """
+        Calculates and stores cummulative test run information
+        """
+        # Calculate test metrics
+        runtime_secs = 0
+        num_tests = 0
+        num_passed_tests = 0
+        num_failed_tests = 0
+        num_script_error = 0
+
+        for script in self.script_list:
+            runtime_secs += script.exec_time
+            num_tests += script.num_tests
+            num_passed_tests += script.num_passed
+            num_failed_tests += len(script.failed_tests)
+            num_script_error += script.num_error
+
+        num_passed_scripts = sum(1 for script in self.script_list if script.status == StatusDefs.passed)
+        num_failed_scripts = sum(1 for script in self.script_list if script.status == StatusDefs.failed)
+
+        # Store metrics in dictionary
+        self.aggregated_metrics["runtime_secs"] = runtime_secs
+        self.aggregated_metrics["num_tests"] = num_tests
+        self.aggregated_metrics["num_passed_tests"] = num_passed_tests
+        self.aggregated_metrics["num_failed_tests"] = num_failed_tests
+        self.aggregated_metrics["num_script_error"] = num_script_error
+        self.aggregated_metrics["num_passed_scripts"] = num_passed_scripts
+        self.aggregated_metrics["num_failed_scripts"] = num_failed_scripts
+
+    def write_test_suite_summary(self):
+        """
+        Writes cumulative run information to the end of the results file.
+
+        @note: calculate_summary_metrics() needs to be called prior to calling this function.
+        """
+        if not self.aggregated_metrics:
+            log.error("Aggregated metrics must be calculated before being written.")
+            return
+
+        if self.summary_file is not None:
+            try:
+                self.summary_file.close()
+                self.summary_file = None
+            except IOError:
+                log.error("Failed to close CTF results summary file!")
+                return
+
+        runtime_secs = self.aggregated_metrics["runtime_secs"]
+        runtime_mins = runtime_secs / 60
+
+        # Write results
+        try:
+            self.summary_file = open(self.regression_summary_file_path, "a+", buffering=10)
+            self.summary_file.write("\n" + ("-" * 200) + "\n")
+
+            self.summary_file.write(str("%0s   %0s   %0s   %0s   %0s   %0s"
+                                        % ("Totals:   ",
+                                        "{} mins ({} seconds)".ljust(111)
+                                        .format("%3.2f" % runtime_mins,"%3.2f" % runtime_secs),
+                                        str(self.aggregated_metrics["num_tests"]).ljust(12),
+                                        str(self.aggregated_metrics["num_passed_tests"]).ljust(12),
+                                        str(self.aggregated_metrics["num_failed_tests"]).ljust(12),
+                                        str(self.aggregated_metrics["num_script_error"]).ljust(12))))
+
+            self.summary_file.write("\n\n")
+            self.summary_file.write("Scripts run".ljust(12) + ":  {} \n".format(len(self.script_list)))
+            self.summary_file.write("Run result".ljust(12) +  ":  {} passed | {} failed | {} skipped \n".
+                                    format(self.aggregated_metrics["num_passed_scripts"],
+                                        self.aggregated_metrics["num_failed_scripts"],
+                                        len(self.skipped_script_list)))
+
+            self.summary_file.close()
+            self.summary_file = None
+        except IOError:
+            log.error("Failed to write aggregate metrics to CTF results summary file!")
 
     def __del__(self):
         """

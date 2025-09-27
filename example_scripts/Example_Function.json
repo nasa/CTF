@@ -1,0 +1,31 @@
+{
+    "test_script_number": "Test-CTF-Example-Function",
+    "test_script_name": "Test_CTF_Example_Function.json",
+    "owner": "CTF",
+    "description": "Example Function used for testing nested function behavior",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "test_setup": "",
+    "import": {},
+    "functions": {
+        "TempFunc2": {
+            "varlist": [],
+            "instructions": [
+                {
+                    "instruction": "InsertUserComment",
+                    "data": {
+                        "comment": "In Test_CTF_Example_Function.json : 1"
+                    }
+                },
+                {
+                    "instruction": "InsertUserComment",
+                    "data": {
+                        "comment": "In Test_CTF_Example_Function.json : 2"
+                    }
+                }
+            ]
+        }
+    }
+}
+

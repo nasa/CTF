@@ -3,10 +3,8 @@
 Utility library functions
 """
 
+# =========================================================================================
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
-#
-# Copyright (c) 2019-2024 United States Government as represented by the
-# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
 # distributed and modified only pursuant to the terms of that agreement.
@@ -16,11 +14,24 @@ Utility library functions
 # Unless required by applicable law or agreed to in writing, software distributed under the
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
+#
+# Copyright © 2019-2025 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
+#
+# File: ctf_utility.py
+#
+# Purpose: This file defines utility library functions.
+#
+# Note: This file was created at the NASA Johnson Space Center.
+# =========================================================================================
+
+
 import functools
 import operator
 import os
 import re
 import sys
+import ast
 
 from lib.ctf_global import Global
 from lib.exceptions import CtfParameterError
@@ -251,14 +262,35 @@ def set_nested_attr(obj, nested_attr, value):
     Set the attribute of the nested object. If the attr is not valid, raise CtfParameterError exception.
     """
     split_attrs = nested_attr.split('.')
-    # Check the attribute
-    for i in range(len(split_attrs) - 1):
-        if hasattr(obj, split_attrs[i]):
-            obj = getattr(obj, split_attrs[i])
-        else:
-            raise CtfParameterError("Could not find the attribute {} in object".format(nested_attr), nested_attr)
-
-    if hasattr(obj, split_attrs[-1]) and type(getattr(obj, split_attrs[-1])) is type(value):
-        setattr(obj, split_attrs[-1], value)
+    # Traverse and check the attributes
+    parent_obj = None
+    for attr in split_attrs:
+        if not hasattr(obj, attr):
+            log.error("Could not find the attribute: {} in object: {}, skipping it ...".format(nested_attr, obj))
+            return
+        parent_obj = obj
+        obj = getattr(obj, attr)
+    # convert value, if it is str type and the object attribute is int type
+    if isinstance(value, str) and isinstance(obj, int):
+        try:
+            value = ast.literal_eval(value)
+        except ValueError as ex:
+            raise CtfParameterError("Could not convert value {} to int type".format(value), ex) from ex
+    if type(obj) is type(value):
+        setattr(parent_obj, split_attrs[-1], value)
     else:
         raise CtfParameterError("Could not set the attribute {} in object {}".format(nested_attr, obj), nested_attr)
+
+
+def resolve_macros(arg: str):
+    """
+    Macros are associated with CCDD definition. It can only be resolved with a registered cfs target.
+    arg is assumed to start with "cfs_target::" prefix
+    """
+    if isinstance(arg, str) and "::" in arg:
+        target, arg = arg.split("::", 1)
+        if target in Global.plugins_available['CFS Plugin'].targets:
+            log.debug("Referred to the macro defined for target '{}' ".format(target))
+            cfs_controller = Global.plugins_available['CFS Plugin'].targets[target]
+            arg = cfs_controller.resolve_macros(arg)
+    return arg

@@ -6,7 +6,7 @@ Unit Test for JSONScriptReader class: Loads and validates input CTF test scripts
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2024 United States Government as represented by the
+# Copyright (c) 2019-2025 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -31,7 +31,7 @@ from lib.readers.json_script_reader import JSONScriptReader
 @pytest.fixture(scope="session", autouse=True)
 def init_global():
     Global.load_config("./configs/default_config.ini")
-    Global.plugin_manager = PluginManager(['plugins'])
+    Global.plugin_manager = PluginManager(['core_plugins'])
 
 
 @pytest.fixture(name="json_script_reader")
@@ -102,7 +102,7 @@ def test_json_script_reader_process_exception(json_script_reader, utils):
     Parse and process test information from script header
     """
     # delete an element from raw_data
-    json_script_reader.raw_data.pop('owner')
+    json_script_reader.raw_data.pop('requirements')
     utils.clear_log()
     assert json_script_reader.process_header() is None
     assert not json_script_reader.valid_script
@@ -121,6 +121,19 @@ def test_json_script_reader_process_functions(json_script_reader):
     assert json_script_reader.process_functions() is None
     assert 'SendCheckCiEnableToCmd' in json_script_reader.functions
 
+def test_json_script_reader_process_functions_nested_function_imports(json_script_reader):
+    """
+    test JSONScriptReader class method : process_functions
+    Parse the function definitions and imports in the test script
+
+    Verify that nested function imports are imported/resolved.
+    """
+    input_script_path = 'example_scripts/Test_CTF_Nested_Function.json'
+    reader = JSONScriptReader(input_script_path)
+
+    assert reader.process_functions() is None
+    assert 'TempFunc' in reader.functions.keys()
+    assert 'TempFunc2' in reader.functions.keys()
 
 def test_json_script_reader_process_functions_with_function():
     """
@@ -256,7 +269,8 @@ def test_json_script_reader_process_tests():
     input_script_path = 'functional_tests/cfe_6_7_tests/cfe_tests/CfeEsTest.json'
     reader = JSONScriptReader(input_script_path)
     with patch("lib.readers.json_script_reader.JSONScriptReader.resolve_function", return_value=None):
-        assert reader.process_tests() is None
+        with pytest.raises(CtfTestError):
+            reader.process_tests()
 
 
 def test_json_script_reader_process_tests_command_dict_type_exception(json_script_reader):
@@ -451,6 +465,94 @@ def test_json_script_reader_resolve_function_inside_func(json_script_reader):
     with pytest.raises(CtfTestError):
         json_script_reader.resolve_function(name, params, functions)
 
+def test_json_script_reader_resolve_function_multiple_nested_function_call(json_script_reader):
+    """
+    test JSONScriptReader class method : resolve_function
+    Perform in-line replacement of function calls with the set of instructions within the function definition
+    """
+    # Arrange
+    name = 'OuterFunction'
+    params = {}
+    functions = {
+        "OuterFunction": {
+                "description": "",
+                "varlist": [],
+                "instructions": [
+                    {
+                        "instruction": "SendCfsCommand",
+                        "description": "OuterFunction no-op",
+                        "data": {
+                            "mid": "CP_CMD_MID",
+                            "cc": "CP_NOOP_CC",
+                            "args": [],
+                            "target": "target_1"
+                        },
+                        "wait": 1
+                    },
+                    {
+                        "function": "InnerFunction",
+                        "params": {},
+                        "wait": 1
+                    },
+                    {
+                        "instruction": "SendCfsCommand",
+                        "description": "OuterFunction second no-op",
+                        "data": {
+                            "mid": "CP_CMD_MID",
+                            "cc": "CP_NOOP_CC",
+                            "args": [],
+                            "target": "target_1"
+                        },
+                        "wait": 1
+                    },
+                    {
+                        "function": "InnerFunction",
+                        "params": {},
+                        "wait": 1
+                    }
+                ]
+            },
+        "InnerFunction": {
+            "description": "",
+            "varlist": [],
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "description": "InnerFunction instruction 1",
+                    "data": {
+                        "mid": "CP_CMD_MID",
+                        "cc": "CP_RESET_CNTRS_CC",
+                        "args": [],
+                        "target": "target_1"
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "SendCfsCommand",
+                    "description": "InnerFunction instruction 2",
+                    "data": {
+                        "mid": "CP_CMD_MID",
+                        "cc": "CP_RESET_CNTRS_CC",
+                        "args": [],
+                        "target": "target_1"
+                    },
+                    "wait": 1
+                }
+            ]
+        },
+    }
+
+    # Act
+    instructions = json_script_reader.resolve_function(name, params, functions)
+
+    # Assert
+    assert len(instructions) == 6
+    assert(instructions[0]['description'] == 'OuterFunction no-op')
+    assert(instructions[1]['description'] == 'InnerFunction instruction 1')
+    assert(instructions[2]['description'] == 'InnerFunction instruction 2')
+    assert(instructions[3]['description'] == 'OuterFunction second no-op')
+    assert(instructions[4]['description'] == 'InnerFunction instruction 1')
+    assert(instructions[5]['description'] == 'InnerFunction instruction 2')
 
 def test_json_script_reader_resolve_function_mismatch(json_script_reader):
     """

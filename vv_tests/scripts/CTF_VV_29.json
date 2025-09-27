@@ -52,7 +52,12 @@
                     "data": {
                         "mid": "CFE_EVS_CMD_MID",
                         "cc": "CFE_EVS_RESET_FILTER_CC",
-                        "hex_buffer": "0000000000000000000000000000000000000000010000000ea424c1"
+                        "hex_buffer": "0000000000000000000000000000000000000000010000000ea424c1",
+                        "header": {
+                            "sheader.timestamp_seconds": 0,
+                            "sheader.timestamp_subseconds": 0,
+                            "eheader.age_check_flag": 0
+                        }
                     }
                 },
                 {
@@ -81,7 +86,12 @@
                     "data": {
                         "mid": "CFE_EVS_CMD_MID",
                         "cc": "CFE_EVS_RESET_FILTER_CC",
-                        "hex_buffer": "$hex_variable$"
+                        "hex_buffer": "$hex_variable$",
+                        "header": {
+                            "sheader.timestamp_seconds": 0,
+                            "sheader.timestamp_subseconds": 0,
+                            "eheader.age_check_flag": 0
+                        }
                     }
                 },
                 {

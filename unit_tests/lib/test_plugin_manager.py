@@ -1,12 +1,5 @@
-"""
-@namespace tests.lib.test_plugin_manager.py
-Unit Test for Plugin class: The Plugin Manager is a CTF core component that manages CTF plugins.
-"""
-
+# =========================================================================================
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
-#
-# Copyright (c) 2019-2024 United States Government as represented by the
-# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
 # distributed and modified only pursuant to the terms of that agreement.
@@ -16,6 +9,16 @@ Unit Test for Plugin class: The Plugin Manager is a CTF core component that mana
 # Unless required by applicable law or agreed to in writing, software distributed under the
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
+#
+# Copyright © 2019-2025 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
+#
+# File: test_plugin_manager.py
+#
+# Purpose: This file contains test cases for unit testing of CTF PluginManager class.
+#
+# Note: This file was created at the NASA Johnson Space Center.
+# =========================================================================================
 
 # Note - this module is adapted from the following open source code-base with the MIT License.
 #
@@ -58,7 +61,7 @@ def _plugin_instance():
 
 @pytest.fixture(name="plugin_manager")
 def _plugin_manager_instance():
-    return PluginManager(['plugins'])
+    return PluginManager(['core_plugins', 'prj_plugins', 'cfs_plugins'])
 
 
 def test_plugin_init(plugin):
@@ -114,8 +117,8 @@ def test_plugin_manager_init(plugin_manager):
     """
     test PluginManager class constructor
     """
-    assert plugin_manager.plugin_packages == ['plugins']
-    assert len(plugin_manager.plugins) == 9
+    assert plugin_manager.plugin_packages == ['core_plugins', 'prj_plugins', 'cfs_plugins']
+    assert len(plugin_manager.plugins) >= 9
     assert 'CCSDS Plugin' in plugin_manager.plugins
     assert 'CFS Plugin' in plugin_manager.plugins
     assert 'ExamplePlugin' in plugin_manager.plugins
@@ -124,6 +127,16 @@ def test_plugin_manager_init(plugin_manager):
     assert 'ControlFlow Plugin' in plugin_manager.plugins
     assert 'VariablePlugin' in plugin_manager.plugins
     assert 'ValidationPlugin' in plugin_manager.plugins
+    assert 'TrickPlugin' in plugin_manager.plugin_name_list
+    assert len(plugin_manager.plugin_name_list) >= 9
+    assert 'CCSDS Plugin' in plugin_manager.plugin_name_list
+    assert 'CFS Plugin' in plugin_manager.plugin_name_list
+    assert 'ExamplePlugin' in plugin_manager.plugin_name_list
+    assert 'SshPlugin' in plugin_manager.plugin_name_list
+    assert 'UserIOPlugin' in plugin_manager.plugin_name_list
+    assert 'ControlFlow Plugin' in plugin_manager.plugin_name_list
+    assert 'VariablePlugin' in plugin_manager.plugin_name_list
+    assert 'ValidationPlugin' in plugin_manager.plugin_name_list
     assert 'TrickPlugin' in plugin_manager.plugin_name_list
 
 
@@ -183,7 +196,7 @@ def test_plugin_manager_walk_package_skip_disabled_plugins(plugin_manager):
     Recursively walk the supplied package to retrieve all plugins
     """
     plugin_manager.disabled_plugins.append('cfe')
-    plugin_manager.walk_package('plugins.ccsds_plugin.cfe')
+    plugin_manager.walk_package('core_plugins.ccsds_plugin.cfe')
 
 
 def test_plugin_manager_reload_plugins(plugin_manager, utils):
@@ -193,7 +206,7 @@ def test_plugin_manager_reload_plugins(plugin_manager, utils):
     provided plugin package to load all available plugins
     """
     assert plugin_manager.reload_plugins() is None
-    assert len(plugin_manager.plugin_name_list) == 9
+    assert len(plugin_manager.plugin_name_list) >= 9
     assert 'CCSDS Plugin' in plugin_manager.plugin_name_list
     assert 'CFS Plugin' in plugin_manager.plugin_name_list
     assert 'ExamplePlugin' in plugin_manager.plugin_name_list
@@ -209,7 +222,7 @@ def test_plugin_manager_reload_plugins(plugin_manager, utils):
     assert plugin_manager.reload_plugins() is None
     assert utils.has_log_level('ERROR')
 
-    plugin_manager.plugin_packages = ['plugins/cfs']
+    plugin_manager.plugin_packages = ['core_plugins/cfs']
     assert plugin_manager.reload_plugins() is None
 
 

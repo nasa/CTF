@@ -1,12 +1,10 @@
 """
-@namespace lib.Test
-Represents a single CTF test within a script
+@namespace lib.test
+Represent a single CTF test within a test script
 """
 
+# =========================================================================================
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
-#
-# Copyright (c) 2019-2024 United States Government as represented by the
-# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
 # distributed and modified only pursuant to the terms of that agreement.
@@ -16,6 +14,16 @@ Represents a single CTF test within a script
 # Unless required by applicable law or agreed to in writing, software distributed under the
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
+#
+# Copyright © 2019-2025 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
+#
+# File: test.py
+#
+# Purpose: This file defines Test class representing a single CTF test within a test script.
+#
+# Note: This file was created at the NASA Johnson Space Center.
+# =========================================================================================
 
 
 import time
@@ -132,12 +140,12 @@ class Test:
         instruction = command["instruction"]
         data = command["data"]
 
-        log.info("Waiting up to {} time-units for verification of {}: {}".format(timeout, instruction, data))
-
         self.status_manager.update_command_status(StatusDefs.active, "Waiting for verification", index=command_index)
         num_verify = int(timeout / self.ctf_verification_poll_period) + 1
         verified = False
         verification_start_time = time.time()
+        log.info("Waiting up to {} time-units {} iterations for verification of {}: {}".format(
+                 timeout, num_verify, instruction, data))
 
         for i in range(num_verify):
             log.info("Executing {}th verification of the command {}".format(i+1, command))
@@ -161,7 +169,9 @@ class Test:
                 if verified:
                     break
             # In case CTF is over-loaded, use system time to break the loop
-            if (time.time() - verification_start_time) > (timeout+1):
+            # Global.current_verification_stage will not be CtfVerificationStage.last_ver
+            if (time.time() - verification_start_time) > (timeout + 5):
+                log.error("End {} verification as it times out".format(instruction))
                 break
             try:
                 self.process_verification_delay()

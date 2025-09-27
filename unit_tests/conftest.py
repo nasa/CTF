@@ -1,6 +1,6 @@
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2024 United States Government as represented by the
+# Copyright (c) 2019-2025 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -18,8 +18,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from lib.ctf_global import Global
-from plugins.cfs.cfs_config import CfsConfig
-from plugins.cfs.cfs_plugin import CfsPlugin
+from core_plugins.cfs.cfs_config import CfsConfig
+from core_plugins.cfs.cfs_plugin import CfsPlugin
 
 
 def pytest_addoption(parser):
@@ -64,8 +64,8 @@ def init_global():
 
 
 @pytest.fixture
-@patch('plugins.cfs.cfs_plugin.RemoteCfsController')
-@patch('plugins.cfs.cfs_plugin.CfsController')
+@patch('core_plugins.cfs.cfs_plugin.RemoteCfsController')
+@patch('core_plugins.cfs.cfs_plugin.CfsController')
 def cfs_plugin(mock_local, mock_remote):
     """
     CFS interfaces are patched here to avoid attempts to build or start CFS when a target is registered with the plugin
@@ -91,6 +91,10 @@ def ctf_test_utils(caplog):
         @staticmethod
         def has_log_level(level):
             return any([rec for rec in caplog.records if rec.levelname == level])
+
+        @staticmethod
+        def has_log(log_str):
+            return True if log_str in caplog.text else False
 
     return CtfTestUtils
 
@@ -141,6 +145,6 @@ def mid_map():
 
 @pytest.fixture
 def ccsdsv2():
-    from plugins.ccsds_plugin.ccsds_packet_interface import CcsdsHeaderTypes
-    from plugins.ccsds_plugin.cfe.ccsds_v2.ccsds_v2 import CcsdsPrimaryHeader, CcsdsCommand, CcsdsTelemetry
+    from core_plugins.ccsds_plugin.ccsds_packet_interface import CcsdsHeaderTypes
+    from core_plugins.ccsds_plugin.cfe.ccsds_v2.ccsds_v2 import CcsdsPrimaryHeader, CcsdsCommand, CcsdsTelemetry
     return CcsdsHeaderTypes(CcsdsPrimaryHeader, CcsdsCommand, CcsdsTelemetry)

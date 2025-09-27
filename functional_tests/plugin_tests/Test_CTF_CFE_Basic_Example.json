@@ -33,11 +33,9 @@
                         "mid": "CFE_ES_HK_TLM_MID",
                         "args": [
                             {
-                                "compare": "==",
+                                "compare": "in",
                                 "variable": "Payload.CommandCounter",
-                                "value": [
-                                    0.0
-                                ]
+                                "value": ["#CI_RESERVED_EID#", 1, 2]
                             }
                         ]
                     },
@@ -62,9 +60,7 @@
                             {
                                 "compare": "==",
                                 "variable": "Payload.CommandCounter",
-                                "value": [
-                                    1.0
-                                ]
+                                "value": 1
                             }
                         ]
                     },

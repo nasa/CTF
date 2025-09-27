@@ -3,10 +3,8 @@
 Logger configuration and initialization for CTF logging
 """
 
+# =========================================================================================
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
-#
-# Copyright (c) 2019-2024 United States Government as represented by the
-# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
 # distributed and modified only pursuant to the terms of that agreement.
@@ -16,6 +14,16 @@ Logger configuration and initialization for CTF logging
 # Unless required by applicable law or agreed to in writing, software distributed under the
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
+#
+# Copyright © 2019-2025 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
+#
+# File: logger.py
+#
+# Purpose: This file defines logger configuration and initialization for CTF logging.
+#
+# Note: This file was created at the NASA Johnson Space Center.
+# =========================================================================================
 
 
 import datetime as dt
@@ -127,6 +135,16 @@ def set_logger_options_from_config(config):
     Global.CTF_log_dir_file = os.path.join(os.path.abspath(Global.test_log_dir),
                                            config.get("logging", "ctf_log_file", fallback="./CTF_Log.log"))
 
+    Global.CTF_log_to_db = config.getboolean("logging", "ctf_log_to_db", fallback=False)
+
+    default_ctf_db_file_path = os.path.join(Global.test_log_dir, "ctf_log.db")
+    ctf_db_file_path = config.get("logging", "ctf_db_file_path", fallback=default_ctf_db_file_path)
+
+    # Use filepath from config only if provided
+    if ctf_db_file_path:
+        Global.CTF_db_file_path = ctf_db_file_path
+    else:
+        Global.CTF_db_file_path = default_ctf_db_file_path
 
 def change_log_file(new_log_file):
     """

@@ -1,11 +1,5 @@
-"""
-@namespace lib.test_script_manager.py
-Unit Test for ScriptManager: Loads and manages test scripts during a test run
-"""
+# =========================================================================================
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
-#
-# Copyright (c) 2019-2024 United States Government as represented by the
-# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
 # distributed and modified only pursuant to the terms of that agreement.
@@ -15,8 +9,24 @@ Unit Test for ScriptManager: Loads and manages test scripts during a test run
 # Unless required by applicable law or agreed to in writing, software distributed under the
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
+#
+# Copyright © 2019-2025 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
+#
+# File: test_script_manager.py
+#
+# Purpose: This file contains test cases for unit testing of CTF ScriptManager class.
+#
+# Note: This file was created at the NASA Johnson Space Center.
+# =========================================================================================
+
+"""
+@namespace lib.test_script_manager.py
+Unit Test for ScriptManager: Loads and manages test scripts during a test run
+"""
 
 import time
+import os
 from unittest.mock import patch, Mock, mock_open
 
 import pytest
@@ -27,6 +37,7 @@ from lib.plugin_manager import PluginManager
 from lib.readers.json_script_reader import JSONScriptReader
 from lib.script_manager import ScriptManagerConfig, ScriptManager
 from lib.status_manager import StatusManager
+from lib.test_script import TestScript
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -49,9 +60,14 @@ def _script_manager_config_instance():
 @pytest.fixture(name="script_manager")
 def _script_manager_instance():
     status_manager = StatusManager()
-    plugin_manager = PluginManager(['plugins'])
+    plugin_manager = PluginManager(['core_plugins'])
     return ScriptManager(plugin_manager, status_manager)
 
+@pytest.fixture(name="test_script_instance")
+def test_script_instance():
+    def _create_instance():
+        return TestScript()
+    return _create_instance
 
 def test_script_manager_config_init(script_manager_config):
     """
@@ -91,10 +107,32 @@ def test_script_manager_add_script_file(script_manager, utils):
     # valid json file
     assert script_manager.add_script_file('functional_tests/cfe_6_7_tests/cfe_tests/CfeEsTest.json') is None
 
-    # invalid json file
+    # valid json file, only contains function, no tests
+    assert script_manager.add_script_file('functional_tests/cfe_6_7_tests/libs/CfeEsFunctions.json') is None
+
+    # invalid json file: the exception is processed by caller function
     utils.clear_log()
     assert script_manager.add_script_file('functional_tests/cfe_6_7_tests/cfe_tests/NOFILE.json') is None
-    assert utils.has_log_level('WARNING')
+
+    # SendCheckCfeEsNoopCmd is referred by CfeEsTest.json
+    os.system("sed -i '15s/.*/\"SendInvalidCmd\": {/' functional_tests/cfe_6_7_tests/libs/CfeEsFunctions.json")
+    assert script_manager.add_script_file('functional_tests/cfe_6_7_tests/cfe_tests/CfeEsTest.json') is None
+    os.system("git restore functional_tests/cfe_6_7_tests/libs/")
+
+
+def test_script_manager_add_script_file_exception(script_manager, utils):
+    """
+    Test ScriptManager class method: add_script_file raises exception when provided script contains invalid instruction(s)
+    Attempts to add a script file that contains an invalid instruction, and ensure exception is raised.
+    """
+    utils.clear_log()
+
+    # path to json file containing invalid instruction
+    invalid_script_dir = 'example_scripts/example_failing_tests/Invalid_Instruction.json'
+
+    with pytest.raises(CtfTestError, match='Unsupported instruction'):
+        script_manager.add_script_file(invalid_script_dir)
+        assert utils.has_log_level('ERROR')
 
 
 def test_script_manager_run_all_scripts(script_manager, example_script):
@@ -201,14 +239,23 @@ def test_script_manager_run_all_scripts_test_fail(script_manager, example_script
     Run all added scripts, updating the status packets, and ensuring plugins are reloaded between scripts if needed.
     """
     script_manager.add_script(example_script)
-
     script_manager.script_list[0].run_script = Mock()
     script_manager.script_list[0].tests[0].test_result = False
+    script_reader = JSONScriptReader('./functional_tests/plugin_tests/Test_CTF_Basic_Example.json')
+    script_manager.skipped_script_list.append(script_reader.script)
     with patch('builtins.open', new_callable=mock_open()), \
          patch('os.makedirs'), \
          patch("lib.script_manager.change_log_file"),\
          patch.object(script_manager, 'plugin_manager', Mock(spec=PluginManager)):
         assert script_manager.run_all_scripts() is None
+
+    script_manager.skipped_script_list.append(Mock())
+    with patch('builtins.open', new_callable=mock_open()), \
+         patch('os.makedirs'), \
+         patch("lib.script_manager.change_log_file"),\
+         patch.object(script_manager, 'plugin_manager', Mock(spec=PluginManager)):
+        with pytest.raises(CtfTestError):
+            script_manager.run_all_scripts()
 
 
 def test_script_manager__del__(script_manager):
@@ -253,3 +300,95 @@ def test_script_manager_write_summary_line_open_exception(script_manager,example
         mocked_open.side_effect = IOError
         script_manager.write_summary_line(example_script)
         assert utils.has_log_level('ERROR')
+
+def test_script_manager_write_test_suite_summary_exception(script_manager):
+    """
+    Test ScriptManager class method: write_test_suite_summary  raise exception when calling self.summary_file.close()
+    """
+    script_manager.summary_file = Mock()
+
+    # Summary metrics must be calculated first
+    script_manager.calculate_summary_metrics()
+
+    with patch.object(script_manager.summary_file, 'close') as mock_close:
+        mock_close.side_effect = IOError
+        script_manager.write_test_suite_summary()
+        mock_close.assert_called_once()
+
+def test_script_manager_write_test_suite_summary_open_exception(script_manager, utils):
+    """
+    Test ScriptManager class method: write_test_suite_summary  raise exception when calling self.summary_file.open()
+    """
+    script_manager.summary_file = Mock()
+    utils.clear_log()
+
+    # Summary metrics must be calculated first
+    script_manager.calculate_summary_metrics()
+
+    with patch.object(script_manager.summary_file, 'open') as mocked_open:
+        mocked_open.side_effect = IOError
+        script_manager.write_test_suite_summary()
+        assert utils.has_log_level('ERROR')
+
+
+def test_script_manager_write_test_suite_summary_without_prereq_call_exception(script_manager, utils):
+    """
+    Test ScriptManager class method: write_test_suite_summary  logs an error when run without calling prereq function
+    """
+    script_manager.summary_file = Mock()
+    utils.clear_log()
+
+    # Writing summary without calculating the aggregate results
+    script_manager.write_test_suite_summary()
+
+    assert utils.has_log_level('ERROR')
+
+def test_script_manager_write_test_suite_summary(script_manager, utils):
+    """
+    Test ScriptManager class method: write_test_suite_summary   executes without error in nominal case.
+    """
+    script_manager.summary_file = Mock()
+    utils.clear_log()
+
+    script_manager.calculate_summary_metrics()
+
+    print(script_manager.__class__.__module__)
+
+    with patch("builtins.open", new_callable=mock_open()):
+        script_manager.write_test_suite_summary()
+
+    assert not utils.has_log_level('ERROR')
+
+def test_script_manager_calculate_summary_metrics(script_manager, test_script_instance):
+    """
+    Test ScriptManager class method: calculate_summary_metrics correctly aggregates test metrics
+    """
+    # Test script with some failing tests
+    script1 = test_script_instance()
+    script1.exec_time = 30
+    script1.num_tests = 5
+    script1.num_passed = 3
+    script1.failed_tests = [Mock(), Mock()]
+    script1.status = 'failed'
+
+    script_manager.add_script(script1)
+
+    # Test script with all passing tests
+    script2 = test_script_instance()
+    script2.exec_time = 20
+    script2.num_tests = 3
+    script2.num_passed = 3
+    script2.failed_tests = []
+    script2.status = 'passed'
+
+    script_manager.add_script(script2)
+
+    script_manager.calculate_summary_metrics()
+
+    assert(len(script_manager.script_list) == 2)
+    assert(script_manager.aggregated_metrics["runtime_secs"] == 50)
+    assert(script_manager.aggregated_metrics["num_tests"] == 8)
+    assert(script_manager.aggregated_metrics["num_passed_tests"] == 6)
+    assert(script_manager.aggregated_metrics["num_failed_tests"] == 2)
+    assert(script_manager.aggregated_metrics["num_passed_scripts"] == 1)
+    assert(script_manager.aggregated_metrics["num_failed_scripts"] == 1)

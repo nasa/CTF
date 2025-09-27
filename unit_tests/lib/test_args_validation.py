@@ -1,7 +1,5 @@
+# =========================================================================================
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
-#
-# Copyright (c) 2019-2024 United States Government as represented by the
-# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
 # distributed and modified only pursuant to the terms of that agreement.
@@ -11,6 +9,17 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
+#
+# Copyright © 2019-2025 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
+#
+# File: test_args_validation.py
+#
+# Purpose: This file contains test cases for unit testing of argument validation helper utilities.
+#
+# Note: This file was created at the NASA Johnson Space Center.
+# =========================================================================================
+
 
 import logging
 from unittest.mock import patch
@@ -107,7 +116,7 @@ def test_validate_file(argsval, caplog):
 
 def test_validate_directory(argsval, caplog):
     caplog.set_level(logging.WARN)
-    assert argsval.validate_directory("./plugins") == "./plugins", "Valid directory is validated"
+    assert argsval.validate_directory("./core_plugins") == "./core_plugins", "Valid directory is validated"
     assert "Directory does not exist" not in caplog.text, "Error was not logged"
     assert argsval.validate_directory("./foo") is None, "Invalid directory is not validated"
     assert "Directory does not exist" in caplog.text, "Error was logged"

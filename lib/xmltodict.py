@@ -1,4 +1,31 @@
-#!/usr/bin/env python
+"""
+@namespace lib.xmltodict
+Parse xml files into json objects
+"""
+
+# =========================================================================================
+# MSC-26646-1, "Core Flight System Test Framework (CTF)"
+#
+# This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
+# distributed and modified only pursuant to the terms of that agreement.
+# See the License for the specific language governing permissions and limitations under the
+# License at https://software.nasa.gov/ .
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the
+# License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either expressed or implied.
+#
+# Copyright © 2024-2025 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
+#
+# File: xmltodict.py
+#
+# Purpose: This file defines utilities to parse xml files into json objects.
+#
+# Note: This file was created at the NASA Johnson Space Center.
+# =========================================================================================
+
+# Note - this module is adapted from the following open source code-base.
 # Copyright (C) 2012 Martin Blech and individual contributors.
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 # associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -17,9 +44,6 @@
 #
 # Functionality for retaining tag order added by Lindsay Stevens.
 
-"""
-xmltodict.py: Makes working with XML feel like you are working with JSON.
-"""
 
 import platform
 

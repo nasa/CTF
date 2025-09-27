@@ -11,7 +11,7 @@
     "ctf_options": {
         "verify_timeout": 4
     },
-    "test_setup": "Pair with config file ../configs/vv_custom_plugin_config.ini",
+    "test_setup": "Pair with config file ../configs/ctf_vv_config.ini",
     "import": {},
     "tests": [
         {

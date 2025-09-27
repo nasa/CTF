@@ -17,10 +17,17 @@
             "description": "Demonstrates use of the Trick Plugin instructions",
             "instructions": [
                 {
+                    "instruction": "RunShellCommand",
+                    "data": {
+                        "command": "cd ~/trick/trick_sims/Cannon/SIM_cannon_analytic/; ./S_main_Linux_8.5_x86_64.exe RUN_graphics/input.py &"
+                    }
+                },
+                {
                     "instruction": "FreezeTrickSim",
                     "data": {
                         "freeze": false
-                    }
+                    },
+                    "wait": 20
                 },
                 {
                     "instruction": "FreezeTrickSim",
@@ -57,6 +64,13 @@
                         "operator": "=="
                     },
                     "wait": 1
+                },
+                {
+                    "instruction": "RunShellCommand",
+                    "data": {
+                        "command": "cd ~/tools/ctf/example_scripts/trick_tests; trick_killsim.sh"
+                    },
+                    "wait": 20
                 }
             ]
         }

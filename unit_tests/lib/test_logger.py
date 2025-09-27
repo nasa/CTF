@@ -1,7 +1,5 @@
+# =========================================================================================
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
-#
-# Copyright (c) 2019-2024 United States Government as represented by the
-# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
 # distributed and modified only pursuant to the terms of that agreement.
@@ -11,6 +9,17 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
+#
+# Copyright © 2019-2025 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
+#
+# File: test_logger.py
+#
+# Purpose: This file contains test cases for unit testing of CTF logger configuration
+#          and initialization functions.
+#
+# Note: This file was created at the NASA Johnson Space Center.
+# =========================================================================================
 
 import os
 import time
@@ -40,7 +49,7 @@ def test_testformatter(caplog):
 
     # actual format
     assert logger.test_formatter.format(record) == \
-           '[00:00:00.012] test_logger                     (36 ) *** ERROR: test log'
+           '[00:00:00.012] test_logger                     (45 ) *** ERROR: test log'
     # default format
     assert logger.test_formatter.formatTime(record) == '00:00:00'
     # valid format

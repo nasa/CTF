@@ -1,11 +1,10 @@
 """
 @namespace lib.status_manager
-Publishes CTF status messages over a UDP socket (utilized by the CTF editor)
+Publish CTF status messages over a UDP socket (utilized by the CTF editor)
 """
+
+# =========================================================================================
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
-#
-# Copyright (c) 2019-2024 United States Government as represented by the
-# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
 # distributed and modified only pursuant to the terms of that agreement.
@@ -15,6 +14,18 @@ Publishes CTF status messages over a UDP socket (utilized by the CTF editor)
 # Unless required by applicable law or agreed to in writing, software distributed under the
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
+#
+# Copyright © 2019-2025 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
+#
+# File: status_manager.py
+#
+# Purpose: This file defines StatusManager to publish CTF status messages over a UDP socket.
+#
+# Note: This file was created at the NASA Johnson Space Center.
+# =========================================================================================
+
+
 import traceback
 import socket
 import json

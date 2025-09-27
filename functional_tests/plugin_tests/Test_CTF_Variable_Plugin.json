@@ -141,13 +141,22 @@
                     }
                 },
                 {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "=",
+                        "value": "12",
+                        "variable_type": "string"
+                    }
+                },
+                {
                     "instruction": "CheckUserVariable",
                     "data": {
                         "variable_name": "my_var",
-                        "operator": "==",
-                        "value": 12
-                    },
-                    "disabled": true
+                        "operator": "<",
+                        "value": "111",
+                        "variable_type": "int"
+                    }
                 }
             ]
         }

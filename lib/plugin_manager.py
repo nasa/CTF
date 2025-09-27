@@ -3,10 +3,8 @@
 The Plugin Manager is a CTF core component that manages CTF plugins.
 """
 
+# =========================================================================================
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
-#
-# Copyright (c) 2019-2024 United States Government as represented by the
-# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
 # distributed and modified only pursuant to the terms of that agreement.
@@ -16,6 +14,16 @@ The Plugin Manager is a CTF core component that manages CTF plugins.
 # Unless required by applicable law or agreed to in writing, software distributed under the
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
+#
+# Copyright © 2019-2025 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
+#
+# File: plugin_manager.py
+#
+# Purpose: This file defines Plugin Manager as a CTF core component that manages CTF plugins.
+#
+# Note: This file was created at the NASA Johnson Space Center.
+# =========================================================================================
 
 # Note - this module is adapted from the following open source code-base with the MIT License.
 #
@@ -50,6 +58,7 @@ import pkgutil
 import json
 import sys
 from inspect import signature
+from importlib import import_module
 
 from lib.ctf_global import Global
 from lib.ctf_utility import resolve_dic_variable
@@ -186,6 +195,8 @@ class PluginManager:
         Constructor of PluginManager Class: initiates the reading of all available plugins
         when an instance of the PluginManager object is created
         """
+        self.disabled_plugins = None
+        self.seen_paths = None
         Global.plugin_manager = self
         self.plugin_packages = plugin_packages
         self.plugins = {}
@@ -249,11 +260,12 @@ class PluginManager:
         self.plugin_name_list = []
         self.disabled_plugins = Global.config.get("core", "disabled_plugins").split(',') \
             if Global.config.has_option("core", "disabled_plugins") else []
+        self.disabled_plugins = [plugin.strip() for plugin in self.disabled_plugins]
 
         for plugin_package in self.plugin_packages:
             cwd = os.getcwd()
             log.info("Looking for plugins under package: {} ".format(plugin_package))
-            if not os.path.exists(plugin_package) and plugin_package != "plugins":
+            if not os.path.exists(plugin_package) and plugin_package not in ["core_plugins", "prj_plugins"]:
                 log.error("Invalid plugin path: {}. Skipping... ".format(plugin_package))
                 continue
             if os.path.dirname(plugin_package) != "":
@@ -270,18 +282,18 @@ class PluginManager:
         """
 
         # Skip pycache modules
-        if 'pycache' in package:
+        if any(sub_str in package for sub_str in ['pycache', '.git', '.idea']):
             return
 
-        imported_package = __import__(os.path.basename(package), fromlist=[''])
+        imported_package = import_module(os.path.basename(package))
         if '.' in package and package.split('.')[-1] in self.disabled_plugins:
             log.info("    Plugin {} in disable plugins list. Skipping...".format(package))
             return
 
         # Load any modules ending in '_plugin' and not containing 'tests' in the path to check for Plugin classes
-        for _, pluginname, ispkg in pkgutil.iter_modules(imported_package.__path__, imported_package.__name__ + '.'):
-            if not ispkg and 'tests' not in pluginname and str(pluginname).endswith('_plugin'):
-                plugin_module = __import__(pluginname, fromlist=[''])
+        for _, plugin_name, is_pkg in pkgutil.iter_modules(imported_package.__path__, imported_package.__name__ + '.'):
+            if not is_pkg and 'tests' not in plugin_name and str(plugin_name).endswith('_plugin'):
+                plugin_module = import_module(plugin_name)
                 class_members = inspect.getmembers(plugin_module, inspect.isclass)
                 for (_, class_member) in class_members:
                     # Only add classes that are a sub class of Plugin, but NOT Plugin itself

@@ -2,10 +2,9 @@
 @namespace lib.test_status_manager.py
 Unit Test for StatusManager: Publishes CTF status messages over a UDP socket (utilized by the CTF editor)
 """
+
+# =========================================================================================
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
-#
-# Copyright (c) 2019-2024 United States Government as represented by the
-# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
 # distributed and modified only pursuant to the terms of that agreement.
@@ -15,6 +14,16 @@ Unit Test for StatusManager: Publishes CTF status messages over a UDP socket (ut
 # Unless required by applicable law or agreed to in writing, software distributed under the
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
+#
+# Copyright © 2019-2025 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
+#
+# File: test_status_manager.py
+#
+# Purpose: This file contains test cases for unit testing of CTF StatusManager class.
+#
+# Note: This file was created at the NASA Johnson Space Center.
+# =========================================================================================
 
 import copy
 import socket

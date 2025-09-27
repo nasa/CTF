@@ -1,0 +1,39 @@
+{
+    "test_script_number": "Test-CTF-Nested-Function-Import",
+    "test_script_name": "Test_CTF_Nested_Function_Import.json",
+    "owner": "CTF",
+    "description": "Testing CTF behavior with nested functions",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "import": {
+        "./Nested_Function.json": []
+    },
+    "test_setup": "",
+    "tests": [
+        {
+            "test_number": "Nested-Function-Import-Test-1",
+            "description": "",
+            "instructions": [
+                {
+                    "instruction": "SetUserVariable",
+                    "data": {
+                        "variable_name": "my_var",
+                        "operator": "=",
+                        "value": "0xD",
+                        "variable_type": "int"
+                    }
+                },
+                {
+                    "function": "TempFunc",
+                    "params": {
+                        "cfstgt": "tgt1",
+                        "expectedCmdCnt": 0,
+                        "expectedErrCnt": 0
+                    },
+                    "wait": 0
+                }
+            ]
+        }
+    ]
+}

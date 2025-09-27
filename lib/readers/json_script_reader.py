@@ -5,7 +5,7 @@ Loads and validates input CTF test scripts. Manages execution of loaded test scr
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2024 United States Government as represented by the
+# Copyright (c) 2019-2025 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -53,6 +53,7 @@ class JSONScriptReader:
             return
 
         self.valid_script = True
+        self.functions_only_script = False
         self.script = TestScript()
         self.input_script_path = input_script_path
 
@@ -79,9 +80,9 @@ class JSONScriptReader:
             verification_test_number = self.raw_data.get("test_number") or self.raw_data.get("test_script_number")
             verification_test_name = self.raw_data.get("test_name") or self.raw_data.get("test_script_name")
             requirements = ", ".join([str(x) for x in self.raw_data["requirements"].keys()])
-            test_description = str(self.raw_data["description"])
-            test_owner = str(self.raw_data["owner"])
-            test_setup = self.raw_data.get("test_setup") or ""
+            test_description = self.raw_data.get("test_description","-- No Test Description --")
+            test_owner = self.raw_data.get("owner","")
+            test_setup = self.raw_data.get("test_setup","")
             ctf_options = self.raw_data.get("ctf_options")
             verify_timeout = ctf_options.get("verify_timeout", 0) if ctf_options else 0
 
@@ -90,47 +91,60 @@ class JSONScriptReader:
         except KeyError as exception:
             log.error("Exception: Invalid Json Script file: {} does not contain {}"
                       .format(self.input_script_path, exception))
-
             self.valid_script = False
+
+    def import_function(self, file_data_dict):
+        """
+        Recursively imports the function dependencies needed for the test script.
+        """
+        # Base case - no functions to import
+        if "import" not in file_data_dict.keys():
+            return
+
+        try:
+            # Open the file and grab the raw data
+            for util in file_data_dict["import"].keys():
+                util = expand_path(util)
+                if not os.path.exists(util):
+                    util = os.path.join(self.script.input_file_path, util)
+                if not os.path.exists(util):
+                    util = os.path.realpath(util)
+                if not os.path.exists(util):
+                    log.error("Error opening file {} while importing functions from script: {}"
+                                .format(util, self.script.input_file))
+                    raise CtfTestError("Error opening file while importing functions from script")
+                with open(util, "r") as util_file:
+                    try:
+                        util_raw = json.load(util_file)
+                    except ValueError as exception:
+                        log.error("Exception: ValueError %s", exception)
+                        raise exception
+
+                if "functions" in util_raw.keys():
+                    if self.functions:
+                        self.functions.update(util_raw["functions"])
+                    else:
+                        self.functions = util_raw["functions"]
+
+                # Process the function imports for this file
+                self.import_function(util_raw)
+        except KeyError as exception:
+            log.error("Exception: Invalid Json Script file: {} does not contain {}"
+                      .format(self.input_script_path, exception))
+            raise exception
 
     def process_functions(self):
         """
         Parse the function definitions and imports in the test script
         """
-        util_raw = None
+        # Process user-defined functions
+        if "functions" in self.raw_data.keys():
+            self.functions = self.raw_data["functions"]
 
+        # Make a recursive call to process function imports
         try:
-            # Process user-defined functions
-            if "functions" in self.raw_data.keys():
-                self.functions = self.raw_data["functions"]
-            # Process function imports
-            if "import" in self.raw_data.keys():
-                for util in self.raw_data["import"].keys():
-                    util = expand_path(util)
-                    if not os.path.exists(util):
-                        util = os.path.join(self.script.input_file_path, util)
-                    if not os.path.exists(util):
-                        util = os.path.realpath(util)
-                    if not os.path.exists(util):
-                        log.error("Error opening file {} while importing functions from script: {}"
-                                  .format(util, self.script.input_file))
-                        raise CtfTestError("Error opening file while importing functions from script")
-                    with open(util, "r") as util_file:
-                        try:
-                            util_raw = json.load(util_file)
-                        except ValueError as exception:
-                            log.error("Exception: ValueError %s", exception)
-                            raise exception
-
-                    if "functions" in util_raw.keys():
-                        if self.functions:
-                            self.functions.update(util_raw["functions"])
-                        else:
-                            self.functions = util_raw["functions"]
-
+            self.import_function(self.raw_data)
         except KeyError as exception:
-            log.error("Exception: Invalid Json Script file: {} does not contain {}"
-                      .format(self.input_script_path, exception))
             raise exception
 
     def sanitize_args(self, args):
@@ -174,6 +188,7 @@ class JSONScriptReader:
         if tests is None:
             self.script.set_tests(test_list)
             self.valid_script = False
+            self.functions_only_script = True
             return
 
         # Build event list
@@ -206,7 +221,8 @@ class JSONScriptReader:
                     if inline_commands is None:
                         log.error("Failed to process test due to the error(s) above. Skipping {}".format(test_number))
                         instruction_list = []
-                        break
+                        raise CtfTestError("Error in resolve_function ")
+
                     if not inline_commands:
                         log.error("No commands in function {}".format(command["function"]))
                         continue
@@ -236,7 +252,7 @@ class JSONScriptReader:
             for i, _ in enumerate(instruction_list):
                 instruction_list[i].command_index = i
 
-            test.test_info = {"test_number": test_number, "description": curr_test["description"]}
+            test.test_info = {"test_number": test_number, "description": curr_test.get("description","")}
             test.instructions = instruction_list
             test_list.append(test)
         self.script.set_tests(test_list)
@@ -267,7 +283,10 @@ class JSONScriptReader:
 
     def resolve_function(self, name, params, functions):
         """
-        Perform in-line replacement of function calls with the set of instructions within the function definition
+        Recursive function that performs in-line replacement of function calls with the
+        set of instructions within the function definition.
+
+        Returns a flattened list of instructions
         """
         try:
             if name not in functions.keys():
@@ -289,21 +308,28 @@ class JSONScriptReader:
                 log.error("Function {} parameter mismatch".format(name))
                 raise CtfTestError("Function {} parameter mismatch".format(name))
 
-            for index, command in enumerate(commands):
+            # Retrieve the individual commands
+            inline_commands = []
+            for command in commands:
                 if "function" in command:
+                    # Decompose function into individual commands
                     resolved_cmds = self.resolve_function(command["function"], command["params"], functions)
-                    if not resolved_cmds:
+
+                    if resolved_cmds:
+                        inline_commands.extend(resolved_cmds)
+                    else:
                         log.error("Command %s not resolved", name)
                         return None
-                    commands = commands[:index] + resolved_cmds + commands[index + 1:]
+
                 else:
                     command["data"] = self.resolve_function_params(params, command["data"])
+                    inline_commands.append(command)
         except KeyError as exception:
             log.error("Exception: Invalid Json Script file: {} does not contain {}"
                       .format(self.input_script_path, exception))
             traceback.print_exc()
             raise exception
-        return commands
+        return inline_commands
 
     def resolve_function_params(self, params: dict, data: dict) -> dict:
         """

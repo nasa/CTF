@@ -86,7 +86,7 @@ elif [ "$1" == "vv" ]; then
     # Move the generated output to VV sub-dir
     mv -f CTF_Results/Run_* $OUT_SUBDIR/vv_run_ci  &&
     # Run requirement verification tests written in CTF scripts - set 2
-    ./ctf --config_file vv_tests/configs/ci_vv_lx1_config.ini \
+    ./ctf --config_file vv_tests/configs/ctf_vv_config.ini \
           vv_tests/scripts/CTF_VV_14.json \
           vv_tests/scripts/CTF_VV_15.json \
           vv_tests/scripts/CTF_VV_19.json &&

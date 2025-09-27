@@ -31,7 +31,7 @@
                 {
                     "instruction": "SearchStr",
                     "data": {
-                        "file": "./plugins/validation_plugin/tests/evs.bin",
+                        "file": "./core_plugins/validation_plugin/tests/evs.bin",
                         "search_str": "cFE EVS Initial*",
                         "is_regex": true
                     }
@@ -39,7 +39,7 @@
                 {
                     "instruction": "SearchNoStr",
                     "data": {
-                        "file": "./plugins/validation_plugin/tests/evs.bin",
+                        "file": "./core_plugins/validation_plugin/tests/evs.bin",
                         "search_str": "cFE SCH Initial*"
                     }
                 }
