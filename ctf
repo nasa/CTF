@@ -46,7 +46,7 @@ from lib.exceptions import CtfTestError
 from lib.db_manager import DBManager
 
 CTF_VERSION = "v1.10"
-CTF_RELEASE_DATE = "Sep 25 2025"
+CTF_RELEASE_DATE = "Sep 29 2025"
 
 
 def main():
