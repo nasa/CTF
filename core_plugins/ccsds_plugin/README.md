@@ -6,7 +6,7 @@ The CCSDS Plugin provides interfaces and utilities for CCSDS messages. It is res
 The CCSDS plugin reads some values from the `[ccsds]` section of CTF config file:
 - **CCSDS_header_info_included:** Boolean indicating whether header info is included in the CCSDS exports
 - **CCSDS_header_path:** The full file path of the module implementing CCSDS header types. The file does not need to be inside of the CTF directory.
-The CCSDS Plugin provides three header implementations: `ccsds_v1`, `ccsds_v2`, and `ccsds_gw`. To provide your own implementation, see [Custom CCSDS Headers](#custom-cccsds-headers) below.
+The CCSDS Plugin provides two header implementations: `ccsds_v1`, `ccsds_v2`. To provide your own implementation, see [Custom CCSDS Headers](#custom-cccsds-headers) below.
 
 
 ### ValidateCfsCcsdsData

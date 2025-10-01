@@ -54,20 +54,6 @@ def cfs_interface(cfs_config, mid_map, ccsdsv2):
         return CfsInterface(cfs_config, mock_tlm, mock_cmd, mid_map, ccsdsv2)
 
 
-@pytest.fixture(name="cfs_interface_gw")
-def cfs_interface_gw(cfs_config, mid_map, ccsdsv2, workspace):
-    from core_plugins.cfs.pycfs.cfs_interface import CfsInterface
-    from core_plugins.cfs.pycfs.command_interface import CommandInterface
-    from core_plugins.cfs.pycfs.tlm_listener import TlmListener
-    cfs_gw = ccsdsv2
-    if workspace['type'] != 'open_source':
-        import prj_plugins.gw_msg_plugin.cfs_gw as cfs_gw
-    mock_tlm = MagicMock(spec=TlmListener)
-    mock_cmd = MagicMock(spec=CommandInterface)
-    with patch('core_plugins.cfs.pycfs.output_app_interface.ToApi', name='mock'):
-        return CfsInterface(cfs_config, mock_tlm, mock_cmd, mid_map, cfs_gw)
-
-
 def test_cfs_interface_init(cfs):
     assert cfs.config
     assert cfs.evs_long_event_msg_mid == 8198
@@ -381,7 +367,7 @@ def test_cfs_interface_read_sb_packets_timeout(cfs, utils):
         assert utils.has_log_level('WARNING')
 
 
-def test_cfs_interface_parse_telemetry_packet_crc_check_fail(cfs_interface_gw, utils):
+def test_cfs_interface_parse_telemetry_packet_crc_check_fail(cfs, utils):
 
     buffer = bytearray(b'(\x01\xc0\x02\x00\x99\x0c \x00B+F\x0f\x00;\xcd\x00\x00\xfb\x8a' \
                        b'\x06\x07\t\x00\x05\x00\x08\x00,\x08\x00\x00\x00\x0c\x00\x00\x1e' \
@@ -393,7 +379,7 @@ def test_cfs_interface_parse_telemetry_packet_crc_check_fail(cfs_interface_gw, u
                        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
                        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
                        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
-    assert not cfs_interface_gw.parse_telemetry_packet(buffer)
+    assert not cfs.parse_telemetry_packet(buffer)
     assert utils.has_log_level('DEBUG')
 
 
@@ -978,7 +964,7 @@ def test_cfs_parse_telemetry_packet_segmented_packet_none(cfs, utils):
     Global.register_construct_incomplete_tlm_func(tlm_handler, tlm_test_mid)
     assert tlm_test_mid in Global.coalesce_funcs
 
-    # ccsds_v2 telemetry is 16 bytes, gw telemetry is 20 bytes
+    # ccsds_v2 telemetry is 16 bytes, the other type telemetry is 20 bytes
     header = cfs.ccsds.CcsdsTelemetry()
     header.pheader.set_segmentation_flags(CcsdsPacketInterface.CFE_MSG_SEGFLG_FIRST)
     header.pheader.set_sequence_count(100)
@@ -1024,7 +1010,7 @@ def test_cfs_parse_telemetry_packet_segmented_packet_mid(cfs):
     tlm_test_mid = 8198
     assert tlm_test_mid not in Global.coalesce_funcs
     # reconstruction func is not registered
-    # ccsds_v2 telemetry is 16 bytes, gw telemetry is 20 bytes
+    # ccsds_v2 telemetry is 16 bytes, the other type telemetry is 20 bytes
     header = cfs.ccsds.CcsdsTelemetry()
     header.pheader.set_segmentation_flags(CcsdsPacketInterface.CFE_MSG_SEGFLG_FIRST)
     header.pheader.set_sequence_count(100)
@@ -1076,7 +1062,7 @@ def test_cfs_parse_telemetry_packet_segmented_packet_rollover(cfs):
     assert 'FM_DIR_TEST_MID' in Global.coalesce_funcs
 
     max_seq = 2 ** 14 - 1  # 16383
-    # ccsds_v2 telemetry is 16 bytes, gw telemetry is 20 bytes
+    # ccsds_v2 telemetry is 16 bytes, the other type telemetry is 20 bytes
     header = cfs.ccsds.CcsdsTelemetry()
     header.pheader.set_segmentation_flags(CcsdsPacketInterface.CFE_MSG_SEGFLG_FIRST)
     header.pheader.set_sequence_count(max_seq - 1)
@@ -1152,7 +1138,7 @@ def test_cfs_parse_telemetry_packet_variable_len_packet(cfs):
     assert tml_test_mid not in Global.variable_payload_length_funcs
     Global.register_construct_variable_length_payload_func(tlm_handler, tml_test_mid)
 
-    # ccsds_v2 telemetry is 16 bytes, gw telemetry is 20 bytes
+    # ccsds_v2 telemetry is 16 bytes, the other type telemetry is 20 bytes
     header = cfs.ccsds.CcsdsTelemetry()
     header.pheader.set_sequence_count(100)
     header.set_msg_id(tml_test_mid)

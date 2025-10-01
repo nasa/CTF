@@ -2,7 +2,7 @@
     "test_script_number": "CTF-VV-17",
     "test_script_name": "CTF_VV_17.json",
     "owner": "CTF",
-    "description": "Establish communication with multiple cFS targets on SP0",
+    "description": "Establish communication with multiple cFS targets on specific hardware",
     "requirements": {
         "CTF-35": "Full",
         "CTF-42": "Full"

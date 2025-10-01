@@ -267,7 +267,7 @@ class CfsPlugin(Plugin):
         if target == "":
             return self.load_configured_targets(target)
 
-        # ENHANCE - Allow clean disconnect and reinit of registered targets consistent with SP0 behavior
+        # ENHANCE - Allow clean disconnect and reinit of registered targets consistent with specific hardware behavior
         if target in self.targets:
             log.error("CFS target {} is already registered".format(target))
             return False

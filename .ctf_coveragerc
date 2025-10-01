@@ -1,4 +1,4 @@
 [run]
-omit = lib/patchwork/patchwork/*, */tests/*, plugins/trick_plugin/trick/*
+omit = lib/patchwork/patchwork/*, */tests/*, core_plugins/trick_plugin/trick/*
 [html]
 directory = UnitTests_Coverage

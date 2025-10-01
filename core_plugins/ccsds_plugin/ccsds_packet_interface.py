@@ -46,7 +46,6 @@ class CcsdsVer(enum.IntEnum):
     """
     Ccsds_ver_1 = 1
     Ccsds_ver_2 = 2
-    Ccsds_ver_GW = 3
 
 
 class CcsdsPacketType(enum.IntEnum):

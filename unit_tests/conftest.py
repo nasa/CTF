@@ -24,7 +24,7 @@ from core_plugins.cfs.cfs_plugin import CfsPlugin
 
 def pytest_addoption(parser):
     parser.addoption(
-        "--workspace", action="store", default="gateway", help="my option: open_source or gateway"
+        "--workspace", action="store", default="open_source", help="the option: open_source only"
     )
 
 

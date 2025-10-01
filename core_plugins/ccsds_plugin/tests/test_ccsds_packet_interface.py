@@ -42,7 +42,6 @@ def test_cccsds_packet_interface_ccsdsver():
     """
     assert CcsdsVer.Ccsds_ver_1 == 1
     assert CcsdsVer.Ccsds_ver_2 == 2
-    assert CcsdsVer.Ccsds_ver_GW == 3
 
 
 def test_cccsds_packet_interface_ccsdspacketype():

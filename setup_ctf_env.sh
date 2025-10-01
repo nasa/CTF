@@ -70,35 +70,6 @@ source ~/ctf_env/bin/activate
 python -m pip install pip==22.3.1
 pip install -r ./requirements.txt
 
-# install required gateway-ctf packages
-gw_ctf_reqs_file="../prj_plugins/requirements.txt"
-
-# Check alternate path
-if [ -s "./prj_plugins/requirements.txt" ]; then
-    gw_ctf_reqs_file="./prj_plugins/requirements.txt"
-fi
-
-if  [ -s "$gw_ctf_reqs_file" ]; then
-    echo "installing packages from $gw_ctf_reqs_file.."
-    # read each non-empty line in the file
-    while IFS= read -r line && [ -n "$line" ]; do
-        # extract the package name and version 
-        IFS='=' read -r package_name _ package_version <<< "$line"
-
-        # check if we already have the package installed
-        installed_version=$(pip show "$package_name" 2>/dev/null | awk '/Version:/ {print $2}')
-
-        # install the package if we don't have it
-        if [ -z "$installed_version" ]; then
-            pip install "$line"
-        elif [ "$installed_version" != "$package_version" ]; then
-            echo -e "${yellow}$package_name is already installed, proceeding with installed version $installed_version" ${reset} >&2
-        else
-            echo "$package_name is already installed with version $installed_version"
-        fi
-    done < "$gw_ctf_reqs_file"
-fi
-
 # if no intention to use CTF editor, the next line could be commented out
 source setup_editor.sh
 

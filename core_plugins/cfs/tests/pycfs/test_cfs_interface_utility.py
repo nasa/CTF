@@ -30,8 +30,6 @@ from core_plugins.cfs.pycfs.cfs_interface_utility import build_command_packet_he
 def ccsds_command(workspace):
     if workspace['type'] == 'open_source':
         from core_plugins.ccsds_plugin.cfe.ccsds_v2.ccsds_v2 import CcsdsCommand
-    else:
-        from prj_plugins.gw_msg_plugin.cfs_gw import CcsdsCommand
     ccsds_command = CcsdsCommand
     return ccsds_command
 

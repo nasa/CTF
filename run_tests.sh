@@ -51,7 +51,7 @@ elif [ "$1" == "utc" ]; then
            -W ignore::pytest.PytestCollectionWarning \
            -W ignore::DeprecationWarning:invoke.loader \
            --cov-config=.ctf_coveragerc \
-           --cov=plugins --cov=lib \
+           --cov=core_plugins --cov=lib \
            --cov-report=html | tee $OUT_SUBDIR/ctf_ut_results.log
     # Convert coverage report in HTML to PDF
     wkhtmltopdf --enable-local-file-access UnitTests_Coverage/index.html $OUT_SUBDIR/ctf_ut_coverage.pdf

@@ -38,7 +38,7 @@ class FtpInterface:
     """
     The FtpInterface class provides functionality to connect/disconnect to remote FTP server,
     upload/download files, create folder on server.
-    @note - Two parallel FTP implementations are provided: ftputil for use via SSH, and ftplib for SP0
+    @note - Two parallel FTP implementations are provided: ftputil for use via SSH, and ftplib for specific hardware
     """
 
     def __init__(self):

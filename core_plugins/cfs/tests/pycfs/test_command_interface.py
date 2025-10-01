@@ -40,13 +40,6 @@ def command_interface(ccsdsv2):
     return CommandInterface(tcp_socket_if)
 
 
-@pytest.fixture(name='cmdif_gw')
-def command_interface_gw(ccsdsv2):
-    from core_plugins.cfs.pycfs.command_interface import CommandInterface
-    import prj_plugins.gw_msg_plugin.cfs_gw as cfs_gw
-    return CommandInterface(cfs_gw, target_name="test_target", crc=True)
-
-
 def test_command_interface_init(cmdif):
     assert cmdif.socket_if
     assert cmdif.socket_if.ipaddr == "127.0.0.1"
