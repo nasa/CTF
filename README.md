@@ -21,6 +21,41 @@ in the `CTF Documentation` directory of the CTF releases' Assets (https://github
  
 ## Release Notes
 
+### v1.11
+07/2/2026
+
+* CTF Core Changes
+    * Enhance logging capabilities for the FTP utility.
+
+    * Enable support for CCDD macros within CTF test function arguments.
+
+    * Resolve Linux shell special characters (e.g., '~') in test instructions.
+
+    * Refine intermediate test result logs.
+
+    * Enable message age verification via command header updates.
+
+    * Add support for TCP socket communication across cFS instances.
+
+    * Add support for the ExpectedFail test instruction, which wraps an individual test instruction on specified target platforms.
+
+    * Enhance the results_summary log with additional execution metrics, including total runtime and the number of scripts executed. Add an ExpectedFail summary section, if ExpectedFail instructions are present in the test scripts.
+
+    * Report json test script parsing errors as test failures in the results summary.
+
+    * Fix conditional label resolution logic inside CTF functions.
+
+    * Minor improvements and bug fixes.
+
+* CTF Plugins Changes
+
+    * Updates to CFS Plugin
+        * Resolve CheckEvent timing issues under high frequency events.
+
+        * Support multiple target registration in the RegisterCfs instruction.
+
+        * Implement callback function to support encapsulated inner telemetry messages.
+    
 
 ### v1.10 
 09/26/2025
@@ -750,7 +785,7 @@ Major backend updates to improve reliability/maintainability of CTF.
 
 MSC-26646-1, "Core Flight System Test Framework (CTF)"
 
-Copyright (c) 2019-2025 United States Government as represented by the
+Copyright (c) 2019-2026 United States Government as represented by the
 Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 
 This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
