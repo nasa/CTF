@@ -32,11 +32,13 @@ try:
 except ImportError:
     pass
 
+
 class VariableServerError(Exception):
     '''
     Variable Server communication I/O error.
     '''
     pass
+
 
 class UnitsConversionError(VariableServerError):
     """
@@ -56,6 +58,7 @@ class UnitsConversionError(VariableServerError):
         self.name = name
         self.units = units
 
+
 class UnexpectedMessageError(VariableServerError):
     """
     Raised when a received message is not of the expected type.
@@ -74,6 +77,7 @@ class UnexpectedMessageError(VariableServerError):
         )
         self.expected_id = expected_id
         self.actual_id = actual_id
+
 
 class ValueCountError(VariableServerError):
     """
@@ -95,6 +99,7 @@ class ValueCountError(VariableServerError):
         self.expected = expected
         self.actual = actual
 
+
 def _create_enum(name, field_names, ordinal_values=True):
     """
     Create a namedtuple with automatic values.
@@ -115,6 +120,7 @@ def _create_enum(name, field_names, ordinal_values=True):
       *(range(len(field_names)) if ordinal_values else field_names)
     )
 
+
 class Message(namedtuple('Message', ['indicator', 'data'])):
     """
     A message from the variable server.
@@ -127,6 +133,7 @@ class Message(namedtuple('Message', ['indicator', 'data'])):
         The rest of the message.
     """
     Indicator = _create_enum('Indicator', ['VAR_SEND', 'VAR_EXISTS'])
+
 
 class Variable(object):
     """
@@ -187,6 +194,7 @@ class Variable(object):
           self.name,
           self.value,
           ' {0}'.format(self.units) if self.units is not None else '')
+
 
 class VariableServer(object):
     """
@@ -1038,6 +1046,7 @@ class VariableServer(object):
     def __str__(self):
         return 'VariableServer' + str(self._synchronous_socket.getpeername())
 
+
 def find_simulation(host=None, port=None, user=None, pid=None,
                    version=None, sim_directory=None, s_main=None,
                    input_file=None, tag=None, timeout=None):
@@ -1132,6 +1141,7 @@ def find_simulation(host=None, port=None, user=None, pid=None,
         if candidate_matches(candidate):
             return VariableServer(candidate[0], candidate[1])
 
+
 def _parse_value(text):
     """
     Parse a variable server value with optional units.
@@ -1152,6 +1162,7 @@ def _parse_value(text):
     if match:
         return match.group('value'), match.group('units')
     return text, None
+
 
 def _assert_message_type(message, indicator):
     """
@@ -1212,6 +1223,7 @@ def _assert_value_count(expected, actual):
     """
     if expected != actual:
         raise ValueCountError(expected, actual)
+
 
 if __name__ == '__main__':
     import doctest

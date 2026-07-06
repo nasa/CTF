@@ -15,7 +15,7 @@ Represent a single CTF test within a test script
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: test.py
@@ -29,8 +29,7 @@ Represent a single CTF test within a test script
 import time
 
 from lib.ctf_global import Global, CtfVerificationStage
-from lib.ctf_utility import resolve_variable
-from lib.event_types import Instruction
+from lib.ctf_utility import resolve_variable, validate_exp_fail, exp_fail_is_affected_platform, get_exp_fail_result
 from lib.exceptions import CtfTestError, CtfConditionError
 from lib.logger import logger as log
 from lib.status import StatusDefs
@@ -86,11 +85,20 @@ class Test:
 
         self.current_instruction_index = 0
 
+    def _exp_fail_validation_error(self, command_index):
+        """
+        Updates StatusManager and test state to reflect Test Failure.
+        """
+        msg = "ExpectedFail instruction failed validation."
+        self.status_manager.update_command_status(StatusDefs.error, msg, index=command_index)
+        self.status_manager.end_command()
+        log.test(False, False, msg)
+        self.test_result = False
+
     def execute_instruction(self, test_instruction, command_index):
         """
         Execute a CTF Test Instruction
         """
-        # for command in commands:
         instruction = test_instruction["instruction"]
         data = test_instruction.get("data") or {}
 
@@ -98,12 +106,24 @@ class Test:
             log.error("Instruction {} must be handles by execute_verification")
             return False
 
+        # Check if this is an ExpectedFail instruction
+        is_exp_fail_instr = "ExpectedFail" in instruction
+        if is_exp_fail_instr:
+            if not validate_exp_fail(data):
+                self._exp_fail_validation_error(command_index)
+                return False
+
+            nested_cmd_data = data["args"]["data"]
+            instruction = data["args"]["instruction"]
+            is_affected_platform = exp_fail_is_affected_platform(data)
+
         # execute command if not verification
         plugin_to_use = Global.plugin_manager.find_plugin_for_command(instruction)
         data_str = str(data).replace("\n", "\n" + " " * 20)
         if plugin_to_use is not None:
             try:
-                instruction_passed = plugin_to_use.process_command(instruction=instruction, data=data)
+                instruction_passed = plugin_to_use.process_command(instruction=instruction,
+                                                                   data=nested_cmd_data if is_exp_fail_instr else data)
             except CtfTestError:
                 instruction_passed = False
 
@@ -111,7 +131,20 @@ class Test:
 
             self.status_manager.update_command_status(status, "", index=command_index)
             self.status_manager.end_command()
+
+            # Inverse the command result for ExpectedFail instruction
+            if is_exp_fail_instr:
+                if is_affected_platform:
+                    instruction_passed = get_exp_fail_result(instruction, instruction_passed)
+                else:
+                    log.info("ExpectedFail: Current platform is not affected, "
+                             "returning result of nested instruction.")
+
+                # Reset instruction name to ExpectedFail for logging
+                instruction = test_instruction["instruction"]
+
             log.test(instruction_passed, False, "Instruction {}: {}".format(instruction, data_str))
+
             if instruction_passed is None:
                 instruction_passed = False
             self.test_result &= instruction_passed
@@ -140,6 +173,15 @@ class Test:
         instruction = command["instruction"]
         data = command["data"]
 
+        is_exp_fail_instr = "ExpectedFail" in instruction
+        if is_exp_fail_instr:
+            if not validate_exp_fail(data):
+                self._exp_fail_validation_error(command_index)
+                return False
+
+            nested_cmd_data = data["args"]["data"]
+            instruction = data["args"]["instruction"]
+
         self.status_manager.update_command_status(StatusDefs.active, "Waiting for verification", index=command_index)
         num_verify = int(timeout / self.ctf_verification_poll_period) + 1
         verified = False
@@ -150,29 +192,38 @@ class Test:
         for i in range(num_verify):
             log.info("Executing {}th verification of the command {}".format(i+1, command))
             plugin_to_use = Global.plugin_manager.find_plugin_for_command(instruction)
-            if plugin_to_use is not None:
-                if i == 0:
-                    Global.current_verification_stage = CtfVerificationStage.first_ver
-                elif i == num_verify - 1:
-                    Global.current_verification_stage = CtfVerificationStage.last_ver
-                else:
-                    Global.current_verification_stage = CtfVerificationStage.polling
-
-                try:
-                    verified = plugin_to_use.process_command(instruction=instruction, data=data)
-                except CtfTestError:
-                    verified = False
-
-                if verified is None:
-                    verified = False
-                    break
-                if verified:
-                    break
-            # In case CTF is over-loaded, use system time to break the loop
-            # Global.current_verification_stage will not be CtfVerificationStage.last_ver
-            if (time.time() - verification_start_time) > (timeout + 5):
-                log.error("End {} verification as it times out".format(instruction))
+            if plugin_to_use is None:
+                log.error("Could not find plugin to execute: {}".format(command))
                 break
+
+            if i == 0:
+                Global.current_verification_stage = CtfVerificationStage.first_ver
+            elif i == num_verify - 1:
+                Global.current_verification_stage = CtfVerificationStage.last_ver
+            else:
+                Global.current_verification_stage = CtfVerificationStage.polling
+
+            # When CTF is over-loaded, use system time to end the loop
+            # Nominal case: set Global.current_verification_stage to CtfVerificationStage.last_ver
+            # So process_command sets verified to True to end the loop
+            if (time.time() - verification_start_time) > (timeout + 1):
+                log.warning("Set CtfVerificationStage to last_ver as instruction:{} times out".format(instruction))
+                Global.current_verification_stage = CtfVerificationStage.last_ver
+
+            try:
+                verified = plugin_to_use.process_command(instruction=instruction,
+                                                         data=nested_cmd_data if is_exp_fail_instr else data)
+            except CtfTestError:
+                verified = None
+            if verified is None or verified:
+                break
+
+            # Off-nominal case: process_command returns False or None under CtfVerificationStage.last_ver
+            # need to end the loop directly
+            if (time.time() - verification_start_time) > (timeout + 3):
+                log.error("End verification as instruction:{} times out".format(instruction))
+                break
+
             try:
                 self.process_verification_delay()
             except CtfConditionError as exception:
@@ -181,17 +232,28 @@ class Test:
 
         Global.current_verification_stage = CtfVerificationStage.none
 
+        if is_exp_fail_instr:
+            is_affected_platform = exp_fail_is_affected_platform(data)
+            # Inverse the cmd result to get the final ExpectedFail result
+            if is_affected_platform:
+                verified = get_exp_fail_result(instruction, verified)
+            else:
+                log.info("ExpectedFail: Current platform is not affected, "
+                         "returning result of nested instruction.")
+
+            # Reset instruction name for logging
+            instruction = command["instruction"]
+
         if not verified:
             self.status_manager.update_command_status(StatusDefs.failed, "", index=command_index)
             self.status_manager.end_command()
-            log.test(verified, False,
-                     "Verification Failed {}: {}".format(instruction, data))
+            log.test(verified, False, "Verification Failed {}: {}".format(instruction, data))
             self.status_manager.update_command_status(StatusDefs.failed, "Timeout", index=command_index)
+            verified = False
         else:
             self.status_manager.update_command_status(StatusDefs.passed, "Verified", index=command_index)
             self.status_manager.end_command()
-            log.test(verified, False,
-                     "Verification Passed {}: {}".format(instruction, data))
+            log.test(verified, False, "Verification Passed {}: {}".format(instruction, data))
 
         self.test_result &= verified
         return verified
@@ -234,6 +296,7 @@ class Test:
             delay = i.delay
             instruction = i.command["instruction"]
             instruction_result = False
+            i.execution_result = False
 
             # Update current instruction index globally
             Global.current_instruction_index = self.current_instruction_index
@@ -278,12 +341,32 @@ class Test:
                 log.error("Unknown Error Processing Command Delay & Pre-Command: {}".format(exception))
                 raise CtfTestError("Unknown Error Processing Command Delay & Pre-Command") from exception
 
+            # For ExpectedFail instructions, the executed instruction is the nested instruction
+            is_exp_fail_instr = False
+            if "ExpectedFail" in i.command["instruction"]:
+                instruction = i.command["data"].get("args", {}).get("instruction")
+                is_exp_fail_instr = True
+
             # reset_ver_start_time only applies to tlm check (to clear stale messages)
             continuous_check_tlm = False
-            if prev_instruction and prev_instruction.command['instruction'] == instruction and instruction in \
+            if prev_instruction:
+                prev_instruction_name = prev_instruction.command['instruction']
+                prev_instruction_mid = prev_instruction.command['data'].get('mid')
+
+                # If prev instruction was an ExpectedFail, grab details from the nested instruction.
+                if 'ExpectedFail' in prev_instruction_name:
+                    prev_instruction_name = prev_instruction.command["data"].get("args", {}).get("instruction")
+                    prev_instruction_mid = prev_instruction.command["data"].get("args", {}).get("mid")
+
+                if is_exp_fail_instr:
+                    curr_instr_mid = i.command['data'].get('args', {}).get('mid')
+                else:
+                    curr_instr_mid = i.command['data'].get('mid')
+
+                if prev_instruction_name == instruction and instruction in \
                     ['CheckTlmValue', 'CheckTlmPacket', 'CheckNoTlmPacket'] and \
-                    i.command['data']['mid'] == prev_instruction.command['data']['mid']:
-                continuous_check_tlm = True
+                    curr_instr_mid == prev_instruction_mid:
+                    continuous_check_tlm = True
 
             reset_ver_start_time = True
             # Not to clear received tlm messages if 'wait' == 0 and the last instruction check the same tlm MID's value
@@ -291,7 +374,13 @@ class Test:
                 reset_ver_start_time = False
 
             if instruction in self.verify_required_commands:
-                timeout = i.command.get("verify_timeout", self.ctf_verification_timeout)
+                # Retrieve timeout from instruction if applicable, default to CTF timeout value otherwise
+                timeout = (
+                    i.command.get("verify_timeout")
+                    or (i.command.get("data", {}).get("args", {}).get("verify_timeout") if is_exp_fail_instr else None)
+                    or self.ctf_verification_timeout
+                )
+
                 instruction_result = self.execute_verification(i.command,
                                                                i.command_index,
                                                                timeout,
@@ -299,6 +388,9 @@ class Test:
             # this handles continuously verified commands.
             else:
                 instruction_result = self.execute_instruction(i.command, self.current_instruction_index)
+
+            # Update instruction state
+            i.execution_result = instruction_result
 
             prev_instruction = i
             try:
@@ -320,8 +412,7 @@ class Test:
             if goto_instruction_index:
                 if goto_instruction_index < 0 or goto_instruction_index > len(self.instructions) - 1:
                     log.error("Invalid goto instruction index {}. Valid test instructions: [0, {}]".format(
-                        goto_instruction_index, len(self.instructions) - 1
-                    ))
+                        goto_instruction_index, len(self.instructions) - 1))
                     log.error("Test: {} Failed.".format(self.test_info.get("test_number", "")))
                     self.test_aborted = True
                     break
@@ -335,7 +426,7 @@ class Test:
                 break
 
     @staticmethod
-    def __check_label_def(name: str, instruction: Instruction, defined: bool, label_map: dict):
+    def __check_label_def(name, instruction, defined, label_map):
         """
         Helper method to check the label definition
         """

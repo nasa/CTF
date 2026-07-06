@@ -113,7 +113,7 @@ Example:
 
 ### CheckFileExists
 
-Check whether a file or folder exists on the host file system.  
+Check whether a file or folder exists on the host file system.
 
 - **file**: path of the file.
 
@@ -123,7 +123,26 @@ Example:
      "instruction": "CheckFileExists",
      "data": {
          "file": "/testArtifacts/event_log.txt"
-     }             
+     } 
 }
 </code></pre>
+
+### RegisterTlmCallback
+
+Register a callback function to process the wrapped telemetry messages.
+
+- **func_name**: the full path of callback function.
+- **mid**: the mid of wrapped telemetry message.
+
+Example:
+<pre><code>
+{
+     "instruction": "CheckFileExists",
+     "data": {
+         "func_name":": "plugin_path.plugin_class.callback_func",
+         "mid": "WRAPPED_TLM_MID"
+     } 
+}
+</code></pre>
+
 

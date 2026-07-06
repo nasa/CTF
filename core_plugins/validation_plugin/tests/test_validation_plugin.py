@@ -10,7 +10,7 @@
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: test_validation_plugin.py
@@ -55,7 +55,7 @@ def test_validation_plugin_commandmap(validation_plugin):
     """
     Test Validation command content
     """
-    assert len(validation_plugin.command_map) == 7
+    assert len(validation_plugin.command_map) == 8
     assert "DeleteFiles" in validation_plugin.command_map
     assert "CopyFiles" in validation_plugin.command_map
     assert "SearchStr" in validation_plugin.command_map
@@ -63,6 +63,7 @@ def test_validation_plugin_commandmap(validation_plugin):
     assert "InsertUserComment" in validation_plugin.command_map
     assert "CheckFileExists" in validation_plugin.command_map
     assert "RunShellCommand" in validation_plugin.command_map
+    assert "RegisterTlmCallback" in validation_plugin.command_map
 
 
 def test_validation_plugin_verify_required_commands(validation_plugin):
@@ -151,6 +152,27 @@ def test_validation_plugin_search_txt_file(validation_plugin, utils):
     assert not validation_plugin.search_txt_file('file_not_exist.txt', 'NASA Open Source Agreement')
     assert not validation_plugin.search_txt_file('./ctf', 'NO Open Source Agreement')
     assert utils.has_log_level("ERROR")
+
+
+def test_validation_plugin_register_tlmpkt_callback(validation_plugin, utils):
+    func = Global.variable_payload_length_funcs.get('Test_ONLY_MID')
+    assert validation_plugin.register_tlmpkt_callback('core_plugins.validation_plugin.validation_plugin.'
+                                                      'ValidationPlugin.check_file_exists',
+                                                      'Test_ONLY_MID')
+    Global.variable_payload_length_funcs['Test_ONLY_MID'] = func
+
+    utils.clear_log()
+    assert not validation_plugin.register_tlmpkt_callback('invalid_module.invalid_class.func', 'Test_ONLY_MID')
+    assert utils.has_log_level('ERROR')
+    assert utils.has_log('Import module:invalid_module error')
+
+    utils.clear_log()
+    assert not validation_plugin.register_tlmpkt_callback('core_plugins.validation_plugin.validation_plugin.'
+                                                          'ValidationPlugin.invalid_fuc',
+                                                          'Test_ONLY_MID')
+    assert utils.has_log_level('ERROR')
+    assert utils.has_log('Could not find the class: ValidationPlugin or function: invalid_fuc')
+    utils.clear_log()
 
 
 def test_validation_plugin_search_txt_file_macro(validation_plugin, utils):

@@ -10,7 +10,7 @@
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: variable_plugin.py
@@ -134,7 +134,7 @@ class VariablePlugin(Plugin):
         return
 
     @staticmethod
-    def set_user_defined_variable(variable_name: str, operator: str, value: any, variable_type: str = None):
+    def set_user_defined_variable(variable_name, operator, value, variable_type=None):
         """
         Set / update the value of user defined variable (defined in json test scripts)
 
@@ -152,8 +152,8 @@ class VariablePlugin(Plugin):
         return status
 
     @staticmethod
-    def set_user_variable_from_tlm(variable_name: str, mid: str, tlm_variable: str, target: str = None,
-                                   is_header: bool = False, variable_type: str = None, tlm_args: list = None):
+    def set_user_variable_from_tlm(variable_name, mid, tlm_variable, target=None,
+                                   is_header=False, variable_type=None, tlm_args=None):
         """
         Get the latest telemetry value from queue, and set it to the specified variable.
         @return bool: True if successful, False otherwise.
@@ -174,8 +174,8 @@ class VariablePlugin(Plugin):
         return status
 
     @staticmethod
-    def set_user_variable_from_tlm_header(variable_name: str, mid: str, header_variable: str,
-                                          target: str = None, variable_type: str = None, tlm_args: list = None):
+    def set_user_variable_from_tlm_header(variable_name, mid, header_variable,
+                                          target=None, variable_type=None, tlm_args=None):
         """
         Get the latest telemetry header value from queue, and set it to the specified variable.
         @return bool: True if successful, False otherwise.
@@ -184,7 +184,7 @@ class VariablePlugin(Plugin):
                                                          True, variable_type, tlm_args)
 
     @staticmethod
-    def set_label(label: str) -> bool:
+    def set_label(label):
         """
         Set a test-script scope label for control flow instructions. It is a placeholder.
         Process_control_flow_label in test will validate the labels.
@@ -195,7 +195,7 @@ class VariablePlugin(Plugin):
         return True
 
     @staticmethod
-    def get_user_defined_variable(variable_name: str) -> bool:
+    def get_user_defined_variable(variable_name):
         """
         Get the value of user defined variable
 
@@ -207,7 +207,7 @@ class VariablePlugin(Plugin):
         return status
 
     @staticmethod
-    def check_user_defined_variable(variable_name: str, operator: str, value, variable_type: str = None) -> bool:
+    def check_user_defined_variable(variable_name, operator, value, variable_type=None):
         """
         Compare the user-defined variable with value using the operator
         @return bool: the bool outcome of the operation performed on the variables and values.

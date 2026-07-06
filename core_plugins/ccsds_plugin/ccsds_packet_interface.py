@@ -10,7 +10,7 @@
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: ccsds_packet_interface.py
@@ -69,11 +69,11 @@ class CcsdsPacketInterface(ctypes.BigEndianStructure):
     CFE_MSG_SEGFLG_LAST = 2
     CFE_MSG_SEGFLG_UNSEG = 3
 
-    def get_msg_id(self) -> int:
+    def get_msg_id(self):
         """Convenience method to get the message ID from the packet"""
         raise NotImplementedError
 
-    def set_msg_id(self, msg_id: int) -> None:
+    def set_msg_id(self, msg_id):
         """
         Convenience method to set the message ID on the packet
 
@@ -81,23 +81,23 @@ class CcsdsPacketInterface(ctypes.BigEndianStructure):
         """
         raise NotImplementedError
 
-    def has_secondary_header(self) -> bool:
+    def has_secondary_header(self):
         """Convenience method to check for the presence of a secondary header"""
         raise NotImplementedError
 
-    def get_sequence_count(self) -> int:
+    def get_sequence_count(self):
         """Convenience method to get sequence_count from the packet header """
         raise NotImplementedError
 
-    def get_function_code(self) -> int:
+    def get_function_code(self):
         """Convenience method to get the function code from the packet"""
         raise NotImplementedError
 
-    def validate(self, data: bytearray) -> bool:
+    def validate(self, data):
         """Convenience method to validate packet"""
         raise NotImplementedError
 
-    def set_function_code(self, function_code: int) -> None:
+    def set_function_code(self, function_code):
         """
         Convenience method to set the function code on the packet
 

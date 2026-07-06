@@ -15,7 +15,7 @@ Utility functions to manage sqlite database
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: db_manager.py
@@ -180,7 +180,7 @@ class DBManager:
         DBManager.event_queue.put((ctf_timestamp, target, fsw_timestamp, mid, msghdr,
                                    payload, formatted_payload, app_name, eventid, event_type, event_message))
 
-    def start_background_logging_task(self) -> bool:
+    def start_background_logging_task(self):
         """"
         Kicks off the logging task in a background thread.
         """

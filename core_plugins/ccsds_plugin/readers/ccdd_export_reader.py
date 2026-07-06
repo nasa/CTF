@@ -10,7 +10,7 @@
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: ccsds_export_reader.py
@@ -163,7 +163,7 @@ def create_type_class(name, supertype, params):
         raise CtfTestError("Error in create_type_class") from exception
 
 
-def _compare_field(field_a: tuple, field_b: tuple) -> bool:
+def _compare_field(field_a, field_b):
     # pylint: disable=protected-access
     """
     Comparison of a single ctypes field of the form (name, type). Returns true IFF both fields have the same
@@ -182,7 +182,7 @@ def _compare_field(field_a: tuple, field_b: tuple) -> bool:
     return field_a[1]._type_ == field_b[1]._type_
 
 
-def _compare_ctypes(type_a: type, type_b: type) -> bool:
+def _compare_ctypes(type_a, type_b):
     # pylint: disable=protected-access
     """
     Recursive comparison of fields in two ctypes structures. Returns true IFF both objects have fields

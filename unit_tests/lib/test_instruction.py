@@ -10,17 +10,17 @@
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
-# File: test_event_types.py
+# File: test_instruction.py
 #
 # Purpose: This file contains test cases for unit testing of CTF Instruction class.
 #
 # Note: This file was created at the NASA Johnson Space Center.
 # =========================================================================================
 
-from lib.event_types import Instruction
+from lib.instruction import Instruction
 
 
 def test_command():

@@ -10,7 +10,7 @@
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: output_app_interface.py
@@ -63,7 +63,7 @@ class OutputManager:
         """
         raise NotImplementedError
 
-    def on_time_interval(self) -> None:
+    def on_time_interval(self):
         """
         Define abstract on_time_interval method, the inherited class must implement
         """
@@ -130,7 +130,7 @@ class ToApi(OutputManager):
 
         return Global.plugin_manager.find_plugin_for_command_and_execute(instruction)
 
-    def on_time_interval(self) -> None:
+    def on_time_interval(self):
         """
         Does nothing, as TO output is a one-time message
         """

@@ -10,7 +10,7 @@
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: cfs_plugin.py
@@ -258,50 +258,63 @@ class CfsPlugin(Plugin):
         The value of 'cfs_protocol' in this section determines the type of config and controller objects to be
         constructed, except in the case of 'cfs' which is reserved for automatic configuration when no targets
         are explicitly configured."""
-        log.info("RegisterCfs for target: {}".format(target))
+        statuses = []
         self.has_attempted_register = True
+        if target:
+            if isinstance(target, str):
+                target = [target]
+            for tar in target:
+                log.info("RegisterCfs for target: {}".format(tar))
 
-        if '$' in target:
-            target = resolve_variable(target)
+                if '$' in tar:
+                    tar = resolve_variable(tar)
 
-        if target == "":
+                # ENHANCE - Allow clean disconnect and reinit of registered targets
+                # consistent with specific hardware behavior
+                if tar in self.targets:
+                    log.error("CFS target {} is already registered".format(tar))
+                    statuses += [False]
+                    break
+
+                if tar == self.FALLBACK_TARGET_NAME:
+                    cfs_protocol = Global.config.get(tar, "cfs_protocol", fallback="local")
+                elif tar not in Global.config.sections():
+                    log.error("No CFS configuration defined in config file for {}.".format(tar))
+                    statuses += [False]
+                    break
+                else:
+                    cfs_protocol = Global.config.get(tar, "cfs_protocol", fallback=None)
+
+                if not cfs_protocol or cfs_protocol.lower() not in self.protocols:
+                    log.error("Missing or invalid protocol for CFS target {}".format(tar))
+                    statuses += [False]
+                    break
+
+                log.debug("Registering target {} with {} protocol".format(tar, cfs_protocol))
+                config_type, controller_type = self.protocols[cfs_protocol.lower()]
+                config = config_type(tar)
+
+                if config.get_error_count() > 0:
+                    statuses += [False]
+                    break
+
+                controller = controller_type(config)
+                status = controller.initialize()
+                if status:
+                    self.targets[tar] = controller
+                else:
+                    log.error("Register for {} failed.".format(tar))
+                    statuses += [False]
+                    break
+
+                log.info("Register for {} finished with status {}.".format(tar, status))
+                statuses += [status]
+        else:
             return self.load_configured_targets(target)
 
-        # ENHANCE - Allow clean disconnect and reinit of registered targets consistent with specific hardware behavior
-        if target in self.targets:
-            log.error("CFS target {} is already registered".format(target))
-            return False
+        return all(statuses) if statuses else False
 
-        if target == self.FALLBACK_TARGET_NAME:
-            cfs_protocol = Global.config.get(target, "cfs_protocol", fallback="local")
-        elif target not in Global.config.sections():
-            log.error("No CFS configuration defined in config file for {}.".format(target))
-            return False
-        else:
-            cfs_protocol = Global.config.get(target, "cfs_protocol", fallback=None)
-
-        if not cfs_protocol or cfs_protocol.lower() not in self.protocols:
-            log.error("Missing or invalid protocol for CFS target {}".format(target))
-            return False
-
-        log.debug("Registering target {} with {} protocol".format(target, cfs_protocol))
-        config_type, controller_type = self.protocols[cfs_protocol.lower()]
-        config = config_type(target)
-
-        if config.get_error_count() > 0:
-            status = False
-        else:
-            controller = controller_type(config)
-            status = controller.initialize()
-            if status:
-                self.targets[target] = controller
-            else:
-                log.error("Register for {} failed.".format(target))
-
-        log.info("Register for {} finished with status {}.".format(target, status))
-        return status
-
-    def load_configured_targets(self, target: str = None) -> bool:
+    def load_configured_targets(self, target=None):
         """Configures targetS based on the config file. Any section starting with 'cfs_' will be interpreted
         as a target configuration. If no such sections are found, a single target named 'cfs' will be configured
         as a local target using the values of the [cfs] section."""
@@ -320,22 +333,46 @@ class CfsPlugin(Plugin):
     def get_cfs_targets(self, target: str = None) -> list:
         """Helper method to get a list of targets, containing the
         named target or all registered targets if no target is provided."""
-
         targets = []
         if target:
-            if target in self.targets:
-                targets = [self.targets[target]]
-            else:
-                log.error("CFS target {} not found.".format(target))
+            if isinstance(target, str):
+                target = [target]
+            targets = [self.targets[t] for t in target if t in self.targets]
+            missing_target_list = set(target) - set(self.targets)
+            if missing_target_list:
+                for missing_target in missing_target_list:
+                    log.error("CFS target {} not found.".format(missing_target))
+                targets = []
         else:
             if len(self.targets) > 0:
                 targets = list(self.targets.values())
             else:
                 log.error("No Cfs target Registered")
-
         return targets
 
-    def build_cfs(self, target: str = None) -> bool:
+    def get_target_ip(self, target):
+        """Helper method to get the target IP address from config for a given target.
+        Returns None if target is not found or IP address is not specified in config."""
+        targets = self.get_cfs_targets(target)
+        if not targets:
+            log.error("Failed to retrieve IP address for target {}. "
+                      "Ensure target is registered and IP address is specified in config.".format(target))
+            return None
+
+        return targets[0].config.cfs_target_ip
+
+    def get_protocol(self, target):
+        """Helper method to get the protocol from config for a given target.
+        Returns None if target is not found or protocol is not specified in config."""
+        targets = self.get_cfs_targets(target)
+        if not targets:
+            log.error("Failed to retrieve protocol for target {}. "
+                      "Ensure target is registered and protocol is specified in config.".format(target))
+            return None
+
+        return targets[0].config.cfs_protocol
+
+    def build_cfs(self, target=None):
         """Implements the instruction BuildCfs.
         If RegisterCfs has not yet been used, the plugin will first
         attempt to register any targets defined in the config file.
@@ -353,7 +390,7 @@ class CfsPlugin(Plugin):
         status = [t.build_cfs() for t in self.get_cfs_targets(target)]
         return all(status) if status else False
 
-    def start_cfs(self, target: str = None, run_args: str = "") -> bool:
+    def start_cfs(self, target=None, run_args=""):
         """Implements the instruction StartCfs.
         If RegisterCfs has not yet been used, the plugin will first
         attempt to register any targets defined in the config file.
@@ -370,7 +407,7 @@ class CfsPlugin(Plugin):
         status = [t.start_cfs(run_args) for t in self.get_cfs_targets(target)]
         return all(status) if status else False
 
-    def enable_cfs_output(self, target: str = None) -> bool:
+    def enable_cfs_output(self, target=None):
         """Implements the instruction EnableCfsOutput."""
         log.info("EnableCfsOutput for target: {}".format(target))
         target = resolve_variable(target)
@@ -398,8 +435,7 @@ class CfsPlugin(Plugin):
             else:
                 cmd_args[key] = resolve_variable(value)
 
-    def send_cfs_command(self, mid: str, cc: str, args: any, target: str = None, header: dict = None,
-                         payload_length: int = None, ctype_args: bool = False) -> bool:
+    def send_cfs_command(self, mid, cc, args, target=None, header=None, payload_length=None, ctype_args=False):
         """Implements the instruction SendCfsCommand
         ctype_args is a flag to zero out the message structure for internal validation,
         and is not intended to be used by test instructions."""
@@ -423,7 +459,7 @@ class CfsPlugin(Plugin):
 
         return all(status) if status else False
 
-    def send_raw_cfs_command(self, mid: str, cc: int, hex_buffer: str, target: str = None, header: dict = None) -> bool:
+    def send_raw_cfs_command(self, mid, cc, hex_buffer, target=None, header=None):
         """Implements the instruction SendCfsCommandWithRawPayload."""
         # pylint: disable=invalid-name
         target = resolve_variable(target)
@@ -432,7 +468,7 @@ class CfsPlugin(Plugin):
 
         return all(status) if status else False
 
-    def check_tlm_value(self, mid: str, args: list, target: str = None, backward: float = 0) -> bool:
+    def check_tlm_value(self, mid, args, target=None, backward=0.0, inner_mid=None):
         """Implements the instruction CheckTlmValue."""
         if Global.current_verification_stage == CtfVerificationStage.first_ver:
             log.info("CheckTlmValue: CFS Target: {}, MID {}, Args {} Backward: {}".format(target, mid,
@@ -441,11 +477,11 @@ class CfsPlugin(Plugin):
         target = resolve_variable(target)
         # Collect the results of check_tlm_value on each specified target, and check that all passed
         copied_args = _resolve_tlm_args_values(args)
-        status = [t.check_tlm_value(mid, copied_args, backward) for t in self.get_cfs_targets(target)]
+        status = [t.check_tlm_value(mid, copied_args, backward, inner_mid) for t in self.get_cfs_targets(target)]
 
         return all(status) if status else False
 
-    def check_tlm_packet(self, mid: str, target: str = None) -> bool:
+    def check_tlm_packet(self, mid, target=None):
         """Implements the instruction CheckTlmPacket."""
         if Global.current_verification_stage == CtfVerificationStage.first_ver:
             log.info("CheckTlmPacket: CFS Target: {}, MID {}".format(target, mid))
@@ -455,14 +491,14 @@ class CfsPlugin(Plugin):
         status = [t.check_tlm_value(mid) for t in self.get_cfs_targets(target)]
         return all(status) if status else False
 
-    def clear_tlm_packet(self, mid: str, target: str = None) -> bool:
+    def clear_tlm_packet(self, mid, target=None):
         """Implements the instruction ClearTlmPacket."""
         target = resolve_variable(target)
         # Collect the results of clear_tlm_packet on each specified target, and check that all passed
         status = [t.clear_tlm_packet(mid) for t in self.get_cfs_targets(target)]
         return all(status) if status else False
 
-    def check_no_tlm_packet(self, mid: str, target: str = None) -> bool:
+    def check_no_tlm_packet(self, mid, target=None):
         """Implements the instruction CheckNoTlmPacket."""
         if Global.current_verification_stage == CtfVerificationStage.first_ver:
             log.info("CheckNoTlmPacket: CFS Target: {}, MID {}".format(target, mid))
@@ -483,8 +519,7 @@ class CfsPlugin(Plugin):
 
         return result
 
-    def get_tlm_value(self, mid: str, tlm_variable: str, is_header: bool = False,
-                      target: str = None, tlm_args: list = None):
+    def get_tlm_value(self, mid, tlm_variable, is_header=False, target=None, tlm_args=None):
         """Get the latest telemetry value with matching mid and named parameter"""
         tlm_value = None
         log.debug("get_tlm_value for target: {},  mid: {}, tlm_variable: {}, is_header : {}"
@@ -496,7 +531,7 @@ class CfsPlugin(Plugin):
         log.debug("get_tlm_value's return tlm_value: {} ({})".format(tlm_value, type(tlm_value).__name__))
         return tlm_value
 
-    def check_tlm_continuous(self, verification_id: str, mid: str, args: dict, target: str = None) -> bool:
+    def check_tlm_continuous(self, verification_id, mid, args, target=None):
         """Implements the instruction CheckTlmContinuous."""
         log.info("CheckTlmContinuous for target: {}, Verification ID: {}, MID: {}, Args: {}"
                  .format(target, verification_id, mid, json.dumps(args)))
@@ -513,7 +548,7 @@ class CfsPlugin(Plugin):
         status = [t.check_tlm_continuous(verification_id, mid, copied_args) for t in self.get_cfs_targets(target)]
         return all(status) if status else False
 
-    def remove_check_tlm_continuous(self, verification_id: str, target: str = None) -> bool:
+    def remove_check_tlm_continuous(self, verification_id, target=None):
         """Implements the instruction RemoveCheckTlmContinuous."""
         log.info("RemoveCheckTlmContinuous for target: {}, Verification ID: {}".format(target, verification_id))
 
@@ -522,7 +557,7 @@ class CfsPlugin(Plugin):
         status = [t.remove_check_tlm_continuous(verification_id) for t in self.get_cfs_targets(target)]
         return all(status) if status else False
 
-    def check_event(self, args: list, target: str = None) -> bool:
+    def check_event(self, args, target=None):
         """Implements the instruction CheckEvent.
         'id' shadows the built-in function target but is kept because it exists in legacy test scripts."""
         log.info("CheckEvent: CFS Target {}, Args {}"
@@ -534,7 +569,7 @@ class CfsPlugin(Plugin):
         status = [t.check_event(**event) for event in copied_args for t in self.get_cfs_targets(target)]
         return all(status) if status else False
 
-    def check_noevent(self, args: list, target: str = None) -> bool:
+    def check_noevent(self, args, target=None):
         """Implements the instruction CheckNoEvent.
         'id' shadows the built-in function target but is kept because it exists in legacy test scripts."""
         log.info("CheckNoEvent: CFS Target {}, Args {}"
@@ -556,18 +591,19 @@ class CfsPlugin(Plugin):
 
         return result
 
-    def shutdown_cfs(self, target: str = None) -> bool:
+    def shutdown_cfs(self, target=None):
         """Implements the instruction ShutdownCfs.
         This is non-destructive; the target still exists and can be restarted.
         Any running targets will be stopped automatically on plugin shutdown."""
         log.info("ShutdownCfs for target: {}".format(target))
 
         target = resolve_variable(target)
+
         # Collect the results of shutdown_cfs on each specified target, and check that all passed
         status = [t.shutdown_cfs() for t in self.get_cfs_targets(target)]
         return all(status) if status else False
 
-    def archive_cfs_files(self, source_path: str, target: str = None) -> bool:
+    def archive_cfs_files(self, source_path, target=None):
         """Implements the instruction ArchiveCfsFiles.
         Copies files from a source directory that have been modified
         during the test run into the test script's log directory"""
@@ -585,7 +621,7 @@ class CfsPlugin(Plugin):
 
         return all(status) if status else False
 
-    def shutdown(self) -> None:
+    def shutdown(self):
         """Shuts down the plugin, releasing target resources.
         Only runs when the plugin itself is shutting down.
         To shut down individual targets, use shutdown_cfs.

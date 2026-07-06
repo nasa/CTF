@@ -15,7 +15,7 @@ Utility library functions
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: ctf_utility.py
@@ -218,7 +218,7 @@ def resolve_variable(variable):
     return variable
 
 
-def resolve_dic_variable(var_obj: dict):
+def resolve_dic_variable(var_obj):
     """
     Recursively resolve the user defined variables in dictionary object.
     The function resolve_variable only resolve str type variables.
@@ -282,7 +282,7 @@ def set_nested_attr(obj, nested_attr, value):
         raise CtfParameterError("Could not set the attribute {} in object {}".format(nested_attr, obj), nested_attr)
 
 
-def resolve_macros(arg: str):
+def resolve_macros(arg):
     """
     Macros are associated with CCDD definition. It can only be resolved with a registered cfs target.
     arg is assumed to start with "cfs_target::" prefix
@@ -294,3 +294,80 @@ def resolve_macros(arg: str):
             cfs_controller = Global.plugins_available['CFS Plugin'].targets[target]
             arg = cfs_controller.resolve_macros(arg)
     return arg
+
+
+def validate_exp_fail(data):
+    """
+    Validate the arguments of an ExpectedFail CTF instruction.
+    Returns True if instruction is formatted as expected, False otherwise.
+    """
+    instruction = data.get("args", {}).get("instruction")
+    nested_cmd_data = data.get("args", {}).get("data")
+    affected_platforms = data.get("affected_platforms")
+
+    if not instruction or not nested_cmd_data:
+        log.error("ExpectedFail is missing the nested instruction to execute.")
+        return False
+    if not affected_platforms:
+        log.error("ExpectedFail is missing the affected_platforms list.")
+        return False
+
+    # Validate specified platforms
+    known_platforms = ["linux", "sp0"]
+    target = data.get("args", {}).get("target") or data.get("args", {}).get("data", {}).get("target")
+    config_protocol = Global.config.get(target, "cfs_protocol", fallback="") if target else ""
+
+    # Only accept known or config specified platforms
+    for platform in (p.lower() for p in affected_platforms):
+        if platform not in known_platforms and platform not in config_protocol.lower():
+            log.error("Unknown platform(s) provided in affected_platforms.")
+            return False
+
+    return True
+
+
+def exp_fail_is_affected_platform(data):
+    """
+    Uses the "affected_platforms" parameter of the ExpectedFail instruction to determine
+    whether the current platform is affected.
+
+    The current platfrom is determined by using the platform specified in the config if possible,
+    with fallback to checking the OS environment otherwise.
+
+    Returns True if current platform is affected, or False otherwise
+    """
+    target = data.get("args", {}).get("target") or data.get("args", {}).get("data", {}).get("target")
+    affected_platforms = data.get("affected_platforms")
+
+    # Determine current platform
+    cfs_protocol = None
+    if target:
+        # Get current platform from config
+        cfs_protocol = Global.config.get(target, "cfs_protocol", fallback="").lower()
+
+    # Fallback on checking OS environment to determine current platform
+    if not cfs_protocol:
+        cfs_protocol = "sp0" if "WIND_BASE" in os.environ else "linux"
+
+    # Determine whether current platform is in affected_platforms list
+    is_affected_platform = True
+    affected_platforms = [platform.lower() for platform in affected_platforms]
+    if cfs_protocol in ("local", "linux") and "linux" not in affected_platforms:
+        is_affected_platform = False
+    if cfs_protocol == "sp0" and cfs_protocol not in affected_platforms:
+        is_affected_platform = False
+
+    return is_affected_platform
+
+
+def get_exp_fail_result(nested_instruction, cmd_result):
+    """
+    Takes the command result and returns the inversed result value (i.e the ExpectedFail result).
+    """
+    if cmd_result:
+        log.error("ExpectedFail instruction {} is expected to fail, "
+                    "but passed.".format(nested_instruction))
+        return False
+
+    log.info("ExpectedFail instruction {} failed as expected.".format(nested_instruction))
+    return True

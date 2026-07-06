@@ -15,7 +15,7 @@ Define status messages to be sent out by CTF during test run
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: status.py
@@ -51,7 +51,7 @@ class ObjectFactory:
     """
 
     @staticmethod
-    def create_object(obj_name: str):
+    def create_object(obj_name):
         """
         Static ObjectFactory class method: create objects using factory methods
         """

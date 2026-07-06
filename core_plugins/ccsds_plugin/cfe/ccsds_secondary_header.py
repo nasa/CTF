@@ -10,7 +10,7 @@
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: ccsds_secondary_header.py
@@ -47,7 +47,7 @@ class CcsdsSecondaryCmdHeader(ctypes.BigEndianStructure):
         self.checksum = 0
         self.function_code = 0
 
-    def set_function_code(self, function_code: int) -> None:
+    def set_function_code(self, function_code):
         """
         Sets the function code field
 
@@ -55,7 +55,7 @@ class CcsdsSecondaryCmdHeader(ctypes.BigEndianStructure):
         """
         self.function_code = function_code
 
-    def set_checksum(self, checksum: int) -> None:
+    def set_checksum(self, checksum):
         """
         Sets the checksum field
 
@@ -63,13 +63,13 @@ class CcsdsSecondaryCmdHeader(ctypes.BigEndianStructure):
         """
         self.checksum = checksum
 
-    def get_function_code(self) -> int:
+    def get_function_code(self):
         """
         Gets the function code value
         """
         return self.function_code
 
-    def get_checksum(self) -> int:
+    def get_checksum(self):
         """
         Gets the checksum value
         """

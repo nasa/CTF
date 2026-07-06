@@ -10,7 +10,7 @@
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: ccsds_v2.py
@@ -59,7 +59,7 @@ class CcsdsV2ExtendedHeader(ctypes.BigEndianStructure):
         self.subsystem_id = 0
         self.system_id = 0
 
-    def set_eds_version(self, version: int) -> None:
+    def set_eds_version(self, version):
         """
         Convenience method to set the EDS version on the packet
 
@@ -67,7 +67,7 @@ class CcsdsV2ExtendedHeader(ctypes.BigEndianStructure):
         """
         self.eds_version = version
 
-    def set_endian(self, endian: int) -> None:
+    def set_endian(self, endian):
         """
         Convenience method to set the endianness on the packet
 
@@ -75,7 +75,7 @@ class CcsdsV2ExtendedHeader(ctypes.BigEndianStructure):
         """
         self.endian = endian
 
-    def set_playback_flag(self, flag: int) -> None:
+    def set_playback_flag(self, flag):
         """
         Convenience method to set the playback flag on the packet
 
@@ -83,7 +83,7 @@ class CcsdsV2ExtendedHeader(ctypes.BigEndianStructure):
         """
         self.playback_flag = flag
 
-    def set_subsystem_id(self, subsystem_id: int) -> None:
+    def set_subsystem_id(self, subsystem_id):
         """
         Convenience method to set the subsystem ID on the packet
 
@@ -91,7 +91,7 @@ class CcsdsV2ExtendedHeader(ctypes.BigEndianStructure):
         """
         self.subsystem_id = subsystem_id
 
-    def set_system_id(self, system_id: int) -> None:
+    def set_system_id(self, system_id):
         """
         Convenience method to set the system ID on the packet
 
@@ -108,7 +108,7 @@ class CcsdsV2PrimaryHeader(CcsdsPrimaryHeaderBase):
             The implementation of is_command is redundant with CcsdsPrimaryHeaderBase.
     """
 
-    def is_command(self) -> int:
+    def is_command(self):
         return self.type
 
 
@@ -123,7 +123,7 @@ class CcsdsV2Packet(CcsdsPacketInterface):
         ("eheader", CcsdsV2ExtendedHeader)
     ]
 
-    def set_msg_id(self, msg_id: int) -> None:
+    def set_msg_id(self, msg_id):
         """
         Sets the message ID on the packet
         Python implementation of CFE_SB_SetMsgId(CFE_SB_MsgPtr_t MsgPtr, CFE_SB_MsgId_t MsgId)
@@ -146,7 +146,7 @@ class CcsdsV2Packet(CcsdsPacketInterface):
         self.eheader.set_subsystem_id(subsystem_id)
         self.eheader.set_system_id(system_id)
 
-    def get_msg_id(self) -> int:
+    def get_msg_id(self):
         """
         Returns the message ID derived from the header fields
         Python implementation of CFE_SB_GetMsgId(CFE_SB_MsgPtr_t MsgPtr)
@@ -157,29 +157,29 @@ class CcsdsV2Packet(CcsdsPacketInterface):
         msg_id = msg_id | (self.eheader.subsystem_id << 8)
         return msg_id
 
-    def get_sequence_count(self) -> int:
+    def get_sequence_count(self):
         """
         Returns the sequence_count derived from the header fields
         """
         return self.pheader.get_sequence_count()
 
-    def has_secondary_header(self) -> bool:
+    def has_secondary_header(self):
         return self.pheader.secondary_header_flag
 
-    def get_function_code(self) -> int:
+    def get_function_code(self):
         raise TypeError("Function code is only supported in a command packet")
 
-    def set_function_code(self, function_code: int) -> None:
+    def set_function_code(self, function_code):
         raise TypeError("Function code is only supported in a command packet")
 
     @staticmethod
-    def get_crc_flag() -> int:
+    def get_crc_flag():
         """
         Get the header crc flag: CRC is not supported in open source release
         """
         return 0
 
-    def validate(self, data: bytearray) -> bool:
+    def validate(self, data):
         """
         Packet validation is not supported in open source release
         """
@@ -218,10 +218,10 @@ class CcsdsV2CmdPacket(CcsdsV2Packet):
         self.sheader.set_function_code(command_code)
         self.sheader.set_checksum(command_code)
 
-    def get_function_code(self) -> int:
+    def get_function_code(self):
         return self.sheader.get_function_code()
 
-    def set_function_code(self, function_code: int) -> None:
+    def set_function_code(self, function_code):
         self.sheader.set_function_code(function_code)
 
 
@@ -235,19 +235,19 @@ class CcsdsV2TlmPacket(CcsdsV2Packet):
         ("sheader", CcsdsSecondaryTlmHeader)
     ]
 
-    def get_timestamp_seconds(self) -> int:
+    def get_timestamp_seconds(self):
         """
         Returns the timestamp_seconds derived from the header fields in CcsdsV2TlmPacket
         """
         return self.sheader.timestamp_seconds
 
-    def get_timestamp_subseconds(self) -> int:
+    def get_timestamp_subseconds(self):
         """
          Returns the timestamp_subseconds derived from the header fields in CcsdsV2TlmPacket
         """
         return self.sheader.timestamp_subseconds
 
-    def get_msg_size(self) -> int:
+    def get_msg_size(self):
         """
          Return the msg size derived from the header fields in CcsdsV2TlmPacket
         """

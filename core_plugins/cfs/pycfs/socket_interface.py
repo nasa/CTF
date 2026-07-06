@@ -10,7 +10,7 @@
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: socket_interface.py
@@ -199,7 +199,7 @@ class TCPSocketInterface(SocketInterface):
     TCP socket implementation of the SocketInterface.
 
     Used for sending command packets and receiving telemetry data over a TCP connection.
-    This implementation handles lazy connection, error recovery, and non-blocking I/O.
+    This implementation handles lazy connection, error recovery, and non-blocking I/O as TCP client.
     """
 
     def __init__(self, ipaddr, src_port, dest_port):
@@ -233,8 +233,8 @@ class TCPSocketInterface(SocketInterface):
                 # listen on self.src_port (tlm_udp_port), regardless of the network interfaces the traffic comes from
                 # Should not call socket.connect, as cFS may not start yet
                 cfs_socket.bind(('', self.src_port))
-            port = cfs_socket.getsockname()
-            log.info("Successfully created tcp socket on {}".format(port))
+            assigned_port = cfs_socket.getsockname()
+            log.info("Successfully created tcp socket on {}".format(assigned_port))
         except OSError as exception:
             log.error("Init socket failed: {}".format(exception))
             cfs_socket = None
@@ -319,3 +319,83 @@ class TCPSocketInterface(SocketInterface):
             self.init_socket()
             status = False
         return status
+
+
+class TCPServerSocketInterface(TCPSocketInterface):
+    """
+    TCP server socket implementation of the SocketInterface.
+
+    Used for sending command packets and receiving telemetry data over a TCP connection.
+    This implementation handles lazy connection, error recovery, and non-blocking I/O as TCP server.
+    """
+
+    def __init__(self, ipaddr, src_port, dest_port):
+        """
+        Initialize the TCP socket interface.
+
+        @param    ipaddr (str): IP address of the cFS target system.
+        @param    src_port (int): Source port for the local socket (0 for any available port).
+        @param    dest_port (int): Destination port of the cFS system.
+        """
+        self.listen_socket = None
+        super().__init__(ipaddr, src_port, dest_port)
+        self.connected = False
+        self.init_socket()
+
+    def init_socket(self):
+        """
+        Initialize the TCP socket:
+        - Creates a TCP listen socket object.
+        - Sets socket options for address reuse, non-blocking and binds to source port.
+        - Does not connect immediately as cFS may not start.
+        """
+        if self.cfs_socket:
+            return
+
+        if not self.listen_socket:
+            log.info("Init tcp listen socket with src_port:{} dest_port:{}".format(self.src_port, self.dest_port))
+            self.connected = False
+            try:
+                listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                listen_socket.bind(('', self.src_port))
+                listen_socket.listen()
+                listen_socket.setblocking(False)  # Non-blocking
+                assigned_port = listen_socket.getsockname()
+                log.info("Successfully created tcp listen socket on {}".format(assigned_port))
+                self.listen_socket = listen_socket
+            except OSError as exception:
+                log.error("Init socket failed: {}".format(exception))
+
+    def cleanup(self):
+        """
+        Cleanly close the TCP sockets.
+        Releases any system resources associated with the sockets.
+        """
+        if self.cfs_socket:
+            self.cfs_socket.close()
+            self.cfs_socket = None
+            log.debug("Closing tcp cfs socket")
+        if self.listen_socket:
+            self.listen_socket.close()
+            self.listen_socket = None
+            log.debug("Closing tcp listen socket")
+
+    def connect(self):
+        """
+        Attempt to establish a TCP connection to the remote host.
+
+        This method is only called when needed and skips reconnecting if already connected.
+        It sets the new connected socket as non-blocking mode for I/O.
+        """
+        if self.listen_socket and not self.connected:
+            try:
+                conn, addr = self.listen_socket.accept()
+                conn.setblocking(False)
+                self.cfs_socket = conn
+                self.connected = True
+                log.info("TCP cfs socket connected to {}".format(addr))
+            except BlockingIOError:
+                log.debug("TCP socket no incoming connection right now (non-blocking)")
+            except OSError as exception:
+                log.error("TCP socket OS level error occurred: {}".format(exception))

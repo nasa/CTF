@@ -15,7 +15,7 @@ FTP interface for CTF
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: ftp_interface.py
@@ -72,8 +72,8 @@ class FtpInterface:
                 if self.ftp:
                     try:
                         self.ftp.storbinary('STOR %s' % file, fileobject)
-                    except ftplib.all_errors:
-                        log.warning("FTP put file failed {}".format(file))
+                    except ftplib.all_errors as exception:
+                        log.warning("FTP put file {} failed with exception: {}".format(file, exception))
                         status = False
                 else:
                     log.warning("FTP connection invalid for: {} ".format(self.ipaddr))
@@ -110,17 +110,17 @@ class FtpInterface:
 
                 try:
                     self.ftp.retrbinary('RETR %s' % remote_file, callback)
-                except ftplib.all_errors:
-                    log.warning("FTP get file failed {} @ {} ".format(remote_file, remote_path))
+                except ftplib.all_errors as exception:
+                    log.warning("FTP get file {} @ {} failed with exception: {}".format(remote_file, remote_path,
+                                                                                        exception))
                     status = False
             else:
                 log.warning("FTP connection invalid for: {}".format(self.ipaddr))
                 status = False
 
             fileobject.close()
-
-            if not status:
-                os.remove(file)
+            if not status and os.path.exists(local_file):
+                os.remove(local_file)
         else:
             log.warning("FTP not connected.")
             status = False
@@ -149,8 +149,8 @@ class FtpInterface:
         if remotepath:
             try:
                 self.ftp.cwd(remotepath)
-            except ftplib.all_errors:
-                log.warning("FTP cwd Failed for {}@{}".format(remotepath, self.ipaddr))
+            except ftplib.all_errors as exception:
+                log.warning("FTP cwd failed for {}@{} with exception: {}".format(remotepath, self.ipaddr, exception))
                 status = False
         try:
             localpath = expand_path(localpath)
@@ -175,13 +175,15 @@ class FtpInterface:
                 elif os.path.isdir(localfile):
                     try:
                         self.ftp.cwd(localfile)
-                    except ftplib.all_errors:
+                    except ftplib.all_errors as exception:
+                        log.warning("FTP cwd {} failed with exception: {}".format(localfile, exception))
                         try:
                             log.debug("Creating remote directory {}...".format(localfile))
                             self.ftp.mkd(localfile)
                             self.ftp.cwd(localfile)
-                        except ftplib.all_errors:
-                            log.error("Creating remote directory failed {}...".format(localfile))
+                        except ftplib.all_errors as exception:
+                            log.error("Creating remote directory failed {} with exception: {}".format(localfile,
+                                                                                                      exception))
                             status = False
                             break
                     status = self.upload_ftp(localfile)
@@ -232,8 +234,8 @@ class FtpInterface:
             self.uploadlevel += 1
             try:
                 self.ftp.cwd(remotepath)
-            except ftplib.all_errors:
-                log.warning("FTP invalid directory {}".format(remotepath))
+            except ftplib.all_errors as exception:
+                log.warning("FTP cwd {} fail with exception: {}".format(remotepath, exception))
                 status = False
 
             if status:
@@ -293,13 +295,15 @@ class FtpInterface:
 
         try:
             self.ftp = ftplib.FTP(ipaddr, usrid, "", timeout=self.ftp_timeout)
-        except ftplib.all_errors:
+        except ftplib.all_errors as exception:
+            log.error("Could not connect to ftp server with exception: {}".format(exception))
             status = False
         if status:
             try:
                 self.ftp.login()
                 self.remotebase = self.ftp.pwd()
-            except ftplib.all_errors:
+            except ftplib.all_errors as exception:
+                log.error("Could not login to ftp server with exception: {}".format(exception))
                 status = False
 
         if not status:
@@ -349,7 +353,7 @@ class FtpInterface:
                         ftp.upload(local_file, remote_file)
                 log.debug("FTP upload complete.")
         except ftplib.all_errors as exception:
-            log.warning("FTP upload failed: {}".format(exception))
+            log.warning("FTP upload failed with exception: {}".format(exception))
             os.chdir(self.curdir)
             return False
         else:
@@ -383,7 +387,7 @@ class FtpInterface:
                         ftp.download(remote_file, local_file)
                 log.debug("FTP download complete.")
         except ftplib.all_errors as exception:
-            log.warning("FTP download failed: {}".format(exception))
+            log.warning("FTP download failed with exception: {}".format(exception))
             return False
         else:
             return True

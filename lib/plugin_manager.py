@@ -15,7 +15,7 @@ The Plugin Manager is a CTF core component that manages CTF plugins.
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: plugin_manager.py
@@ -88,7 +88,8 @@ class ArgTypes:
     condition = "loop_condition"
     event = "event"
     other = "other"
-    array_types = [cmd_arg, comparison, condition, event]
+    generic_list = "generic_list"
+    array_types = [cmd_arg, comparison, condition, event, generic_list]
 
 
 class Plugin():

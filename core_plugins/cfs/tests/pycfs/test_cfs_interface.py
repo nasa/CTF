@@ -10,7 +10,7 @@
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: test_cfs_interface.py
@@ -221,6 +221,29 @@ def test_cfs_interface_parse_command_packet_exception2(cfs, utils):
             assert cfs.parse_command_packet(buff) is None
             cfs.mid_payload_map.pop(1997)
             cfs.has_received_mid.pop(1997)
+
+
+def test_cfs_interface_read_sb_packets_exception(cfs, utils):
+    recvd = [
+        # valid tlm
+        b'(\x06\xc0\x08\x00\xa5\x0c \x00B,F\x0f\x00V\xbaTO'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x03\x00\x02\x00B\x00\x00\x00\x01\x00\x00'
+        b'\x00TO - ENABLE_OUTPUT cmd succesful for  routeMask:0x00000001'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+        0,
+    ]
+    with patch.object(cfs, 'telemetry') as mock_tlm:
+        mock_tlm.read_socket.side_effect = recvd
+        with patch.object(cfs.ccsds.CcsdsPrimaryHeader, 'from_buffer') as mock_from_buf:
+            mock_from_buf.side_effect = ValueError('mock error')
+            utils.clear_log()
+            assert cfs.read_sb_packets() is None
+            utils.has_log_level('ERROR')
+            utils.has_log('Cannot create CCSDS Primary Header')
 
 
 def test_cfs_interface_read_sb_packets_valid(cfs, utils):
@@ -1172,6 +1195,79 @@ def test_cfs_parse_telemetry_packet_length_match(cfs, utils):
         mock_ccsds.CcsdsTelemetry = mock_telemetry
         assert cfs.parse_telemetry_packet(buff) is None
         assert utils.has_log_level('WARNING')
+
+
+def test_cfs_parse_telemetry_packet_header_validate(cfs, utils):
+    # Create the MagicMock that will act as the 'header' object
+    mock_header = MagicMock()
+
+    # Configure the behavior of the header
+    mock_header.validate.return_value = False
+    mock_header.get_msg_id.return_value = 0xABCD
+    mock_header.get_msg_size.return_value = 128
+    # Nested mock for: header.pheader.get_segmentation_flags()
+    mock_header.pheader.get_segmentation_flags.return_value = 1
+    utils.clear_log()
+
+    # Patch the 'from_buffer' method on the class
+    target_class = cfs.ccsds.CcsdsTelemetry
+    with patch.object(target_class, 'from_buffer', return_value=mock_header):
+        buffer = bytearray(200)
+        result = cfs.parse_telemetry_packet(buffer)
+        assert result is None
+        assert utils.has_log_level('DEBUG')
+        assert utils.has_log('Telemetry packet is discarded as CRC check fails.')
+
+
+def test_cfs_parse_telemetry_packet_payload_exception(cfs, utils):
+    # ccsds_v2 telemetry is 16 bytes, the other type telemetry is 20 bytes
+    tlm_test_mid = 18198
+    header = cfs.ccsds.CcsdsTelemetry()
+    header.pheader.set_sequence_count(100)
+    header.set_msg_id(tlm_test_mid)
+    header.pheader.set_packet_length(100 - 7)
+    buffer = bytearray(header) + bytearray(100-16)
+
+    cfs.has_received_mid[tlm_test_mid] = False
+    cfs.mid_payload_map[tlm_test_mid] = MagicMock()
+    cfs.mid_payload_map[tlm_test_mid].from_buffer.side_effect = ValueError('mock error')
+
+    utils.clear_log()
+    assert cfs.parse_telemetry_packet(buffer) is None
+    assert utils.has_log_level('ERROR')
+    assert utils.has_log('cannot retrieve payload from packet with MID')
+
+
+def test_cfs_parse_telemetry_packet_time_source(cfs):
+    # ccsds_v2 telemetry is 16 bytes, the other type telemetry is 20 bytes
+    tlm_test_mid = 8198
+    header = cfs.ccsds.CcsdsTelemetry()
+    header.pheader.set_sequence_count(100)
+    header.set_msg_id(tlm_test_mid)
+    header.pheader.set_packet_length(100 - 7)
+    buffer = bytearray(header) + bytearray(100-16)
+
+    cfs.has_received_mid[tlm_test_mid] = False
+    cfs.has_received_mid[tlm_test_mid] = 0
+    cfs.mid_payload_map[tlm_test_mid] = MagicMock()
+    cfs.config.command_msg_time_source = 2
+    cfs.cfs_timestamp = {}
+    assert cfs.parse_telemetry_packet(buffer) == tlm_test_mid
+    assert len(cfs.cfs_timestamp) > 0
+
+    cfs.config.command_msg_time_source = tlm_test_mid
+    cfs.cfs_timestamp = {}
+    assert cfs.parse_telemetry_packet(buffer) == tlm_test_mid
+    assert len(cfs.cfs_timestamp) > 0
+
+
+def test_check_str_value(cfs):
+    assert not cfs._check_str_value('actual', 'expected', 'invalid_compare')
+    assert cfs._check_str_value('expected', 'expected', 'streq')
+    assert not cfs._check_str_value('expected', 'expected', 'strneq')
+    assert not cfs._check_str_value('actual', 'expected', 'streq')
+    assert cfs._check_str_value('actual', 'expected', 'strneq')
+    assert cfs._check_str_value('expected', 'exp*', 'regex')
 
 
 def test_cfs_log_invalid_packet(cfs, utils):

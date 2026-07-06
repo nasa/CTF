@@ -15,7 +15,7 @@ Unit Test for TestScript: Loads and validates input CTF test scripts. Manages ex
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: test_test_script.py
@@ -26,7 +26,7 @@ Unit Test for TestScript: Loads and validates input CTF test scripts. Manages ex
 # Note: This file was created at the NASA Johnson Space Center.
 # =========================================================================================
 
-from unittest.mock import Mock
+from unittest.mock import Mock, call, patch
 
 import pytest
 
@@ -124,8 +124,19 @@ def test_test_script_run_script_exception(test_script_instance):
     status_manager.start_time = 0
     status_manager.set_scripts([])
     status_manager.status["scripts"] = [script]
+    test_script_instance.input_file = "RequiredFilePath"
+
+    test1 = Mock()
+    test1.run_test.side_effect = CtfTestError("Error in run_script")
+    test_list = [test1]
+    test_script_instance.set_tests(test_list)
+
+    # Verify exception is raised and test results are still generated after.
     with pytest.raises(CtfTestError):
-        test_script_instance.run_script(status_manager)
+        with patch("lib.test_script.TestScript.generate_test_results") as mock_test:
+            test_script_instance.run_script(status_manager)
+
+    mock_test.assert_called_once()
 
 
 def test_test_script_run_script(test_script_instance,utils):

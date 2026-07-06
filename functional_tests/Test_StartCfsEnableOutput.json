@@ -22,14 +22,14 @@
                 {
                     "instruction": "RegisterCfs",
                     "data": {
-                        "target": "tgt1"
+                        "target": ["tgt1"]
                     },
                     "wait": 1
                 },
                 {
                     "instruction": "StartCfs",
                     "data": {
-                        "target": "tgt1"
+                        "target": ["tgt1"]
                     },
                     "wait": 1
                 },
@@ -37,7 +37,7 @@
                     "instruction": "EnableCfsOutput",
                     "description": "",
                     "data": {
-                        "target": "tgt1"
+                        "target": ["tgt1"]
                     },
                     "wait": 90
                 }

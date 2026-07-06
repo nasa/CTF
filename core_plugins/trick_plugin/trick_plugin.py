@@ -10,7 +10,7 @@
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: trick_plugin.py
@@ -37,11 +37,11 @@ from lib.ctf_utility import resolve_variable, operator_map, type_map
 from core_plugins.trick_plugin.trick.variable_server import VariableServer, VariableServerError
 
 
-def convert_type(value: any, variable_type: str = None) -> any:
+def convert_type(value, variable_type=None):
     """
     Utility function to convert a value to a type found in the type map of ctf_utility
-    @param value The value to be converted
-    @param variable_type The name of the type from the type map (int, float, string, or boolean)
+    @param value: The value to be converted
+    @param variable_type: The name of the type from the type map (int, float, string, or boolean)
     @return The converted value, or the original value if variable_type is not provided
     @raises CtfParameterError if variable_type is not valid, or if value cannot be converted
     """
@@ -64,6 +64,7 @@ class TrickPlugin(Plugin):
     @note The Trick Plugin uses values from the [trick] section of the CTF config file.
           This section must be present if any Trick Plugin instructions are used in the test.
     """
+
     def __init__(self):
         """
         Constructor for the Trick Plugin.
@@ -80,7 +81,7 @@ class TrickPlugin(Plugin):
         }
         self.controller = None
 
-    def initialize(self) -> bool:
+    def initialize(self):
         """
         Initializes the Trick Plugin.
         @note The controller is lazily initialized when an instruction is executed.
@@ -103,11 +104,11 @@ class TrickPlugin(Plugin):
 
         return self.controller
 
-    def freeze_trick_sim(self, freeze: bool) -> bool:
+    def freeze_trick_sim(self, freeze):
         """
         Implements the instruction FreezeTrickSim.
         @note If the controller has not yet been created, it will be created now.
-        @param freeze True to freeze the sim or False to un-freeze it
+        @param freeze: True to freeze the sim or False to un-freeze it
         @return True if successful or False if there is an error
         """
         log.info("{} Trick simulation".format('Freezing' if freeze else 'Unfreezing'))
@@ -117,7 +118,7 @@ class TrickPlugin(Plugin):
         self.get_controller().freeze_sim(freeze)
         return True
 
-    def set_trick_variable(self, variable_name: str, value: str, variable_type: str = None, units=None) -> bool:
+    def set_trick_variable(self, variable_name, value, variable_type=None, units=None):
         """
         Implements the instruction SetTrickVariable.
         @note If the controller has not yet been created, it will be created now.
@@ -144,8 +145,7 @@ class TrickPlugin(Plugin):
 
         return True
 
-    def check_trick_variable(self, variable_name: str, operator: str, value: str,
-                             units: str = None, variable_type: str = None) -> bool:
+    def check_trick_variable(self, variable_name, operator, value, units=None, variable_type=None):
         """
         Implements the instruction CheckTrickVariable.
         @note If the controller has not yet been created, it will be created now.
@@ -179,7 +179,7 @@ class TrickPlugin(Plugin):
         log.debug("Value of {} is {}".format(variable_name, actual_value))
         return op_func(actual_value, value)
 
-    def shutdown(self) -> None:
+    def shutdown(self):
         """
         Shuts down the plugin, releasing resources.
         """
@@ -193,6 +193,7 @@ class TrickController:
     """
     TrickController class definition: implements Trick functionality
     """
+
     def __init__(self, config):
         """
         Constructor for TrickController.
@@ -208,13 +209,13 @@ class TrickController:
             log.error("VariableServer client failed to connect: {}".format(ex))
             raise ex
 
-    def freeze_sim(self, freeze: bool) -> None:
+    def freeze_sim(self, freeze):
         """
         Commands the variable server to change the freeze state of the sim.
         """
         self.variable_server.freeze(freeze)
 
-    def set_variable(self, variable_name: str, value: any, units: str = None) -> None:
+    def set_variable(self, variable_name, value, units=None):
         """
         Sets a value on the variable server.
         @raises CtfTestError if the variable server raises an error
@@ -224,7 +225,7 @@ class TrickController:
         except VariableServerError as ex:
             raise CtfTestError(ex) from ex
 
-    def get_variable(self, variable_name: str, units: str = None, variable_type: any = None) -> any:
+    def get_variable(self, variable_name, units=None, variable_type=None):
         """
         Gets a value from the variable server.
         @raises CtfTestError if the variable server raises an error
@@ -234,7 +235,7 @@ class TrickController:
         except VariableServerError as ex:
             raise CtfTestError(ex) from ex
 
-    def shutdown(self) -> None:
+    def shutdown(self):
         """
         Closes and releases the variable server instance. Should be called when the controller is no longer needed.
         """

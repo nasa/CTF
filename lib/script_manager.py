@@ -15,7 +15,7 @@ Load and manage test scripts during a test run
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: script_manager.py
@@ -124,6 +124,7 @@ class ScriptManager:
             results = {
                 "Test_Results": [],
                 "Results_Summary": [],
+                "ExpectedFails_Summary": []
             }
             test_count = 1
             wait_time = Global.config.getfloat("core", "delay_between_scripts", fallback=1.0)
@@ -151,25 +152,27 @@ class ScriptManager:
                 ctf_utility.set_variable("_CTF_LOG_DIR", "=", self.curr_script_log_dir_path, "string")
                 try:
                     script.run_script(self.status_manager)
-                except CtfTestError:
-                    script.status = StatusDefs.failed
-                    self.write_summary_line(script)
-                    log.error("Failed to execute script: {}".format(script.input_file))
+                except CtfTestError as ex:
+                    log.error(ex)
 
                 # When finished, update the script status
-                script_status = StatusDefs.passed
                 script_details = "Running"
                 # If any tests have failed, script has failed
                 for test in script.tests:
                     if test.test_result is not True:
-                        script_status = StatusDefs.failed
+                        script.status = StatusDefs.failed
                         script_details = "One or more tests failed"
 
-                self.status_manager.update_script_status(script_status, script_details)
+                if script.failed_tests:
+                    script.status = StatusDefs.failed
+
+                if script.status not in [StatusDefs.failed, StatusDefs.aborted, StatusDefs.error,
+                                         StatusDefs.timeout, StatusDefs.stopped]:
+                    script.status = StatusDefs.passed
+
+                self.status_manager.update_script_status(script.status, script_details)
 
                 self.status_manager.end_script()
-
-                script.status = StatusDefs.failed if script.failed_tests else StatusDefs.passed
 
                 log.debug("Going to update results summary file ... ")
                 self.write_summary_line(script)
@@ -202,15 +205,20 @@ class ScriptManager:
                 self.plugin_manager.shutdown_plugins()
 
             self.status_manager.finalize_suite_status()
-            if self.config.json_results is True:
-                with open(self.regression_summary_json_file_path, "a") as file:
-                    json.dump(results, file, indent=4)
 
             # Collect aggregated metrics
             self.calculate_summary_metrics()
             # Write aggregated summary to both text and json results files
             self.write_test_suite_summary()
             self.append_summary_metrics_to_json_results(results)
+
+            expected_fail_summary = self.get_expected_fails_summary()
+            self.write_expected_fails_summary(expected_fail_summary)
+            self.append_expected_fails_summary_to_json_results(expected_fail_summary, results)
+
+            if self.config.json_results is True:
+                with open(self.regression_summary_json_file_path, "a") as file:
+                    json.dump(results, file, indent=4)
 
         except Exception as ex:
             log.error("Exception: ", exc_info=True)
@@ -253,6 +261,13 @@ class ScriptManager:
                 "TestScripts_Run": len(self.script_list)
             })
 
+    def append_expected_fails_summary_to_json_results(self, expected_fail_summary, results):
+        """
+        Append the expected fails summary to the json results object.
+        """
+        if self.config.json_results is True:
+            results["ExpectedFails_Summary"].extend(expected_fail_summary)
+
     def validate_instructions(self, script):
         """
         Returns true if all instructions in provided TestScript are valid and processable by a loaded plugin.
@@ -264,6 +279,9 @@ class ScriptManager:
             for instruction in test.instructions:
                 # Grab the instruction string from the object
                 instructions.add(instruction.command['instruction'])
+
+        # Ignore ExpectedFail instruction which is not handled by a plugin.
+        instructions.discard("ExpectedFail")
 
         # Verify each instruction is supported by a plugin
         for instruction in instructions:
@@ -387,6 +405,8 @@ class ScriptManager:
 
         runtime_secs = self.aggregated_metrics["runtime_secs"]
         runtime_mins = runtime_secs / 60
+        formatted_times = ("%3.2f" % runtime_mins,"%3.2f" % runtime_secs)
+        runtime_summary = "{} mins ({} seconds)".format(formatted_times[0], formatted_times[1])
 
         # Write results
         try:
@@ -395,8 +415,7 @@ class ScriptManager:
 
             self.summary_file.write(str("%0s   %0s   %0s   %0s   %0s   %0s"
                                         % ("Totals:   ",
-                                        "{} mins ({} seconds)".ljust(111)
-                                        .format("%3.2f" % runtime_mins,"%3.2f" % runtime_secs),
+                                        runtime_summary.ljust(114),
                                         str(self.aggregated_metrics["num_tests"]).ljust(12),
                                         str(self.aggregated_metrics["num_passed_tests"]).ljust(12),
                                         str(self.aggregated_metrics["num_failed_tests"]).ljust(12),
@@ -413,6 +432,98 @@ class ScriptManager:
             self.summary_file = None
         except IOError:
             log.error("Failed to write aggregate metrics to CTF results summary file!")
+
+    def get_expected_fails_summary(self):
+        """
+        Generates a summary of all expected fails in test scripts.
+        """
+        expected_fail_summary = []
+        # Expected fails are summarized on a per test-script (not per-test) basis.
+        for script in self.script_list:
+            has_expected_fails = False
+            has_failed_expected_fail_instructions = False
+            associated_crs_drs = []
+            for test in script.tests:
+                for instruction in test.instructions:
+                    if "ExpectedFail" in instruction.command['instruction']:
+                        has_expected_fails = True
+                        if instruction.execution_result is False:
+                            has_failed_expected_fail_instructions = True
+                        # Retrieve associated CRs/DRs specified in the instruction parameters, if applicable.
+                        instruction_crs_drs = instruction.command.get("data", {}).get("associated_crs_drs", "")
+                        if instruction_crs_drs:
+                            associated_crs_drs.append(instruction_crs_drs)
+
+            # Add summary for each script that contains expected fails
+            if has_expected_fails:
+                associated_crs_drs_str = ", ".join(f"({x})" for x in associated_crs_drs)
+                failed_expected_fail_str = "One or more expected fail instructions did not behave as expected"
+                passed_expected_fail_str = "All expected fail instructions behaved as expected"
+                summary_str = failed_expected_fail_str if has_failed_expected_fail_instructions \
+                    else passed_expected_fail_str
+
+                expected_fail_summary.append({
+                    "Test Script Name": script.input_file,
+                    "Summary": summary_str,
+                    "Associated CRs/DRs": associated_crs_drs_str
+                })
+
+        return expected_fail_summary
+
+    def write_expected_fails_summary(self, expected_fail_summary):
+        """
+        Writes a summary of expected fails to the results summary file.
+        """
+        if not expected_fail_summary:
+            return
+
+        if self.summary_file is not None:
+            try:
+                self.summary_file.close()
+                self.summary_file = None
+            except IOError:
+                log.error("Failed to close CTF results summary file!")
+                return
+
+        try:
+            self.summary_file = open(self.regression_summary_file_path, "a+", buffering=10)
+
+            # Write the summary to the file
+            self.summary_file.write("\n" + "<" +("-" * 198) + ">" + "\n")
+            self.summary_file.write("Expected Fail(s) Summary: \n\n")
+
+            # Column widths
+            name_w    = 45
+            summary_w = 70
+            cr_dr_w   = 30
+
+            # Header row
+            header = ("%0s | %0s | %0s \n" % (
+                "Test Script Name".ljust(name_w),
+                "Summary".ljust(summary_w),
+                "Associated CRs/DRs".ljust(cr_dr_w)
+            ))
+
+            # Separator length
+            separator = "-" * (name_w + summary_w + cr_dr_w + 3 * 2)
+
+            # Write header + separator
+            self.summary_file.write(header)
+            self.summary_file.write(separator + "\n")
+
+            for exp_fail_row in expected_fail_summary:
+                line = ("%0s | %0s | %0s\n" % (
+                    str(exp_fail_row["Test Script Name"]).ljust(name_w),
+                    str(exp_fail_row["Summary"]).ljust(summary_w),
+                    str(exp_fail_row["Associated CRs/DRs"]).ljust(cr_dr_w)
+                ))
+                self.summary_file.write(line)
+
+            self.summary_file.write(separator + "\n")
+            self.summary_file.close()
+            self.summary_file = None
+        except IOError:
+            log.error("Failed to write expected fail summary to CTF results summary file!")
 
     def __del__(self):
         """

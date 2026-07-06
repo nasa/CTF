@@ -10,7 +10,7 @@
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: test_cfs_plugin.py
@@ -24,6 +24,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
+from core_plugins.cfs.cfs_plugin import _resolve_tlm_args_values
 from lib.ctf_global import Global, CtfVerificationStage
 from lib.exceptions import CtfTestError
 from core_plugins.cfs.cfs_time_manager import CfsTimeManager
@@ -98,6 +99,12 @@ def test_cfs_plugin_load_configured_targets_default(cfs_plugin):
     assert not cfs_plugin.targets
     assert cfs_plugin.load_configured_targets()
     assert 'cfs' in cfs_plugin.targets
+
+
+def test_cfs_plugin__resolve_tlm_args_values():
+    Global.variable_store['may'] = 5
+    tlm_args = [{'arg1': ['$may$']}, {'arg2': 2}]
+    assert _resolve_tlm_args_values(tlm_args) == [{'arg1': 5}, {'arg2': 2}]
 
 
 def test_cfs_plugin_register_cfs(cfs_plugin):
@@ -189,6 +196,29 @@ def test_cfs_plugin_get_cfs_targets_none(cfs_plugin, utils):
     assert cfs_plugin.get_cfs_targets() == []
     assert utils.has_log_level("ERROR")
 
+def test_cfs_plugin_get_target_ip(cfs_plugin, utils):
+    mock_controller = MagicMock()
+    test_ip = '127.1.1.1'
+    mock_controller.config.cfs_target_ip = test_ip
+    with patch.object(cfs_plugin, 'get_cfs_targets', return_value=[mock_controller]):
+        assert cfs_plugin.get_target_ip('cfs') == test_ip
+    assert not utils.has_log_level("ERROR")
+
+    with patch.object(cfs_plugin, 'get_cfs_targets', return_value=[]):
+        assert not cfs_plugin.get_target_ip('cfs')
+    assert utils.has_log_level("ERROR")
+
+def test_cfs_plugin_get_protocol(cfs_plugin, utils):
+    mock_controller = MagicMock()
+    test_protocol = 'sp0'
+    mock_controller.config.cfs_protocol = test_protocol
+    with patch.object(cfs_plugin, 'get_cfs_targets', return_value=[mock_controller]):
+        assert cfs_plugin.get_protocol('cfs') == test_protocol
+    assert not utils.has_log_level("ERROR")
+
+    with patch.object(cfs_plugin, 'get_cfs_targets', return_value=[]):
+        assert not cfs_plugin.get_protocol('cfs')
+    assert utils.has_log_level("ERROR")
 
 def test_cfs_plugin_build_cfs_no_target(cfs_plugin):
     assert not cfs_plugin.targets
@@ -417,9 +447,6 @@ def test_cfs_plugin_check_tlm_value_pass(cfs_plugin):
     cfs_plugin.has_attempted_register = True
     assert cfs_plugin.check_tlm_value("mid", {'args': True}, None)
     assert mock_controller.check_tlm_value.call_count == num_controllers
-    mock_controller.check_tlm_value.assert_called_with("mid", {'args': True}, 0)
-    assert cfs_plugin.check_tlm_value("CFE_EVS_HK_TLM_MID", [{'variable': 'Payload.CommandCounter', 'value': [0],
-                                                              'compare': '=='}], None)
 
 
 def test_cfs_plugin_check_tlm_value_fail(cfs_plugin):

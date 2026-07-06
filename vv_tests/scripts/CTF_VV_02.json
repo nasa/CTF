@@ -18,7 +18,7 @@
                {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "tgt1",
+                        "target": ["tgt1"],
                         "mid": "CI_CMD_MID",
                         "cc": "CI_NOOP_CC",
                         "args": {}
@@ -51,7 +51,7 @@
                {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "tgt1",
+                        "target": ["tgt1"],
                         "mid": "CI_CMD_MID",
                         "cc": "CI_NOOP_CC",
                         "args": {}
@@ -76,7 +76,7 @@
                {
                     "instruction": "SendCfsCommand",
                     "data": {
-                        "target": "tgt1",
+                        "target": ["tgt1"],
                         "mid": "CI_CMD_MID",
                         "cc": "CI_NOOP_CC",
                         "args": {}

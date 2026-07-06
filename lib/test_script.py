@@ -15,7 +15,7 @@ Load and validate input CTF test scripts. Manage execution of loaded test script
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: test_script.py
@@ -136,9 +136,12 @@ class TestScript:
             self.generate_test_results()
 
         except Exception as exception:
+            log.error("Failed to execute script: {}".format(self.input_file))
             script_status = StatusDefs.error
             status_manager.update_script_status(script_status, "Error")
-            raise CtfTestError("Error in run_script") from exception
+            # Ensure we properly terminate and write results for the failed script.
+            self.generate_test_results()
+            raise CtfTestError("Error in run_script for script: {}".format(self.input_file)) from exception
 
     def log_test_header(self):
         """

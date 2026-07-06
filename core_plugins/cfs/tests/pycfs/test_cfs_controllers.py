@@ -10,7 +10,7 @@
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: test_cfs_controllers.py
@@ -28,6 +28,7 @@ import tempfile
 
 import pytest
 
+from core_plugins.cfs.pycfs.socket_interface import TCPSocketInterface, TCPServerSocketInterface
 from lib.ctf_global import Global, CtfVerificationStage
 from lib.exceptions import CtfTestError, CtfParameterError
 from core_plugins.cfs.cfs_config import CfsConfig, RemoteCfsConfig
@@ -370,6 +371,25 @@ def test_cfs_controller_merge_ccsds_dictionaries(cfs_controller):
     pri_dict = {'a':1, 'b':2, 'd':4}
     sec_dict = {'a':1, 'b':3, 'd':4}
     assert merge_ccsds_dictionaries('test_dict', pri_dict, sec_dict)
+
+
+def test_init_cfs_interface(cfs_controller_inited):
+    """
+    Test CfsController class _init_cfs_interface method,
+    It initializes CommandInterface, TlmListener and LocalCfsInterface of CfsController.
+    """
+    assert cfs_controller_inited.cfs
+    # mid_map, ccsds and macro_map are already initialized
+    cfs_controller_inited.config.transport_layer_protocol = 1
+    cfs_controller_inited.config.build_cfs = False
+    assert cfs_controller_inited._init_cfs_interface()
+    assert isinstance(cfs_controller_inited.cfs.telemetry.socket_if, TCPSocketInterface)
+    assert isinstance(cfs_controller_inited.cfs.command.socket_if, TCPSocketInterface)
+
+    cfs_controller_inited.config.transport_layer_protocol = 3
+    assert cfs_controller_inited._init_cfs_interface()
+    assert isinstance(cfs_controller_inited.cfs.telemetry.socket_if, TCPServerSocketInterface)
+    assert isinstance(cfs_controller_inited.cfs.command.socket_if, TCPServerSocketInterface)
 
 
 def test_cfs_controller_initialize_pass(cfs_controller):

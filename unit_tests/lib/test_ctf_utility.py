@@ -10,7 +10,7 @@
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: test_ctf_utility.py
@@ -254,3 +254,15 @@ def test_ctf_utility_resolve_macros():
     cfs_controller.macro_map = {'ARGS': 123}
     Global.plugins_available['CFS Plugin'].targets[my_target] = cfs_controller
     assert resolve_macros(arg) == 123
+
+
+def test_ctf_utility_get_exp_fail_result(utils):
+    utils.clear_log()
+
+    # Correctly inverses a failed command result 
+    assert ctf_utility.get_exp_fail_result("Instruction", cmd_result=False)
+    assert not utils.has_log_level("ERROR")
+
+    # Logs error and returns False when command result passes unexpectedly
+    assert not ctf_utility.get_exp_fail_result("Instruction", cmd_result=True)
+    assert utils.has_log_level("ERROR")

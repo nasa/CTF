@@ -6,7 +6,7 @@ Unit Test for JSONScriptReader class: Loads and validates input CTF test scripts
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2025 United States Government as represented by the
+# Copyright (c) 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -178,6 +178,29 @@ def test_json_script_reader_resolve_labels_exception(utils):
     assert reader.resolve_labels(commands) is None
     assert reader.label_cnt == 1
     assert utils.has_log_level('ERROR')
+
+
+def test_json_script_reader_resolve_labels_nested_if():
+    """
+    test JSONScriptReader class method : resolve_labels
+    Perform in-line label name update for resolved functions. CTF requires unique label names for 'BeginLoop',
+    'EndLoop', 'IfCondition', 'ElseCondition', 'EndCondition' per test script.
+    """
+    input_script_path = 'functional_tests/cfe_6_7_tests/app_tests/CiFunctionTests.json'
+    reader = JSONScriptReader(input_script_path)
+    assert reader.label_cnt == 0
+    commands = [{'instruction': 'IfCondition', 'data': {'conditions': [{'variable': 'var', 'compare': '<', 'value': 1}],
+                                                        'label': 'a'}},
+                {'instruction': 'IfCondition', 'data': {'conditions': [{'variable': 'var2', 'compare': '<', 'value': 1}],
+                                                        'label': 'b'}},
+                {'instruction': 'EndCondition', 'data': {'label': 'b'}},
+                {'instruction': 'ElseCondition', 'data': {'label': 'a'}},
+                {'instruction': 'IfCondition', 'data': {'conditions': [{'variable': 'var3', 'compare': '>', 'value': 1}],
+                                                        'label': 'b'}},
+                {'instruction': 'EndCondition', 'data': {'label': 'b'}},
+                {'instruction': 'EndCondition', 'data': {'label': 'a'}}]
+    assert reader.resolve_labels(commands) is None
+    assert reader.label_cnt == 3
 
 
 def test_json_script_reader_process_functions_exception(utils):
@@ -665,9 +688,9 @@ def test_json_script_reader_resolve_command_data(json_script_reader):
     params = {}
     assert json_script_reader.resolve_function_params(params, data) == {}
 
-    data = {'a': 1, 'b': 2, 'c': 3}
-    params = {1: 'a', 2: 'b'}
-    assert json_script_reader.resolve_function_params(params, data) == {'a': 'a', 'b': 'b', 'c': 3}
+    data = {'a': '1', 'b': '2', 'c': '3'}
+    params = {'1': 'a', '2': 'b'}
+    assert json_script_reader.resolve_function_params(params, data) == {'a': 'a', 'b': 'b', 'c': '3'}
 
     data = {'a': 1, 'b': 2, 'c': 3}
     params = {'a': 1, 'b': 2}
@@ -681,4 +704,15 @@ def test_json_script_reader_resolve_command_data(json_script_reader):
         'usDestPort': 5011,
         'usRouteMask': 0,
         'iFileDesc': 0
+    }
+
+    data = {'cDestIp': 'destIp', 'cDestIp_port': 'destIp::90', 'cDestIp_port2': 'destIp::destPort',
+            'cDestIp_port3': '0.0.0.0::destPort', 'usDestPort': 'destPort',
+            'usRouteMask': 'routeMask', 'iFileDesc': 'fileDesc'}
+    params['destPort'] = '5011'
+    print(json_script_reader.resolve_function_params(params, data))
+    assert json_script_reader.resolve_function_params(params, data) == {
+        'cDestIp': '127.0.0.1', 'cDestIp_port': '127.0.0.1::90',
+        'cDestIp_port2': '127.0.0.1::5011', 'cDestIp_port3': '0.0.0.0::5011',
+        'usDestPort': '5011', 'usRouteMask': 0, 'iFileDesc': 0
     }

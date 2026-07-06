@@ -10,7 +10,7 @@
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: test_script_manager.py
@@ -134,6 +134,18 @@ def test_script_manager_add_script_file_exception(script_manager, utils):
         script_manager.add_script_file(invalid_script_dir)
         assert utils.has_log_level('ERROR')
 
+def test_script_manager_add_script_file_exp_fail(script_manager, utils):
+    """
+    Test ScriptManager class method: add_script_file correctly ignores "ExpectedFail" instructions 
+    as part of inner instruction validation and adds the associated script
+    """
+    utils.clear_log()
+
+    # path to json file containing ExpectedFail instruction(s)
+    script_dir = 'functional_tests/plugin_tests/Test_CTF_ExpectedFail_Example.json'
+
+    script_manager.add_script_file(script_dir)
+    assert not utils.has_log_level('ERROR')
 
 def test_script_manager_run_all_scripts(script_manager, example_script):
     """
@@ -392,3 +404,135 @@ def test_script_manager_calculate_summary_metrics(script_manager, test_script_in
     assert(script_manager.aggregated_metrics["num_failed_tests"] == 2)
     assert(script_manager.aggregated_metrics["num_passed_scripts"] == 1)
     assert(script_manager.aggregated_metrics["num_failed_scripts"] == 1)
+
+def test_script_manager_get_expected_fails_summary_no_exp_fails(script_manager, test_script_instance, example_script, utils):
+    """
+    Test ScriptManager class method: write_expected_fails_summary no sripts or scripts with no expected fails
+    """
+    script_manager.summary_file = Mock()
+    utils.clear_log()
+    # No scripts added, so expected fails summary should be empty
+    assert script_manager.get_expected_fails_summary() == []
+    assert not utils.has_log_level('ERROR')
+
+    # Empty script added, expected fails summary should be empty
+    dummy_script = test_script_instance()
+    dummy_script.status = 'passed'
+    script_manager.add_script(dummy_script)
+    assert script_manager.get_expected_fails_summary() == []
+    assert not utils.has_log_level('ERROR')
+
+    # Script added with no ExpectedFail instructions - expected fails summary should be empty
+    script_manager.add_script(example_script)
+    assert script_manager.get_expected_fails_summary() == []
+    assert not utils.has_log_level('ERROR')
+
+def test_script_manager_get_expected_fails_summary_nominal_fail(script_manager, utils):
+    """
+    Test ScriptManager class method: write_expected_fails_summary contains an expectedfail instruction that behaved nominally (failed as expected)
+    """
+    script_manager.summary_file = Mock()
+    utils.clear_log()
+
+    # Script added with one ExpectedFail instruction - expected fails summary should contain that instruction
+    script_name = 'Test_CTF_ExpectedFail_Example.json'
+    script_reader = JSONScriptReader('./functional_tests/plugin_tests/{}'.format(script_name))
+    example_script = script_reader.script
+    script_manager.add_script(example_script)
+
+    with patch("lib.test_script.TestScript.run_script", return_value=None),\
+         patch('builtins.open', new_callable=mock_open()), \
+         patch('os.makedirs'), \
+         patch("lib.script_manager.change_log_file"),\
+         patch.object(script_manager, 'plugin_manager', Mock(spec=PluginManager)):
+        script_manager.config.reset_plugins_between_scripts = False
+        # Ensure the script runs and 'fails' due to the ExpectedFail instruction. 
+        script_manager.script_list[0].status = 'failed'
+        # Ensure the ExpectedFail instruction 'passes' execution (i.e - the nested instruction failed as expected)
+        for script in script_manager.script_list:
+            for test in script.tests:
+                for instruction in test.instructions:
+                    if "ExpectedFail" in instruction.command['instruction']:
+                        instruction.execution_result = True
+        assert script_manager.run_all_scripts() is None
+
+    expected_summary_str = 'All expected fail instructions behaved as expected'
+    expected_summary = {'Test Script Name': script_name, 'Summary': expected_summary_str,
+                         'Associated CRs/DRs': '(CR:#123, DR:#789)'}
+    
+    assert len(script_manager.get_expected_fails_summary()) == 1
+    assert script_manager.get_expected_fails_summary()[0] == expected_summary
+    assert not utils.has_log_level('ERROR')
+
+def test_script_manager_get_expected_fails_summary_unexpec_fail(script_manager, utils):
+    """
+    Test ScriptManager class method: write_expected_fails_summary contains an expectedfail instruction that did not fail as expected. 
+    """
+    script_manager.summary_file = Mock()
+    utils.clear_log()
+
+    # Script added with one ExpectedFail instruction - expected fails summary should contain that instruction
+    script_name = 'Test_CTF_ExpectedFail_Example.json'
+    script_reader = JSONScriptReader('./functional_tests/plugin_tests/{}'.format(script_name))
+    example_script = script_reader.script
+    script_manager.add_script(example_script)
+
+    with patch("lib.test_script.TestScript.run_script", return_value=None),\
+         patch('builtins.open', new_callable=mock_open()), \
+         patch('os.makedirs'), \
+         patch("lib.script_manager.change_log_file"),\
+         patch.object(script_manager, 'plugin_manager', Mock(spec=PluginManager)):
+        script_manager.config.reset_plugins_between_scripts = False
+        # Ensure the script runs but unexpectedly 'passes' despite the ExpectedFail instruction.
+        script_manager.script_list[0].status = 'passed'
+        # Ensure the ExpectedFail instruction 'fails' execution (i.e - the nested instruction did not fail as expected)
+        for script in script_manager.script_list:
+            for test in script.tests:
+                for instruction in test.instructions:
+                    if "ExpectedFail" in instruction.command['instruction']:
+                        instruction.execution_result = False
+        assert script_manager.run_all_scripts() is None
+
+    expected_summary_str = 'One or more expected fail instructions did not behave as expected'
+    expected_summary = {'Test Script Name': script_name, 'Summary': expected_summary_str,
+                         'Associated CRs/DRs': '(CR:#123, DR:#789)'}
+    
+    print(script_manager.get_expected_fails_summary())
+    print(example_script.tests[0].instructions)
+
+    assert len(script_manager.get_expected_fails_summary()) == 1
+    assert script_manager.get_expected_fails_summary()[0] == expected_summary
+    assert not utils.has_log_level('ERROR')
+
+def test_script_manager_write_expected_fails_summary_empty_summary(script_manager, utils):
+    """
+    Test ScriptManager class method: write_expected_fails_summary no exception or error when passed in empty summary list
+    """
+    script_manager.summary_file = Mock()
+    utils.clear_log()
+
+    script_manager.write_expected_fails_summary([])
+
+    assert not utils.has_log_level('ERROR')
+
+def test_script_manager_write_expected_fails_summary_open_exception(script_manager, utils):
+    """
+    Test ScriptManager class method: write_expected_fails_summary 
+    """
+    script_manager.summary_file = Mock()
+    utils.clear_log()
+
+    with patch.object(script_manager.summary_file, 'open') as mocked_open:
+        mocked_open.side_effect = IOError
+        script_manager.write_expected_fails_summary([{'Dummy Summary'}])
+        assert utils.has_log_level('ERROR')
+
+def test_script_manager_write_expected_fails_summary_close_exception(script_manager):
+    """
+    Test ScriptManager class method: write_expected_fails_summary  raise exception when calling self.summary_file.close()
+    """
+    script_manager.summary_file = Mock()
+    with patch.object(script_manager.summary_file, 'close') as mock_close:
+        mock_close.side_effect = IOError
+        script_manager.write_expected_fails_summary([{'Dummy Summary'}])
+        mock_close.assert_called_once()

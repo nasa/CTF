@@ -55,20 +55,29 @@
                             {
                                 "compare": "==",
                                 "variable": "Payload.CommandCounter",
-                                "value": [
-                                    0.0
-                                ]
+                                "value": 0
                             },
                             {
                                 "compare": "==",
                                 "variable": "Payload.CommandErrorCounter",
-                                "value": [
-                                    1.0
-                                ]
+                                "value": 1
                             }
                         ]
                     },
                     "wait": 1
+                },
+                {
+                    "instruction": "CopyFiles",
+                    "data": {
+                        "source": "~/sample_cfs_workspace/README.md",
+                        "destination": "~/sample_cfs_workspace/../Copied_file.txt"
+                    }
+                },
+                {
+                    "instruction": "DeleteFiles",
+                    "data": {
+                        "path": "~/sample_cfs_workspace/../Copied_file.txt"
+                    }
                 }
             ]
         }

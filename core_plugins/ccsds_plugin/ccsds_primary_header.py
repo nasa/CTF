@@ -10,7 +10,7 @@
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: ccsds_primary_header.py
@@ -56,7 +56,7 @@ class CcsdsPrimaryHeaderBase(ctypes.BigEndianStructure):
         self.length = 0
         self.type = 0
 
-    def set_ccsds_version(self, version: int) -> None:
+    def set_ccsds_version(self, version):
         """
         Sets the CCSDS version number
 
@@ -64,7 +64,7 @@ class CcsdsPrimaryHeaderBase(ctypes.BigEndianStructure):
         """
         self.version_number = version
 
-    def set_app_id(self, app_id: int) -> None:
+    def set_app_id(self, app_id):
         """
         Sets the app ID field
 
@@ -72,7 +72,7 @@ class CcsdsPrimaryHeaderBase(ctypes.BigEndianStructure):
         """
         self.app_id = app_id
 
-    def set_secondary_header_flag(self, flag: int) -> None:
+    def set_secondary_header_flag(self, flag):
         """
         Sets the secondary header flag field
 
@@ -80,7 +80,7 @@ class CcsdsPrimaryHeaderBase(ctypes.BigEndianStructure):
         """
         self.secondary_header_flag = flag
 
-    def set_segmentation_flags(self, flags: int) -> None:
+    def set_segmentation_flags(self, flags):
         """
         Sets the segmentation flags field
 
@@ -88,13 +88,13 @@ class CcsdsPrimaryHeaderBase(ctypes.BigEndianStructure):
         """
         self.segmentation_flags = flags
 
-    def get_segmentation_flags(self) -> int:
+    def get_segmentation_flags(self):
         """
         Returns the segmentation_flags value derived from the header fields
         """
         return self.segmentation_flags
 
-    def set_sequence_count(self, count: int) -> None:
+    def set_sequence_count(self, count):
         """
         Sets the sequence count field
 
@@ -102,7 +102,7 @@ class CcsdsPrimaryHeaderBase(ctypes.BigEndianStructure):
         """
         self.sequence_count = count
 
-    def set_packet_length(self, length: int) -> None:
+    def set_packet_length(self, length):
         """
         Sets the packet length field
 
@@ -110,13 +110,13 @@ class CcsdsPrimaryHeaderBase(ctypes.BigEndianStructure):
         """
         self.length = length
 
-    def get_packet_length(self) -> int:
+    def get_packet_length(self):
         """
         Returns the length value derived from the header fields
         """
         return self.length
 
-    def get_msg_size(self) -> int:
+    def get_msg_size(self):
         """
          Return the msg size derived from the header fields
         """
@@ -124,7 +124,7 @@ class CcsdsPrimaryHeaderBase(ctypes.BigEndianStructure):
         # the primary header and then subtracts one from what's left, which gives the offset 7.
         return self.length + 7
 
-    def set_packet_type(self, packet_type: int) -> None:
+    def set_packet_type(self, packet_type):
         """
         Sets the packet type field
 
@@ -132,15 +132,15 @@ class CcsdsPrimaryHeaderBase(ctypes.BigEndianStructure):
         """
         self.type = packet_type
 
-    def is_command(self) -> int:
+    def is_command(self):
         """Returns true if the packet represents a command, indicated by the type field"""
         return self.type
 
-    def get_sequence_count(self) -> int:
+    def get_sequence_count(self):
         """Returns the sequence_count value derived from the header fields"""
         return self.sequence_count
 
-    def get_msg_id(self) -> int:
+    def get_msg_id(self):
         """Returns the message ID value derived from the header fields"""
         msg_id = (self.version_number << 13) + (self.type << 12) + (
                 self.secondary_header_flag << 11) + self.app_id

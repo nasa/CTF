@@ -10,7 +10,7 @@
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: test_ftp_interface.py
@@ -23,6 +23,7 @@
 import ftplib
 import os
 import shutil
+from pathlib import Path
 from unittest.mock import patch, mock_open
 
 import pytest
@@ -129,11 +130,11 @@ def test_ftp_interface_store_file_ftp(iftp_conn, utils):
 
 
 def test_ftp_interface_get_file_ftp_fail(iftp_conn, utils):
-    with patch('builtins.open', new_callable=mock_open()) as mock_file, \
-            patch('lib.ftp_interface.os.remove') as mock_remove:
+    Path("test_get_file_ftp.txt").write_text("temp_file to test ftp_interface_get_file_ftp")
+    with patch('builtins.open', new_callable=mock_open()) as mock_file:
         # ftp does not exist
         iftp_conn.ftp = None
-        assert not iftp_conn.get_file_ftp('/file/to/get', 'local/file/path')
+        assert not iftp_conn.get_file_ftp('/file/to/test_get_file_ftp.txt')
 
 
 def test_ftp_interface_get_file_ftp(iftp_conn, utils):
@@ -155,10 +156,7 @@ def test_ftp_interface_get_file_ftp(iftp_conn, utils):
         utils.clear_log()
         mock_file.assert_called_once_with('get', 'wb')
         mock_file.return_value.close.assert_called_once()
-        mock_remove.assert_called_once_with('get')
-
-        # invalid FTP
-
+        
         # FTP is disconnected
         mock_file.reset_mock()
         iftp_conn.disconnect_ftp()
@@ -254,6 +252,23 @@ def test_ftp_interface_download_ftp(iftp):
         assert not iftp.download_ftp('/remote/path', 'localhost', './local/path', 'filename.ext')
 
         # cleanup
+        shutil.rmtree('./local/path')
+
+
+def test_ftp_interface_download_ftp_folder_2(iftp):
+    with patch('lib.ftp_interface.ftplib.FTP', spec=ftplib.FTP) as mock_ftp:
+        responses = iter([
+            ['drwxr-x--- folder'],  # Call 1 (Root)
+            ['-rwxr-x--- file1']    # Call 2 (Inside folder)
+        ])
+
+        def side_effect(cmd, callback):
+            for line in next(responses):
+                callback(line)
+
+        mock_ftp.return_value.retrlines.side_effect = side_effect
+        assert iftp.download_ftp('/remote/path', 'localhost', './local/path')
+
         shutil.rmtree('./local/path')
 
 

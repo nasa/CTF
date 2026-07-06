@@ -15,7 +15,7 @@ Unit Test for Test class: Represents a single CTF test.
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: test_test.py
@@ -27,16 +27,15 @@ Unit Test for Test class: Represents a single CTF test.
 
 from math import isclose
 import pytest
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, call, ANY
 
 from lib.ctf_global import Global
-from lib.event_types import Instruction
+from lib.instruction import Instruction
 from lib.exceptions import CtfTestError, CtfConditionError
 from lib.readers.json_script_reader import JSONScriptReader
 from lib.status import ObjectFactory
 from lib.status_manager import StatusManager
 from lib.test import Test
-
 
 @pytest.fixture(name="test_instance")
 def _test_instance():
@@ -45,10 +44,22 @@ def _test_instance():
 
 @pytest.fixture(name="test_instance_inited")
 def _test_instance_inited():
+    return make_test_instance('functional_tests/cfe_6_7_tests/cfe_tests/CfeEsTest.json')
+
+
+@pytest.fixture(name="expected_fail_test_instance_inited")
+def _expected_fail_test_instance_inited():
+    return make_test_instance('functional_tests/plugin_tests/Test_CTF_ExpectedFail_Example.json')
+
+
+def make_test_instance(script_path):
+    """
+    Helper function to make Test class instances based on provided JSON script file.
+    """
     Global.set_time_manager(Mock())
     test = Test()
     status_manager = StatusManager(port=None)
-    script_reader = JSONScriptReader('functional_tests/cfe_6_7_tests/cfe_tests/CfeEsTest.json')
+    script_reader = JSONScriptReader(script_path)
     script_reader.process_tests()
     script_list = [script_reader.script]
     status_manager.set_scripts(script_list)
@@ -132,6 +143,104 @@ def test_test_execute_instruction(test_instance_inited):
         assert test_instance_inited.execute_instruction(test_instruction, 4) is False
 
 
+def test_test_execute_instruction_exp_fail(expected_fail_test_instance_inited, utils):
+    """
+    test Test class method: execute_instruction
+    Verify execute_instruction with ExpectedFail commands
+    """
+    instructions = expected_fail_test_instance_inited.instructions
+    exp_fail_instr = instructions[5].command
+
+    # Invalid ExpectedFail command
+    with patch('lib.test.validate_exp_fail', return_value=False):
+        assert expected_fail_test_instance_inited.execute_instruction(exp_fail_instr, 1) is False
+        assert not expected_fail_test_instance_inited.test_result
+
+    # Valid Passing ExpectedFail command in the same test ran after invalid command, test result is still false
+    with patch('lib.test.validate_exp_fail', return_value=True):
+        assert expected_fail_test_instance_inited.execute_instruction(exp_fail_instr, 1) is True
+        assert not expected_fail_test_instance_inited.test_result
+
+    # nested test instruction fails - affected platform - expectedfail result is a pass
+    utils.clear_log()
+    with patch("lib.plugin_manager.Plugin.process_command", return_value=False):
+        with patch('lib.test.exp_fail_is_affected_platform', return_value=True):
+            assert expected_fail_test_instance_inited.execute_instruction(exp_fail_instr, 1) is True
+    assert not utils.has_log_level("ERROR")
+
+    # nested test instruction passes - affected platform - expectedfail result is fail
+    utils.clear_log()
+    with patch("lib.plugin_manager.Plugin.process_command", return_value=True):
+        with patch('lib.test.exp_fail_is_affected_platform', return_value=True):
+            assert expected_fail_test_instance_inited.execute_instruction(exp_fail_instr, 1) is False
+    assert utils.has_log_level("ERROR")
+
+    # nested test instruction passes - but not affected platform - returns nested command result
+    utils.clear_log()
+    with patch("lib.plugin_manager.Plugin.process_command", return_value=True):
+        with patch('lib.test.exp_fail_is_affected_platform', return_value=False):
+            assert expected_fail_test_instance_inited.execute_instruction(exp_fail_instr, 1) is True
+    assert not utils.has_log_level("ERROR")
+
+    # nested test instruction fails - but not affected platform - returns nested command result
+    utils.clear_log()
+    with patch("lib.plugin_manager.Plugin.process_command", return_value=False):
+        with patch('lib.test.exp_fail_is_affected_platform', return_value=False):
+            assert expected_fail_test_instance_inited.execute_instruction(exp_fail_instr, 1) is False
+    assert not utils.has_log_level("ERROR")
+
+
+def test_test_execute_verification_exp_fail(expected_fail_test_instance_inited, utils):
+    """
+    test Test class method: execute_verification
+    Verify execute_verification with ExpectedFail commands
+    """
+    instructions = expected_fail_test_instance_inited.instructions
+    exp_fail_instr_1 = instructions[1].command
+    command_idx = 1
+    timeout = 5.0
+    new_verification = True
+
+    # Invalid ExpectedFail command
+    with patch('lib.test.validate_exp_fail', return_value=False):
+        assert not expected_fail_test_instance_inited.execute_verification(exp_fail_instr_1, command_idx, timeout, new_verification)
+        assert not expected_fail_test_instance_inited.test_result
+
+    # Valid Passing ExpectedFail command in the same test ran after invalid command, test result is still false
+    with patch('lib.test.validate_exp_fail', return_value=True):
+        assert expected_fail_test_instance_inited.execute_verification(exp_fail_instr_1, command_idx, timeout, new_verification)
+        assert not expected_fail_test_instance_inited.test_result
+
+    # nested test instruction fails - and affected platform - returns True
+    utils.clear_log()
+    with patch("lib.plugin_manager.Plugin.process_command", return_value=False):
+        with patch('lib.test.exp_fail_is_affected_platform', return_value=True):
+            assert expected_fail_test_instance_inited.execute_verification(exp_fail_instr_1, command_idx, timeout, new_verification)
+    assert not utils.has_log_level("ERROR")
+
+    # nested test instruction passes - and affected platform - returns False
+    utils.clear_log()
+    with patch("lib.plugin_manager.Plugin.process_command", return_value=True):
+        with patch('lib.test.exp_fail_is_affected_platform', return_value=True):
+            assert not expected_fail_test_instance_inited.execute_verification(exp_fail_instr_1, command_idx, timeout, new_verification)
+    assert utils.has_log_level("ERROR")
+
+    # nested test instruction fails - not affected platform - returns nested command result
+    utils.clear_log()
+    with patch("lib.plugin_manager.Plugin.process_command", return_value=False):
+        with patch('lib.test.exp_fail_is_affected_platform', return_value=False):
+            assert not expected_fail_test_instance_inited.execute_verification(exp_fail_instr_1, command_idx, timeout, new_verification)
+    assert not utils.has_log_level("ERROR")
+
+    # nested test instruction passes - not affected platform - returns nested command result
+    utils.clear_log()
+    with patch("lib.plugin_manager.Plugin.process_command", return_value=True):
+        with patch('lib.test.exp_fail_is_affected_platform', return_value=False):
+            assert expected_fail_test_instance_inited.execute_verification(exp_fail_instr_1, command_idx, timeout, new_verification)
+
+    assert not utils.has_log_level("ERROR")
+
+
 def test_test_execute_verification_fail(test_instance_inited):
     """
     test Test class method: execute_verification:  verification fail
@@ -169,6 +278,43 @@ def test_test_execute_verification_pass(test_instance_inited):
 
     with patch("lib.plugin_manager.Plugin.process_command", return_value=True):
         assert test_instance_inited.execute_verification(command, command_index, timeout, new_verification)
+
+
+def test_test_execute_verification_invalid_command(test_instance_inited, utils):
+    """
+    test Test class method: execute_verification: invalid test instruction
+    """
+    command = {'instruction': 'InvalidCommand', 'data': {'target': '', 'mid': 'TO_HK_TLM_MID', 'args': [
+        {'compare': '==', 'variable': 'usCmdCnt', 'value': [2.0]}]}, 'wait': 1,
+               'args': [{'compare': '==', 'variable': 'usCmdCnt', 'value': [2.0]}]}
+    command_index = 6
+    timeout = 5.0
+    new_verification = True
+    utils.clear_log()
+    assert not test_instance_inited.execute_verification(command, command_index, timeout, new_verification)
+    utils.has_log_level('ERROR')
+    utils.has_log('Could not find plugin to execute')
+
+
+def test_test_execute_verification_timeout(test_instance_inited, utils):
+    """
+    test Test class method: execute_verification: verification time out
+    """
+    command = {'instruction': 'CheckTlmValue', 'data': {'target': '', 'mid': 'TO_HK_TLM_MID', 'args': [
+        {'compare': '==', 'variable': 'usCmdCnt', 'value': [2.0]}]}, 'wait': 1,
+               'args': [{'compare': '==', 'variable': 'usCmdCnt', 'value': [2.0]}]}
+    command_index = 6
+    timeout = 5.0
+    new_verification = True
+    utils.clear_log()
+
+    with patch("lib.plugin_manager.Plugin.process_command", return_value=False), \
+         patch('time.time', side_effect=[1000, 1001, 1002, 1003, 1004]+[1030]*20):
+        # log function also calls time.time, so side_effect should be a large list
+        assert not test_instance_inited.execute_verification(command, command_index, timeout, new_verification)
+        utils.has_log_level('ERROR')
+        utils.has_log('Set CtfVerificationStage to last_ver')
+        utils.has_log('End verification')
 
 
 def test_test_execute_verification_exception(test_instance_inited):
@@ -270,6 +416,72 @@ def test_test_run_commands_looping(test_instance_inited, utils):
          patch("lib.test.Test.execute_instruction", return_value=None):
         assert test_instance_inited.run_commands() is None
     Global.goto_instruction_index = None
+
+
+def test_test_run_commands_expectedfails(expected_fail_test_instance_inited, utils):
+    """
+    test Test class method: run_commands
+    This test verifies expected fail instructions are correctly identified and executed as verification_required
+    or non-verification required commands based on the nested instruction and verify_required_commands value. 
+    """
+    expected_fail_test_instance_inited.verify_required_commands = ["CheckTlmValue", "CheckTlmPacket", "CheckNoTlmPacket"]
+    expected_fail_test_instance_inited.continuous_verification_commands = ['CheckTlmValue']
+    with patch("lib.test.Test.execute_verification", return_value=None) as mock_verif, \
+         patch("lib.test.Test.execute_instruction", return_value=None) as mock_instr:
+        # Act
+        assert expected_fail_test_instance_inited.run_commands() is None
+
+        instructions = expected_fail_test_instance_inited.instructions
+        standard_instr_0 = instructions[0].command # A standard instruction (not an expectedfail)
+        exp_fail_instr_1 = instructions[1].command
+        exp_fail_instr_2 = instructions[2].command
+        exp_fail_instr_3 = instructions[3].command
+        exp_fail_instr_4 = instructions[4].command
+        exp_fail_instr_5 = instructions[5].command # A non-continuous / not verify-required ExpectedFail instruction
+        standard_instr_6 = instructions[6].command # A standard continuous verification instruction (not an ExpectedFail)
+
+        assert mock_instr.call_count == 2
+        assert mock_verif.call_count == 5
+        assert not utils.has_log_level('ERROR')
+
+        mock_instr.assert_has_calls([
+            call(standard_instr_0, ANY),
+            call(exp_fail_instr_5, ANY)
+        ])
+
+        mock_verif.assert_has_calls([
+            call(exp_fail_instr_1, ANY, ANY, True),
+            # Consecutive identical verification call for same mid should reset verification
+            call(exp_fail_instr_2, ANY, ANY, False),
+            call(exp_fail_instr_3, ANY, ANY, True),
+            call(exp_fail_instr_4, ANY, ANY, True),
+            call(standard_instr_6, ANY, ANY, True),
+        ])
+
+
+def test_test_run_commands_expectedfails_timeout(expected_fail_test_instance_inited):
+    expected_fail_test_instance_inited.verify_required_commands = ["CheckTlmValue", "CheckTlmPacket", "CheckNoTlmPacket"]
+    expected_fail_test_instance_inited.continuous_verification_commands = ['CheckTlmValue']
+    
+    # Verify the verify_timeout field is correctly parsed from an ExpectedFail instruction
+    # and still correctly parsed from standard (non-expectedfail) instructions
+    with patch("lib.test.Test.execute_verification", return_value=None) as mock_verif, \
+         patch("lib.test.Test.execute_instruction", return_value=None):
+        assert expected_fail_test_instance_inited.run_commands() is None
+
+        instructions = expected_fail_test_instance_inited.instructions
+        exp_fail_instr_2 = instructions[2].command
+        standard_instr_6 = instructions[6].command
+        exp_fail_timeout = exp_fail_instr_2["data"]["args"].get("verify_timeout")
+        standard_instr_timetout = standard_instr_6.get("verify_timeout")
+
+        # Verify first that the instructions have timeout fields
+        assert exp_fail_timeout
+        assert standard_instr_timetout
+
+        # Now verify the timeout value is correctly parsed and passed to respective function
+        mock_verif.assert_any_call(exp_fail_instr_2, ANY, exp_fail_timeout, False)
+        mock_verif.assert_any_call(standard_instr_6, ANY, standard_instr_timetout, True)
 
 
 def test_test_run_commands_disabled_instruction(test_instance_inited, utils):

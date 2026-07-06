@@ -10,7 +10,7 @@
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: validation_plugin.py
@@ -34,6 +34,7 @@ import subprocess
 from subprocess import Popen, CalledProcessError
 from pathlib import Path
 import shutil
+import importlib
 
 from lib.ctf_global import Global
 from lib.ctf_utility import resolve_variable, set_variable
@@ -74,10 +75,11 @@ class ValidationPlugin(Plugin):
             "InsertUserComment": (self.insert_comment, [ArgTypes.string]),
             "CheckFileExists": (self.check_file_exists, [ArgTypes.string]),
             "RunShellCommand": (self.run_shell_command, [ArgTypes.string]),
+            "RegisterTlmCallback": (self.register_tlmpkt_callback, [ArgTypes.string] *2 )
         }
 
     @staticmethod
-    def initialize() -> bool:
+    def initialize():
         """
         Initialize implementation for the validation plugin.
 
@@ -85,11 +87,11 @@ class ValidationPlugin(Plugin):
 
         @return bool: True
         """
-        log.info("Initialized Validation Plugin!")
+        log.info("Initialized Validation Plugin")
         return True
 
     @staticmethod
-    def insert_comment(comment: str):
+    def insert_comment(comment):
         """
         Insert comments into the test log
         @return bool: True
@@ -98,12 +100,22 @@ class ValidationPlugin(Plugin):
         return True
 
     @staticmethod
-    def delete_file(path: str) -> bool:
+    def resolve_path(file):
+        """
+        Helper function to resolve file path, such as '~', '../', symbolic link.
+        @return resolved_path.
+        """
+        # Expand the tilde '~' to the full home directory path and resolve symlink
+        # Possible that the file path may not exist, if to create a new file.
+        return Path(file).expanduser().resolve()
+
+    @staticmethod
+    def delete_file(path):
         """
         Delete a file / folder on the host file system
         @return bool: True, unless delete file fails.
         """
-        file_path = Path(path)
+        file_path = ValidationPlugin.resolve_path(path)
         status = True
 
         if not file_path.exists():
@@ -112,10 +124,10 @@ class ValidationPlugin(Plugin):
 
         try:
             if file_path.is_file():
-                log.info("Deleting file {}".format(path))
+                log.info("Deleting file {}".format(file_path))
                 file_path.unlink(missing_ok=True)
             elif file_path.is_dir():
-                log.info("Deleting folder {}".format(path))
+                log.info("Deleting folder {}".format(file_path))
                 shutil.rmtree(file_path.resolve(), ignore_errors=True)
         except IOError:
             log.error("Deleting file/folder fails")
@@ -124,7 +136,7 @@ class ValidationPlugin(Plugin):
         return status
 
     @staticmethod
-    def run_shell_command(command: str):
+    def run_shell_command(command):
         """
         Run shell command
         @return bool: True, if the command returns exit code 0 or runs in the background; otherwise False.
@@ -155,13 +167,13 @@ class ValidationPlugin(Plugin):
         return result
 
     @staticmethod
-    def copy_file(source: str, destination: str) -> bool:
+    def copy_file(source, destination):
         """
         Copy a file or folder on the host file system
         @return bool: True, unless the copy fails.
         """
-        source_path = Path(source)
-        destination_path = Path(destination)
+        source_path = ValidationPlugin.resolve_path(source)
+        destination_path = ValidationPlugin.resolve_path(destination)
         status = True
 
         if not source_path.exists():
@@ -170,10 +182,10 @@ class ValidationPlugin(Plugin):
 
         try:
             if source_path.is_dir():
-                log.info("Copying folder from {} to {}".format(source, destination))
+                log.info("Copying folder from {} to {}".format(source_path, destination_path))
                 shutil.copytree(source_path, destination_path, dirs_exist_ok=True)
             if source_path.is_file():
-                log.info("Copying file from {} to {}".format(source, destination))
+                log.info("Copying file from {} to {}".format(source_path, destination_path))
                 shutil.copy(source_path, destination_path)
         except IOError:
             log.error("Copying file/folder fails")
@@ -182,7 +194,7 @@ class ValidationPlugin(Plugin):
         return status
 
     # Deprecated method
-    def save_file_as_text(self, input_file: str, output_file: str, file_type: str, target: str = None) -> bool:
+    def save_file_as_text(self, input_file, output_file, file_type, target=None):
         """
         Interpret a Cfs (binary) file and convert it to a human readable text file.
         Worth note, as it needs const values / macros to interpret log files,
@@ -194,7 +206,7 @@ class ValidationPlugin(Plugin):
          """
 
         log.info("Interpreting Cfs file input_file={} output_file={}".format(input_file, output_file))
-        input_file_path = Path(input_file)
+        input_file_path = ValidationPlugin.resolve_path(input_file)
         if not input_file_path.is_file():
             log.error("{} is not valid file".format(input_file))
             return False
@@ -212,7 +224,7 @@ class ValidationPlugin(Plugin):
         return status
 
     @staticmethod
-    def convert_timestamp(subsecs) -> str:
+    def convert_timestamp(subsecs):
         """
         Helper function: convert subsecs to microseconds
         """
@@ -236,7 +248,7 @@ class ValidationPlugin(Plugin):
         return microsecs2print
 
     # Deprecated method
-    def interpret_binary_data(self, event_data, entry_id, offset, endianess_of_target, os_max_api_name) -> str:
+    def interpret_binary_data(self, event_data, entry_id, offset, endianess_of_target, os_max_api_name):
         """
         Helper function: interpret each line of the binary cFE Event Log data to a human readable message
         """
@@ -278,12 +290,12 @@ class ValidationPlugin(Plugin):
         return message
 
     # Deprecated method
-    def interpret_event_log(self, input_file: str, output_file: str, target: str = None) -> bool:
+    def interpret_event_log(self, input_file, output_file, target=None):
         """
         Interpret the cFE Event Log file (binary file created via the CFE_EVS_WRITE_LOG_DATA_FILE_CC command)
         to a human readable text file
         """
-        input_file_path = Path(input_file)
+        input_file_path = ValidationPlugin.resolve_path(input_file)
         if not input_file_path.is_file():
             log.error("{} is not valid file".format(input_file))
             return False
@@ -306,7 +318,7 @@ class ValidationPlugin(Plugin):
 
         event_data = input_file_path.read_bytes()
 
-        output_file_path = Path(output_file)
+        output_file_path = ValidationPlugin.resolve_path(output_file)
         output_file_path.parents[0].mkdir(parents=True, exist_ok=True)
         log.info("Creating interpreted evs log file at = {}".format(output_file_path.resolve()))
         parsed_file = output_file_path.open(mode='w+', encoding="utf-8")
@@ -332,12 +344,12 @@ class ValidationPlugin(Plugin):
         return True
 
     @staticmethod
-    def read_file(file: str) -> any:
+    def read_file(file):
         """
         Helper method: read the file content. If the file does not exist, return None;
                        else return the content as a string
         """
-        file_path = Path(file)
+        file_path = ValidationPlugin.resolve_path(file)
         if not file_path.is_file():
             log.error("File {} not found  ".format(file_path.resolve()))
             return None
@@ -349,7 +361,7 @@ class ValidationPlugin(Plugin):
         return file_data
 
     @staticmethod
-    def check_str(file_data: str, search_str: str, variable_name: str = None, is_regex: bool = False) -> bool:
+    def check_str(file_data, search_str, variable_name=None, is_regex=False):
         """
         Helper method: Check whether a given text string is in text data.
         If variable_name is not None, assign the count of the given text string to the variable.
@@ -370,7 +382,7 @@ class ValidationPlugin(Plugin):
         return status
 
     @staticmethod
-    def _resolve_macros(args: str, target: str = None) -> str:
+    def _resolve_macros(args, target=None):
         if target is None:
             return args
 
@@ -381,8 +393,7 @@ class ValidationPlugin(Plugin):
         return args
 
     @staticmethod
-    def search_txt_file(file: str, search_str: str, variable_name: str = None, is_regex: bool = False,
-                        target: str = None) -> bool:
+    def search_txt_file(file, search_str, variable_name=None, is_regex=False, target=None):
         """
         Search a text file for a given text string.
         If variable_name is provided, assign the count of the text string in file to the variable.
@@ -404,7 +415,7 @@ class ValidationPlugin(Plugin):
         return status
 
     @staticmethod
-    def search_no_txt_file(file: str, search_str: str, is_regex: bool = False, target: str = None) -> bool:
+    def search_no_txt_file(file, search_str, is_regex=False, target=None):
         """
         Search a text file for a given text string. It has the reversed logic of search_txt_file.
         @return bool: True, if text string is NOT found; False otherwise
@@ -425,17 +436,43 @@ class ValidationPlugin(Plugin):
         return not status
 
     @staticmethod
-    def check_file_exists(file: str) -> bool:
+    def check_file_exists(file):
         """
         Check whether a file or folder exists on local file system.
         @return bool: True, if a file or folder exists; False otherwise
         """
         file = resolve_variable(file)
-        file_path = Path(file)
+        file_path = ValidationPlugin.resolve_path(file)
         if not file_path.exists():
             log.error("File {} does not exist".format(file_path.resolve()))
             return False
         log.info("File {} exists ".format(file_path.resolve()))
+        return True
+
+    @staticmethod
+    def register_tlmpkt_callback(func_name, mid):
+        """
+        Register the specified telemetry call_back function for a given mid.
+        @return bool: True, if the telemetry call_back function is registered successfully; False otherwise.
+        """
+        module_path, func_name = func_name.rsplit('.', 1)
+        module_name, class_name = module_path.rsplit('.', 1)
+
+        try:
+            log.debug("Import module:{}".format(module_name))
+            mod = importlib.import_module(module_name)
+        except ModuleNotFoundError:
+            log.error("Import module:{} error".format(module_name))
+            return False
+        try:
+            cls = getattr(mod, class_name)
+            call_back_func = getattr(cls, func_name)
+        except AttributeError:
+            log.error("Could not find the class: {} or function: {}".format(class_name, func_name))
+            return False
+
+        Global.register_construct_variable_length_payload_func(call_back_func, mid)
+        log.info("Register telemetry call_back function {} for mid: {}".format(call_back_func, mid))
         return True
 
     def shutdown(self):

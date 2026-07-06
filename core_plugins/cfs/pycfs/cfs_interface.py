@@ -10,7 +10,7 @@
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: cfs_interface.py
@@ -221,7 +221,7 @@ class CfsInterface:
             log.error("Failed to create tlm log file {}")
             log.debug(traceback.format_exc())
 
-    def write_tlm_log(self, payload, buf: bytearray, header):
+    def write_tlm_log(self, payload, buf, header):
         """
         Write payload and mid to telemetry log file. if log file does not exist, create one.
         """
@@ -252,7 +252,7 @@ class CfsInterface:
             log.error("Failed to write telemetry packet received for {}".format(hex(mid)))
             log.debug(traceback.format_exc())
 
-    def write_tlm_error_log(self, mid: str, description: str, buf: bytearray, pkt_size):
+    def write_tlm_error_log(self, mid, description, buf, pkt_size):
         """
         Write telemetry error messages to log file. if log file does not exist, create one.
         """
@@ -394,7 +394,7 @@ class CfsInterface:
         self.on_packet_received(mid, header, payload)
         return mid
 
-    def parse_telemetry_packet(self, buffer: bytearray):
+    def parse_telemetry_packet(self, buffer):
         """
         Parse telemetry packets from received buffer.
         """
@@ -524,7 +524,7 @@ class CfsInterface:
             self.has_received_mid[mid] = True
             log.debug(traceback.format_exc())
 
-    def on_packet_received(self, mid: int, header: any, payload: any) -> None:
+    def on_packet_received(self, mid, header, payload):
         """
         If this is the first time receiving a packet with the given mid then print the value of the mid.
         """
@@ -656,6 +656,7 @@ class CfsInterface:
         to_send = bytearray(command_header) + payload
         update_crc(command_header, to_send)
         status = self.command.send_command_packet(to_send)
+        log.debug("Sending bytes: {}".format(to_send.hex()))
 
         # Log cmd to db
         if Global.CTF_log_to_db:
@@ -802,7 +803,7 @@ class CfsInterface:
         ]
         return
 
-    def check_tlm_value(self, mid, args=None, discard_old_packets=True, backward=0.0):
+    def check_tlm_value(self, mid, args=None, discard_old_packets=True, backward=0.0, inner_mid=None):
         """
          Given a mid and a arguments, iterate over all received packets since the start of the verification.
          Validate each packet until a success is seen, or there are no more packets to check.
@@ -835,9 +836,23 @@ class CfsInterface:
 
         # Traverse packets backwards validating each packet for the selected MID
         log.debug("Check tlmvalue for MID {} in {} messages".format(hex(mid), len(self.received_mid_packets_dic[mid])))
+        inner_tlm_payload_type = self.mid_payload_map.get(inner_mid) if inner_mid else None
+        if inner_mid and not inner_tlm_payload_type:
+            log.error("No telemetry structure defined for MID: {}".format(inner_mid))
+            return False
+
+        check_tlm_result = False
         for i in range(len(self.received_mid_packets_dic[mid]) - 1, -1, -1):
             # Get current packet for the selected MID
             payload = self.received_mid_packets_dic[mid][i].payload
+
+            # Check whether the type of the payload matches with the type defined in mid_payload_map,
+            # If not, proceed to the next packet (tlm callback func may interpret the payload to other types)
+            # pylint: disable=isinstance-second-argument-not-valid-type
+            if inner_tlm_payload_type is not None and not isinstance(payload, inner_tlm_payload_type):
+                log.debug("Payload type {} doesn't match with {} continue ...".format(type(payload),
+                                                                                      inner_tlm_payload_type))
+                continue
 
             # Check that a payload exists, otherwise proceed to the next packet
             if payload is None:
@@ -853,7 +868,7 @@ class CfsInterface:
             self.received_mid_packets_dic[mid] = []
         return check_tlm_result
 
-    def get_tlm_value(self, mid: dict, tlm_variable: str, is_header: bool = False, tlm_args: list = None):
+    def get_tlm_value(self, mid, tlm_variable, is_header=False, tlm_args=None):
         """
         Given a mid and a tlm_variable, iterate over all received packets, and return the latest tlm value.
         """
@@ -1004,11 +1019,11 @@ class CfsInterface:
             if log_result and (id(payload) not in self._tlm_payload_set):
                 if not arg_result:
                     log.info(
-                        "FAILED Intermediate Check - {}: Actual: {}, Expected: {}, Comparison: {}, Tol: +{}, -{}"
+                        "Unsatisfied Intermediate Check - {}: Actual: {}, Expected: {}, Comparison: {}, Tol: +{}, -{}"
                         .format(variable, actual, expected_value, arg["compare"], tol_plus, tol_minus))
                 else:
                     log.debug(
-                        "PASSED Intermediate Check - {}: Actual: {}, Expected: {}, Comparison: {}, Tol: +{}, -{}"
+                        "Satisfied Intermediate Check - {}: Actual: {}, Expected: {}, Comparison: {}, Tol: +{}, -{}"
                         .format(variable, actual, expected_value, arg["compare"], tol_plus, tol_minus))
 
             packet_passed = packet_passed and arg_result
@@ -1044,7 +1059,7 @@ class CfsInterface:
                 log.error("Unable to connect to CFS mission")
                 return False
 
-    def _append_incomplete_packets(self, buffer_lst: list, buffer: bytearray):
+    def _append_incomplete_packets(self, buffer_lst, buffer):
         """
         Add the segmented packet to the incomplete_packet_dic for reconstructing the tlm packet later
         """
@@ -1061,7 +1076,7 @@ class CfsInterface:
         buffer_lst.append(segmented_pkt)
 
     @staticmethod
-    def _sort_incomplete_packets(pkt_lst: list):
+    def _sort_incomplete_packets(pkt_lst):
         """
         Sort incomplete packets based on sequence_count
         """
@@ -1080,7 +1095,7 @@ class CfsInterface:
             # sequence_count should be in order, if no missing/duplicated packets
             pkt_lst.sort(key=lambda pkt: pkt.seq)
 
-    def _build_from_incomplete_packets(self, mid: int):
+    def _build_from_incomplete_packets(self, mid):
         """
         Build the telemetry packet from the stored incomplete packets
         """

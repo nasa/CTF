@@ -1,5 +1,5 @@
 """
-@namespace lib.event_types
+@namespace lib.instruction
 Instruction class definition for CTF
 """
 
@@ -15,10 +15,10 @@ Instruction class definition for CTF
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
-# File: event_types.py
+# File: instruction.py
 #
 # Purpose: This file defines Instruction class for CTF.
 #
@@ -35,7 +35,6 @@ class Instruction:
     @param test: Integer index of the test that includes this instruction
     @param command_index: Integer index of this instruction within the test
     @param disabled: Whether or not the instruction is disabled
-
     """
     def __init__(self, delay, command, test, command_index, disabled):
         self.delay = delay
@@ -43,3 +42,4 @@ class Instruction:
         self.test = test
         self.command_index = command_index
         self.is_disabled = disabled
+        self.execution_result = None

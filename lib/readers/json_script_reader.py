@@ -5,7 +5,7 @@ Loads and validates input CTF test scripts. Manages execution of loaded test scr
 
 # MSC-26646-1, "Core Flight System Test Framework (CTF)"
 #
-# Copyright (c) 2019-2025 United States Government as represented by the
+# Copyright (c) 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # This software is governed by the NASA Open Source Agreement (NOSA) License and may be used,
@@ -27,7 +27,7 @@ from lib.ctf_utility import expand_path
 from lib.exceptions import CtfTestError
 from lib.test import Test
 from lib.test_script import TestScript
-from lib.event_types import Instruction
+from lib.instruction import Instruction
 from lib.logger import logger as log
 
 
@@ -202,12 +202,6 @@ class JSONScriptReader:
                 if not isinstance(command, dict):
                     log.error("{} is not dictionary type".format(command))
                     raise CtfTestError("{} is not dictionary type".format(command))
-                data = command.get("data")
-                args = None if data is None else data.get("args")
-                args = self.sanitize_args(args)
-                if args is not None:
-                    command["args"] = args
-
                 if "function" in command:
                     if "params" not in command:
                         log.error("'params' attribute is not defined in function {}".format(command))
@@ -262,19 +256,25 @@ class JSONScriptReader:
         Perform in-line label name update for resolved functions. CTF requires unique label names for 'BeginLoop',
         'EndLoop', 'IfCondition', 'ElseCondition', 'EndCondition' per test script.
         """
-        log.debug("Resolve labels defined in functions {}".format(commands))
         label_defined = {}
         label_resolved = False
         for command in commands:
-            if command.get("instruction", None) in ("BeginLoop","EndLoop","IfCondition","ElseCondition","EndCondition"):
+            instruction = command.get("instruction")
+            if instruction in ("BeginLoop","EndLoop","IfCondition","ElseCondition","EndCondition"):
                 try:
-                    label = command["data"]["label"]
+                    data = command["data"]
+                    label = data["label"]
                     if label not in label_defined:
                         self.label_cnt += 1
                         label_defined[label] = label + "_"+str(self.label_cnt)
-                    command["data"]["label"] = label_defined[label]
+                    data["label"] = label_defined[label]
                     label_resolved = True
                     log.debug("Label {} is resolved to {}".format(label, label_defined[label]))
+                    # Remove the label from the dictionary when it signifies the end of a control block.
+                    # This ensures that the label is not reused or referenced in subsequent blocks.
+                    # If label is encountered again, a new unique suffix is appended to the label with `label_cnt`.
+                    if instruction in ("EndLoop","EndCondition"):
+                        label_defined.pop(label)
                 except KeyError as exception:
                     log.error("Could not resolve label in command {}, exception {}".format(command, exception))
 
@@ -342,8 +342,8 @@ class JSONScriptReader:
             for key, value in field.items():
                 if isinstance(value, (dict, list)):
                     field[key] = self.resolve_function_params(params, value)
-                elif value in params.keys():
-                    field[key] = params[value]
+                else:
+                    resolve_param(params, field, key, value)
         elif isinstance(field, list):
             for index, item in enumerate(field):
                 if isinstance(item, (dict, list)):
@@ -351,3 +351,28 @@ class JSONScriptReader:
                 elif item in params.keys():
                     field[index] = params[item]
         return field
+
+
+def resolve_param(params, field,  target_key, source):
+    """
+    Resolves a parameter by checking for an exact match in params or
+    performing partial string replacements.
+    If source matches a key in params exactly, field[target_key] is updated
+    with that value. Otherwise, it treats source as a template string,
+    replacing occurrences of param keys with their corresponding values.
+    """
+
+    if not isinstance(source, str):
+        return
+    # exact match in params.keys()
+    if source in params:
+        field[target_key] = params[source]
+        return
+    # partial str replacement only for argument such as 'target::argument'
+    new_value = source
+    for param, val in params.items():
+        if (isinstance(param, str) and isinstance(val, str) and
+           ('::' + param in new_value or param + '::' in new_value)):
+            new_value = new_value.replace(param, val)
+    if new_value != source:
+        field[target_key] = new_value

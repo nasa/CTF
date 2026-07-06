@@ -10,7 +10,7 @@
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: ccsds_v1.py
@@ -49,7 +49,7 @@ class CcsdsV1Packet(CcsdsPacketInterface):
         ("pheader", CcsdsV1PrimaryHeader)
     ]
 
-    def set_msg_id(self, msg_id: int) -> None:
+    def set_msg_id(self, msg_id):
         """
         Convenience method to set the message ID on the packet
 
@@ -63,27 +63,27 @@ class CcsdsV1Packet(CcsdsPacketInterface):
         app_id = ctypes.c_uint16(msg_id).value & APP_ID_MASK
         self.pheader.set_app_id(app_id)
 
-    def get_msg_id(self) -> int:
+    def get_msg_id(self):
         """Convenience method to get the message ID from the packet"""
         return (self.pheader.version_number << 13) + (self.pheader.type << 12) + \
                (self.pheader.secondary_header_flag << 11) + self.pheader.app_id
 
-    def get_sequence_count(self) -> int:
+    def get_sequence_count(self):
         """ Convenience method to get sequence_count from the packet header """
         return self.pheader.get_sequence_count()
 
-    def validate(self, data: bytearray) -> bool:
+    def validate(self, data):
         """ Packet validation is not supported in open source release """
         return True
 
     @staticmethod
-    def get_crc_flag() -> int:
+    def get_crc_flag():
         """
         Get the header crc flag: CRC is not supported in open source release CcsdsV1Packet
         """
         return 0
 
-    def has_secondary_header(self) -> bool:
+    def has_secondary_header(self):
         """Convenience method to check for the presence of a secondary header"""
         return self.pheader.secondary_header_flag
 
@@ -116,11 +116,11 @@ class CcsdsV1CmdPacket(CcsdsV1Packet):
         self.set_function_code(command_code)
         self.set_checksum(command_code)
 
-    def get_function_code(self) -> int:
+    def get_function_code(self):
         """Convenience method to get the function code from the packet"""
         return self.sheader.get_function_code()
 
-    def set_function_code(self, function_code: int) -> None:
+    def set_function_code(self, function_code):
         """
         Convenience method to set the function code on the packet
 
@@ -128,7 +128,7 @@ class CcsdsV1CmdPacket(CcsdsV1Packet):
         """
         self.sheader.set_function_code(function_code)
 
-    def set_checksum(self, checksum: int) -> None:
+    def set_checksum(self, checksum):
         """
         Convenience method to set the checksum on the packet
 
@@ -149,13 +149,13 @@ class CcsdsV1TlmPacket(CcsdsV1Packet):
         ("spare", ctypes.c_uint32)
     ]
 
-    def get_timestamp_subseconds(self) -> int:
+    def get_timestamp_subseconds(self):
         """
          Returns the timestamp_subseconds derived from the sheader header fields in CcsdsV1TlmPacket
         """
         return self.sheader.timestamp_subseconds
 
-    def get_timestamp_seconds(self) -> int:
+    def get_timestamp_seconds(self):
         """
         Returns the timestamp_seconds derived from the sheader header fields in CcsdsV1TlmPacket
         """

@@ -10,7 +10,7 @@
 # License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either expressed or implied.
 #
-# Copyright © 2019-2025 United States Government as represented by the
+# Copyright © 2019-2026 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration. All Rights Reserved.
 #
 # File: cfs_controllers.py
@@ -56,7 +56,7 @@ from core_plugins.cfs.pycfs.command_interface import CommandInterface
 from core_plugins.cfs.pycfs.tlm_listener import TlmListener
 from core_plugins.cfs.pycfs.remote_cfs_interface import RemoteCfsInterface
 from core_plugins.ssh.ssh_plugin import SshController, SshConfig
-from core_plugins.cfs.pycfs.socket_interface import UDPSocketInterface, TCPSocketInterface
+from core_plugins.cfs.pycfs.socket_interface import UDPSocketInterface, TCPSocketInterface, TCPServerSocketInterface
 
 MACRO_MARKER = '#'
 
@@ -176,13 +176,20 @@ class CfsController:
         return self._init_cfs_interface()
 
     def _init_cfs_interface(self):
+        """
+        Initialize CommandInterface, TlmListener and LocalCfsInterface of CfsController.
+        """
         log.info("Starting Local CFS Interface to {}:{} for target {}"
                  .format(self.config.cfs_target_ip, self.config.cmd_udp_port, self.config.name))
 
-        # transport layer protocol setting: 1 for TCP (SOCK_STREAM);  2 for UDP (SOCK_DGRAM)
+        # transport layer protocol setting:
+        # 1: TCP client (SOCK_STREAM); 2: UDP (SOCK_DGRAM) default; 3: TCP server (SOCK_STREAM)
         if self.config.transport_layer_protocol == 1:
             socket_interface = TCPSocketInterface(self.config.cfs_target_ip, self.config.tlm_udp_port,
                                                   self.config.cmd_udp_port)
+        elif self.config.transport_layer_protocol == 3:
+            socket_interface = TCPServerSocketInterface(self.config.cfs_target_ip, self.config.tlm_udp_port,
+                                                        self.config.cmd_udp_port)
         else:
             socket_interface = UDPSocketInterface(self.config.cfs_target_ip, self.config.tlm_udp_port,
                                                   self.config.cmd_udp_port)
@@ -245,8 +252,7 @@ class CfsController:
         log.info("Enabling CFS output on {}".format(self.config.name))
         return self.cfs.enable_output()
 
-    def send_raw_cfs_command(self, mid: str, cc: str, buffer: str, header_args: dict = None,
-                             payload_length: int = None) -> bool:
+    def send_raw_cfs_command(self, mid, cc, buffer, header_args=None, payload_length=None):
         """
         Implementation of the CFS plugin instruction send_raw_cfs_command. Serializes a hex string directly to bytes for
         the command payload, regardless of the data type in the MID map.
@@ -303,7 +309,6 @@ class CfsController:
                     log.warning("The payload size {} is different from the message definition size {} ".
                                 format(len(payload), expected_payload_size))
 
-            log.debug("Sending bytes: {}".format(payload.hex()))
             result = self.cfs.send_command(mid, cc, payload, header_args)
         except (ValueError, TypeError):
             log.error("Could not convert payload {} to bytes. "
@@ -315,8 +320,7 @@ class CfsController:
         return result
 
     # noinspection PyProtectedMember
-    def send_cfs_command(self, mid: str, cc: str, args: dict,
-                         header_args: dict = None, payload_length: dict = None, ctype_args: bool = False) -> bool:
+    def send_cfs_command(self, mid, cc, args, header_args=None, payload_length=None, ctype_args=False):
         """
         Implementation of CFS plugin instructions send_cfs_command.  When CFS plugin instructions
         (send_cfs_command) is executed, it calls one or more CfsController instance's send_cfs_command function.
@@ -348,16 +352,13 @@ class CfsController:
         cc = self.mid_map[mid_name]['CC'][cc_name]['CODE']
 
         arg_data = self.build_command_payload(mid_name, cc_name, args, payload_length, ctype_args)
-        log.debug("Sending bytes: {}".format(arg_data.hex()))
-
         result = self.cfs.send_command(mid, cc, arg_data, header_args)
 
         if not result:
             log.error("Failed to send command message: MID {}, CC {}, args {}".format(hex(mid), cc, args))
         return result
 
-    def build_command_payload(self, mid_name: str, cc_name: str, args: dict,
-                              payload_length: int = None, ctype_args: bool = False) -> bytes:
+    def build_command_payload(self, mid_name, cc_name, args, payload_length=None, ctype_args=False):
         """
         Implements the building of a CFS command payload by converting args into ctypes and then encoding into bytes.
         @note mid_name and cc_name must be keys in the mid_map. Validate before calling this method.
@@ -394,7 +395,7 @@ class CfsController:
         return arg_data
 
     # noinspection PyProtectedMember
-    def convert_args_to_ctypes(self, args, arg_class) -> ctypes.Structure:
+    def convert_args_to_ctypes(self, args, arg_class):
         """
         Implements the conversion of command args into a ctypes structure
         """
@@ -420,7 +421,7 @@ class CfsController:
         return args
 
     # noinspection PyProtectedMember
-    def encode_ctypes_to_bytes(self, args: ctypes.Structure) -> bytes:
+    def encode_ctypes_to_bytes(self, args):
         """
         Implements the encoding of a ctypes Structure into a byte buffer.
         @return bytes: A raw byte representation of args
@@ -630,7 +631,7 @@ class CfsController:
                 return field[1]
         raise CtfParameterError("No field {} in {}".format(name, args_class.__name__), name)
 
-    def check_tlm_value(self, mid, args=None, backward=0):
+    def check_tlm_value(self, mid, args=None, backward=0.0, inner_mid=None):
         """
         Implementation of CFS plugin instructions check_tlm_value. When CFS plugin instructions (check_tlm_value)
         is executed, it calls CfsController instance's check_tlm_value function.
@@ -644,6 +645,11 @@ class CfsController:
         mid = self.mid_map[mid]
         current_mid_value = mid["MID"]
 
+        inner_mid_value = self.mid_map.get(inner_mid, {}).get("MID") if inner_mid else None
+        if inner_mid and not inner_mid_value:
+            log.error("Inner mid: {} is not defined in CCDD".format(inner_mid))
+            return False
+
         if current_mid_value not in self.cfs.received_mid_packets_dic.keys():
             if Global.current_verification_stage == CtfVerificationStage.first_ver:
                 log.error("Messages never received for MID {}:{}.".format(mid, current_mid_value))
@@ -652,7 +658,7 @@ class CfsController:
         args = self.convert_check_tlm_args(args) if args else None
         # As .cfs.clear_received_msgs_before_verification_start in .cfs.check_tlm_value func clears stale packets,
         # there is no need to clear buffer again after the verification by setting discard_old_packets to True
-        result = self.cfs.check_tlm_value(mid, args, discard_old_packets=False, backward=backward)
+        result = self.cfs.check_tlm_value(mid, args, False, backward, inner_mid_value)
 
         if result:
             log.info("PASSED Final Check for MID:{}, Args:{}".format(mid, args))
@@ -677,7 +683,7 @@ class CfsController:
         self.cfs.received_mid_packets_dic[mid_value] = []
         return True
 
-    def get_tlm_value(self, mid: str, tlm_variable: str, is_header: bool = False, tlm_args: list = None) -> any:
+    def get_tlm_value(self, mid, tlm_variable, is_header=False, tlm_args=None):
         """
         Implementation of CFS plugin instructions get_tlm_value. When CFS plugin method (get_tlm_value)
         is executed, it calls CfsController instance's get_tlm_value function.
