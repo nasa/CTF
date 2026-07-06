@@ -1,0 +1,149 @@
+{
+    "test_script_number": "CTF-ExpectedFail-Test",
+    "test_script_name": "Test_CTF_ExpectedFail_Example.json",
+    "owner": "CTF",
+    "description": "Basic CTF Example Script Showing An ExpectedFail Instruction. This file is referenced and used by several CTF unit tests.",
+    "requirements": {
+        "MyRequirement": "N/A"
+    },
+    "ctf_options": {
+        "verify_timeout": 4
+    },
+    "test_setup": "",
+    "import": {},
+    "tests": [
+        {
+            "test_number": "CTF-ExpectedFail-1",
+            "description": "",
+            "instructions": [
+                {
+                    "instruction": "SendCfsCommand",
+                    "data": {
+                        "target": "tgt1",
+                        "mid": "TO_CMD_MID",
+                        "cc": "TO_RESET_CC",
+                        "args": {}
+                    },
+                    "wait": 1
+                },
+                {
+                    "instruction": "ExpectedFail",
+                    "data": {
+                        "args": 
+                            {
+                                "instruction": "CheckTlmValue",
+                                "data": {
+                                    "target": "tgt1",
+                                    "mid": "TO_HK_TLM_MID",
+                                    "args": [
+                                        {
+                                            "compare": "==",
+                                            "variable": "usCmdCnt",
+                                            "value": 1
+                                        }
+                                    ]
+                                },
+                                "wait": 1
+                            },
+                        "affected_platforms": ["Linux", "SP0"],
+                        "associated_crs_drs": "CR:#123, DR:#789"
+                    },
+                    "wait": 2
+                },
+                {
+                    "instruction": "ExpectedFail",
+                    "description": "Consecutive CheckTlm instruction for verification with timeout specified",
+                    "data": {
+                        "args": 
+                            {
+                                "instruction": "CheckTlmValue",
+                                "data": {
+                                    "target": "tgt1",
+                                    "mid": "TO_HK_TLM_MID",
+                                    "args": [
+                                        {
+                                            "compare": "==",
+                                            "variable": "usCmdCnt",
+                                            "value": 1
+                                        }
+                                    ]
+                                },
+                                "wait": 1,
+                                "verify_timeout": 9
+                            },
+                        "affected_platforms": ["Linux", "SP0"],
+                        "associated_crs_drs": ""
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "ExpectedFail",
+                    "data": {
+                        "args": 
+                            {
+                                "instruction": "CheckNoTlmPacket",
+                                "data": {
+                                    "target": "tgt1",
+                                    "mid": "TO_HK_TLM_MID"
+                                }
+                            },
+                        "affected_platforms": ["linux", "sp0"],
+                        "associated_crs_drs": ""
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "ExpectedFail",
+                    "data": {
+                        "args": 
+                            {
+                                "instruction": "CheckTlmPacket",
+                                "data": {
+                                    "target": "tgt1",
+                                    "mid": "CFE_ES_APP_TLM_MID"
+                                }
+                            },
+                        "affected_platforms": ["linux", "sp0"],
+                        "associated_crs_drs": ""
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "ExpectedFail",
+                    "description": "Attempting setting value on a non-existent variable",
+                    "data": {
+                        "args": 
+                            {
+                                "instruction": "CheckUserVariable",
+                                "data": {
+                                    "variable_name": "non_existent_variable",
+                                    "operator": "=",
+                                    "value": 1
+                                }
+                            },
+                        "affected_platforms": ["Linux", "SP0"],
+                        "associated_crs_drs": ""
+                    },
+                    "wait": 0
+                },
+                {
+                    "instruction": "CheckTlmValue",
+                    "description" : "Verify nominal functionality of continuous-verification command is unaffected",
+                    "data": {
+                        "target": "tgt1",
+                        "mid": "TO_HK_TLM_MID",
+                        "args": [
+                            {
+                                "compare": "==",
+                                "variable": "usCmdCnt",
+                                "value": 0
+                            }
+                        ]
+                    },
+                    "wait": 0,
+                    "verify_timeout": 7
+                }
+            ]
+        }
+    ]
+}
