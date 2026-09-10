@@ -20,7 +20,9 @@
 # Note: This file was created at the NASA Johnson Space Center.
 # =========================================================================================
 
-from subprocess import PIPE, STDOUT
+from pathlib import Path
+from subprocess import PIPE, STDOUT, run
+import sys
 from unittest.mock import patch, MagicMock, mock_open, Mock
 
 import pytest
@@ -75,7 +77,7 @@ def test_local_cfs_interface_init_error(localcfs_error):
 
 
 def test_local_cfs_interface_get_start_string(localcfs, utils):
-    with patch('core_plugins.cfs.pycfs.local_cfs_interface.find_executable') as mock_find:
+    with patch('core_plugins.cfs.pycfs.local_cfs_interface.which') as mock_find:
         mock_find.return_value = None
         assert localcfs.get_start_string('') == './core-lx1 >> /logs/cfs_cfs_stdout.txt 2>&1'
         assert utils.has_log_level('ERROR')
@@ -226,3 +228,35 @@ def test_local_cfs_interface_start_cfs_errors(localcfs, utils):
         with pytest.raises(Exception):
             localcfs.start_cfs('args')
         assert utils.has_log_level('ERROR')
+
+
+def test_local_interface_import_without_distutils():
+    """The local interface needs no removed distutils module or setuptools shim."""
+    result = run(
+        [sys.executable, '-S', '-c',
+         "import sys; sys.modules['distutils'] = None; "
+         "from core_plugins.cfs.pycfs.local_cfs_interface import LocalCfsInterface"],
+        cwd=Path(__file__).resolve().parents[4], capture_output=True, text=True, check=False
+    )
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize('executable', [True, False, None])
+def test_xterm_search_checks_path_and_execute_permission(localcfs, monkeypatch, tmp_path, executable):
+    """Only an executable xterm on PATH should select an external terminal."""
+    binary = tmp_path / 'xterm'
+    if executable is not None:
+        binary.write_text('#!/bin/sh\nexit 0\n')
+        binary.chmod(0o755 if executable else 0o644)
+    monkeypatch.setenv('PATH', str(tmp_path))
+    localcfs.config.cfs_run_in_xterm = True
+    command = localcfs.get_start_string('')
+    assert command.startswith('xterm ' if executable else './core-lx1 ')
+
+
+def test_embedded_terminal_does_not_search_for_xterm(localcfs):
+    """Embedded mode must not depend on whether xterm is installed."""
+    localcfs.config.cfs_run_in_xterm = False
+    with patch('core_plugins.cfs.pycfs.local_cfs_interface.which') as lookup:
+        assert localcfs.get_start_string('') == './core-lx1 >> /logs/cfs_cfs_stdout.txt 2>&1'
+        lookup.assert_not_called()
