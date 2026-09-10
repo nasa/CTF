@@ -31,9 +31,8 @@ local_cfs_interface.py: Lower-level interface to communicate with cFS locally (l
 import os
 from io import StringIO
 from pathlib import Path
-from shutil import rmtree
+from shutil import rmtree, which
 from subprocess import run, Popen, PIPE, STDOUT
-from distutils.spawn import find_executable
 
 # module dependencies
 from core_plugins.cfs.pycfs.cfs_interface import CfsInterface
@@ -93,7 +92,7 @@ class LocalCfsInterface(CfsInterface):
             prepend_arg = self.config.prepend_arg + " "
 
         # ENHANCE - Test use of debug when running embedded
-        if not self.config.cfs_run_in_xterm or find_executable('xterm') is None:
+        if not self.config.cfs_run_in_xterm or which('xterm') is None:
             start_string = "{}./{} >> {} 2>&1".format(prepend_arg, target, self.cfs_std_out_path)
             if self.config.cfs_run_in_xterm:
                 log.error("Dependency 'xterm' not found. Attempting to run in an embedded terminal window instead.")
